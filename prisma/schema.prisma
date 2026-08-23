@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
@@ -18,30 +18,23 @@ model User {
 
 model Expense {
   id              String   @id @default(cuid())
-
   category        String
   name            String
   description     String?
-
   date            DateTime
   purchasePlace   String?
-
   quantity        Float?
   unit            String?
   unitPrice       Float?
-
   workers         Int?
   workDays        Float?
   laborCost       Float?
-
   amount          Float
   currency        String   @default("ETB")
-
   paymentMethod   String?
   supplier        String?
   receiptNumber   String?
   notes           String?
-
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

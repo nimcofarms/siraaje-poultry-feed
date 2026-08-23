@@ -1,13 +1,22 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL || "file:./prisma/dev.db",
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error("DATABASE_URL lama helin.");
+  process.exit(1);
+}
+
+const adapter = new PrismaPg({
+  connectionString,
 });
 
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const name = process.argv[2];
 const email = process.argv[3];
@@ -26,29 +35,31 @@ if (password.length < 8) {
 }
 
 try {
+  const normalizedEmail = email.toLowerCase().trim();
+
   const existingUser = await prisma.user.findUnique({
     where: {
-      email: email.toLowerCase(),
+      email: normalizedEmail,
     },
   });
 
   if (existingUser) {
-    console.log("Email-kan hore ayaa loo diiwaangeliyey.");
-    process.exit(1);
+    console.log("Email-kan hore ayaa loogu sameeyay admin.");
+    process.exit(0);
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.create({
     data: {
-      name,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword,
       role: "ADMIN",
     },
   });
 
-  console.log("Admin-ka waa la sameeyay.");
+  console.log("Admin-ka production-ka waa la sameeyay.");
   console.log("Magaca:", user.name);
   console.log("Email:", user.email);
 } catch (error) {
