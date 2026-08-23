@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Expense {
+  id              String   @id @default(cuid())
+
+  category        String
+  name            String
+  description     String?
+
+  date            DateTime
+  purchasePlace   String?
+
+  quantity        Float?
+  unit            String?
+  unitPrice       Float?
+
+  workers         Int?
+  workDays        Float?
+  laborCost       Float?
+
+  amount          Float
+  currency        String   @default("ETB")
+
+  paymentMethod   String?
+  supplier        String?
+  receiptNumber   String?
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

@@ -39,3 +39,27 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+# Local database
+dev.db
+*.db
+*.db-journal
+
+# Environment / secrets
+.env
+.env.local
+.env.production
+.env*.local
+
+# AI/editor generated folders
+.agents/
+.claude/
+.windsurf/
+
+# Old downloaded website files
+siraajpoultry.html
+siraajpoultry_files/
+
+# Misc
+skills-lock.json
