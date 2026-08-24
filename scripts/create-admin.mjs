@@ -36,22 +36,20 @@ if (password.length < 8) {
 
 try {
   const normalizedEmail = email.toLowerCase().trim();
+  const hashedPassword = await bcrypt.hash(password, 12);
 
-  const existingUser = await prisma.user.findUnique({
+  const user = await prisma.user.upsert({
     where: {
       email: normalizedEmail,
     },
-  });
 
-  if (existingUser) {
-    console.log("Email-kan hore ayaa loogu sameeyay admin.");
-    process.exit(0);
-  }
+    update: {
+      name: name.trim(),
+      password: hashedPassword,
+      role: "ADMIN",
+    },
 
-  const hashedPassword = await bcrypt.hash(password, 12);
-
-  const user = await prisma.user.create({
-    data: {
+    create: {
       name: name.trim(),
       email: normalizedEmail,
       password: hashedPassword,
@@ -59,11 +57,11 @@ try {
     },
   });
 
-  console.log("Admin-ka production-ka waa la sameeyay.");
+  console.log("✅ Admin-ka waa diyaar, password-kana waa la cusboonaysiiyay.");
   console.log("Magaca:", user.name);
   console.log("Email:", user.email);
 } catch (error) {
-  console.error("Admin-ka lama samayn.");
+  console.error("❌ Admin-ka lama cusboonaysiin.");
   console.error(error);
   process.exit(1);
 } finally {
