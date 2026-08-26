@@ -461,69 +461,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* EXPENSE MANAGEMENT */}
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <Link
-              href="/dashboard/expenses"
-              className="group rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="mt-1 text-lg font-extrabold text-[#064b2c]">
-                    Kharashka Dhismaha
-                  </h3>
-                </div>
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-[#075b35] transition group-hover:bg-[#075b35] group-hover:text-white">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-5 w-5"
-                  >
-                    <path d="M9 18h6" />
-                    <path d="M10 22h4" />
-                    <path d="M12 2v2" />
-                    <path d="m4.93 4.93 1.42 1.42" />
-                    <path d="M2 12h2" />
-                    <path d="m19.07 4.93-1.42 1.42" />
-                    <path d="M20 12h2" />
-                    <path d="M8 14a6 6 0 1 1 8 0c-1.2.8-1.8 1.8-2 3h-4c-.2-1.2-.8-2.2-2-3Z" />
-                  </svg>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/dashboard/expenses"
-              className="group rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:shadow-md"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="mt-1 text-lg font-extrabold text-[#064b2c]">
-                    Kharashka Productiga
-                  </h3>
-                </div>
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-[#075b35] transition group-hover:bg-[#075b35] group-hover:text-white">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-5 w-5"
-                  >
-                    <path d="M12 22V8" />
-                    <path d="M8 12c-3 0-5-2-5-5 3 0 5 2 5 5Z" />
-                    <path d="M16 10c3 0 5-2 5-5-3 0-5 2-5 5Z" />
-                    <path d="M12 16c-3 0-5-2-5-5 3 0 5 2 5 5Z" />
-                    <path d="M12 14c3 0 5-2 5-5-3 0-5 2-5 5Z" />
-                  </svg>
-                </div>
-              </div>
-            </Link>
-          </div>
+          
 
           <p className="mt-8 text-center text-xs text-slate-400">
             Â© 2026 Siraaje Poultry & Feeds Company
@@ -533,3 +471,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+
