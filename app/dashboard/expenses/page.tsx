@@ -80,6 +80,9 @@ export default function ExpensesPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   async function loadExpenses() {
     try {
       setLoading(true);
@@ -135,7 +138,10 @@ export default function ExpensesPage() {
 
   const productTotal = useMemo(
     () =>
-      productExpenses.reduce((sum, expense) => sum + expense.total, 0),
+      productExpenses.reduce(
+        (sum, expense) => sum + expense.total,
+        0
+      ),
     [productExpenses]
   );
 
@@ -151,15 +157,106 @@ export default function ExpensesPage() {
     (Number(productForm.transport) || 0);
 
   function openModal(type: Section) {
+    setEditingId(null);
     setError("");
     setSuccess("");
+
+    if (type === "construction") {
+      setConstructionForm({
+        ...initialConstructionForm,
+        date: today(),
+      });
+    } else {
+      setProductForm({
+        ...initialProductForm,
+        date: today(),
+      });
+    }
+
     setModal(type);
   }
 
   function closeModal() {
     setModal(null);
+    setEditingId(null);
     setError("");
     setSuccess("");
+  }
+
+  function editConstruction(expense: ConstructionExpense) {
+    setEditingId(expense.id);
+
+    setConstructionForm({
+      date: new Date(expense.date).toISOString().split("T")[0],
+      name: expense.name,
+      type: expense.type,
+      quantity: String(expense.quantity),
+      price: String(expense.price),
+    });
+
+    setError("");
+    setSuccess("");
+    setModal("construction");
+  }
+
+  function editProduct(expense: ProductExpense) {
+    setEditingId(expense.id);
+
+    setProductForm({
+      date: new Date(expense.date).toISOString().split("T")[0],
+      name: expense.name,
+      type: expense.type,
+      quantity: String(expense.quantity),
+      price: String(expense.price),
+      transport: String(expense.transport),
+    });
+
+    setError("");
+    setSuccess("");
+    setModal("product");
+  }
+
+  async function deleteExpense(type: Section, id: string) {
+    const confirmed = window.confirm(
+      "Ma hubtaa inaad rabto inaad tirtirto kharashkan? Xogtan dib looma soo celin karo."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(id);
+      setError("");
+
+      const endpoint =
+        type === "construction"
+          ? "/api/construction-expenses"
+          : "/api/product-expenses";
+
+      const response = await fetch(
+        `${endpoint}?id=${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Kharashka lama tirtiri karin."
+        );
+      }
+
+      await loadExpenses();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Kharashka lama tirtiri karin."
+      );
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function submitConstruction(e: FormEvent<HTMLFormElement>) {
@@ -171,22 +268,34 @@ export default function ExpensesPage() {
       setSuccess("");
 
       const response = await fetch("/api/construction-expenses", {
-        method: "POST",
+        method: editingId ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(constructionForm),
+        body: JSON.stringify({
+          ...constructionForm,
+          id: editingId,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.error || "Kharashka dhismaha lama kaydin."
+          data.error ||
+            (editingId
+              ? "Kharashka dhismaha lama beddeli karin."
+              : "Kharashka dhismaha lama kaydin.")
         );
       }
 
-      setSuccess("Kharashka dhismaha waa la kaydiyay.");
+      setSuccess(
+        editingId
+          ? "Kharashka dhismaha waa la beddelay."
+          : "Kharashka dhismaha waa la kaydiyay."
+      );
+
+      setEditingId(null);
 
       setConstructionForm({
         ...initialConstructionForm,
@@ -218,22 +327,34 @@ export default function ExpensesPage() {
       setSuccess("");
 
       const response = await fetch("/api/product-expenses", {
-        method: "POST",
+        method: editingId ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(productForm),
+        body: JSON.stringify({
+          ...productForm,
+          id: editingId,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.error || "Kharashka productiga lama kaydin."
+          data.error ||
+            (editingId
+              ? "Kharashka productiga lama beddeli karin."
+              : "Kharashka productiga lama kaydin.")
         );
       }
 
-      setSuccess("Kharashka productiga waa la kaydiyay.");
+      setSuccess(
+        editingId
+          ? "Kharashka productiga waa la beddelay."
+          : "Kharashka productiga waa la kaydiyay."
+      );
+
+      setEditingId(null);
 
       setProductForm({
         ...initialProductForm,
@@ -308,7 +429,6 @@ export default function ExpensesPage() {
           </p>
         </div>
 
-        {/* TOTAL CARDS */}
         <div className="mt-8 grid gap-5 md:grid-cols-3">
           <SummaryCard
             title="Kharashka Dhismaha"
@@ -329,7 +449,6 @@ export default function ExpensesPage() {
           />
         </div>
 
-        {/* SECTION BUTTONS */}
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <button
             type="button"
@@ -414,7 +533,6 @@ export default function ExpensesPage() {
           </div>
         )}
 
-        {/* CONSTRUCTION */}
         {section === "construction" && (
           <section className="mt-8 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
@@ -446,7 +564,7 @@ export default function ExpensesPage() {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[850px] text-left">
+                <table className="w-full min-w-[1050px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
                       <th className="px-6 py-4">Taariikhda</th>
@@ -455,6 +573,9 @@ export default function ExpensesPage() {
                       <th className="px-6 py-4 text-right">Tirada</th>
                       <th className="px-6 py-4 text-right">Qiimaha</th>
                       <th className="px-6 py-4 text-right">Total</th>
+                      <th className="px-6 py-4 text-center">
+                        Maamul
+                      </th>
                     </tr>
                   </thead>
 
@@ -487,6 +608,36 @@ export default function ExpensesPage() {
                         <td className="px-6 py-4 text-right font-extrabold text-[#075b35]">
                           {formatMoney(expense.total)}
                         </td>
+
+                        <td className="px-6 py-4">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                editConstruction(expense)
+                              }
+                              className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
+                            >
+                              ✎ Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deleteExpense(
+                                  "construction",
+                                  expense.id
+                                )
+                              }
+                              disabled={deletingId === expense.id}
+                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                            >
+                              {deletingId === expense.id
+                                ? "..."
+                                : "Delete"}
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -495,9 +646,7 @@ export default function ExpensesPage() {
             )}
           </section>
         )}
-
-        {/* PRODUCT */}
-        {section === "product" && (
+                {section === "product" && (
           <section className="mt-8 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
               <div>
@@ -528,7 +677,7 @@ export default function ExpensesPage() {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px] text-left">
+                <table className="w-full min-w-[1200px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
                       <th className="px-6 py-4">Taariikhda</th>
@@ -538,6 +687,7 @@ export default function ExpensesPage() {
                       <th className="px-6 py-4 text-right">Price</th>
                       <th className="px-6 py-4 text-right">Transport</th>
                       <th className="px-6 py-4 text-right">Total</th>
+                      <th className="px-6 py-4 text-center">Maamul</th>
                     </tr>
                   </thead>
 
@@ -574,6 +724,31 @@ export default function ExpensesPage() {
                         <td className="px-6 py-4 text-right font-extrabold text-[#075b35]">
                           {formatMoney(expense.total)}
                         </td>
+
+                        <td className="px-6 py-4">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => editProduct(expense)}
+                              className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
+                            >
+                              ✎ Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deleteExpense("product", expense.id)
+                              }
+                              disabled={deletingId === expense.id}
+                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                            >
+                              {deletingId === expense.id
+                                ? "..."
+                                : "Delete"}
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -584,10 +759,14 @@ export default function ExpensesPage() {
         )}
       </div>
 
-      {/* CONSTRUCTION MODAL */}
+      {/* DHISMAHA FORM */}
       {modal === "construction" && (
         <Modal
-          title="Ku Dar Kharashka Dhismaha"
+          title={
+            editingId
+              ? "Wax Ka Beddel Kharashka Dhismaha"
+              : "Ku Dar Kharashka Dhismaha"
+          }
           onClose={closeModal}
         >
           <form onSubmit={submitConstruction}>
@@ -687,16 +866,24 @@ export default function ExpensesPage() {
             <FormButtons
               saving={saving}
               onCancel={closeModal}
-              label="Kaydi Kharashka"
+              label={
+                editingId
+                  ? "Kaydi Isbeddelka"
+                  : "Kaydi Kharashka"
+              }
             />
           </form>
         </Modal>
       )}
 
-      {/* PRODUCT MODAL */}
+      {/* PRODUCT FORM */}
       {modal === "product" && (
         <Modal
-          title="Ku Dar Kharashka Productiga"
+          title={
+            editingId
+              ? "Wax Ka Beddel Kharashka Productiga"
+              : "Ku Dar Kharashka Productiga"
+          }
           onClose={closeModal}
         >
           <form onSubmit={submitProduct}>
@@ -818,7 +1005,11 @@ export default function ExpensesPage() {
             <FormButtons
               saving={saving}
               onCancel={closeModal}
-              label="Kaydi Kharashka"
+              label={
+                editingId
+                  ? "Kaydi Isbeddelka"
+                  : "Kaydi Kharashka"
+              }
             />
           </form>
         </Modal>
@@ -843,7 +1034,9 @@ function SummaryCard({
     <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-slate-500">{title}</p>
+          <p className="text-sm font-semibold text-slate-500">
+            {title}
+          </p>
 
           <p className="mt-3 text-2xl font-extrabold text-[#075b35]">
             {value}
@@ -895,7 +1088,9 @@ function EmptyState({
     <div className="p-12 text-center">
       <div className="text-5xl">{icon}</div>
 
-      <p className="mt-4 font-semibold text-slate-500">{text}</p>
+      <p className="mt-4 font-semibold text-slate-500">
+        {text}
+      </p>
     </div>
   );
 }
@@ -926,7 +1121,7 @@ function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 transition hover:bg-slate-200"
           >
             ×
           </button>
@@ -976,7 +1171,7 @@ function FormButtons({
       <button
         type="button"
         onClick={onCancel}
-        className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-600 hover:bg-slate-50"
+        className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-600 transition hover:bg-slate-50"
       >
         Jooji
       </button>
