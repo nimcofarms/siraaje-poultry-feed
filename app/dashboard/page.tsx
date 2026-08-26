@@ -4,9 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-type Expense = {
+type ConstructionExpense = {
   id: string;
-  amount: number;
+  total: number;
+};
+
+type ProductExpense = {
+  id: string;
+  total: number;
 };
 
 export default function DashboardPage() {
@@ -16,26 +21,40 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadExpenses() {
       try {
-        const response = await fetch("/api/expenses", {
-          cache: "no-store",
-        });
+        const [constructionResponse, productResponse] = await Promise.all([
+          fetch("/api/construction-expenses", {
+            cache: "no-store",
+          }),
+          fetch("/api/product-expenses", {
+            cache: "no-store",
+          }),
+        ]);
 
-        if (!response.ok) return;
+        if (!constructionResponse.ok || !productResponse.ok) {
+          return;
+        }
 
-        const data = await response.json();
+        const constructionData: ConstructionExpense[] =
+          await constructionResponse.json();
 
-        const expenses: Expense[] = Array.isArray(data)
-          ? data
-          : data.expenses ?? [];
+        const productData: ProductExpense[] =
+          await productResponse.json();
 
-        setExpenseCount(expenses.length);
-
-        const total = expenses.reduce(
-          (sum, expense) => sum + Number(expense.amount || 0),
+        const constructionTotal = constructionData.reduce(
+          (sum, expense) => sum + Number(expense.total || 0),
           0
         );
 
-        setTotalExpenses(total);
+        const productTotal = productData.reduce(
+          (sum, expense) => sum + Number(expense.total || 0),
+          0
+        );
+
+        setTotalExpenses(constructionTotal + productTotal);
+
+        setExpenseCount(
+          constructionData.length + productData.length
+        );
       } catch (error) {
         console.error("Dashboard expense error:", error);
       }
@@ -72,9 +91,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="hidden text-right sm:block">
-            <p className="font-bold">Maamulka</p>
-            <p className="text-sm text-green-100">Dashboard</p>
+          {/* USER */}
+          <div className="flex items-center gap-4">
+            <div className="hidden text-right sm:block">
+              <p className="font-extrabold">
+                Keyse
+              </p>
+
+              <p className="text-sm text-green-100">
+                Maamule
+              </p>
+            </div>
+
+            <Link
+              href="/"
+              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20"
+            >
+              Ka Bax
+            </Link>
           </div>
         </div>
       </header>
@@ -87,7 +121,10 @@ export default function DashboardPage() {
               href="/dashboard"
               className="flex items-center gap-3 rounded-2xl bg-[#075b35] px-4 py-3 font-bold text-white"
             >
-              <span className="text-xl">⌂</span>
+              <span className="flex h-6 w-6 items-center justify-center">
+                ⌂
+              </span>
+
               Dashboard
             </Link>
 
@@ -95,23 +132,16 @@ export default function DashboardPage() {
               href="/dashboard/expenses"
               className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
             >
-              <span className="text-xl">₿</span>
+              <span className="flex h-6 w-6 items-center justify-center font-extrabold">
+                $
+              </span>
+
               Kharashaadka
             </Link>
           </nav>
-
-          <div className="mt-8 border-t border-slate-100 pt-4">
-            <Link
-              href="/"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-red-600 transition hover:bg-red-50"
-            >
-              <span>↪</span>
-              Ka Bax
-            </Link>
-          </div>
         </aside>
 
-        {/* DASHBOARD CONTENT */}
+        {/* CONTENT */}
         <section>
           <div className="mb-7">
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-[#b38420]">
@@ -129,7 +159,6 @@ export default function DashboardPage() {
 
           {/* CARDS */}
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {/* KHARASH TOTAL */}
             <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
@@ -148,7 +177,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* TIRADA KHARASHYADA */}
             <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
@@ -161,13 +189,12 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff2cc] text-xl">
-                  📋
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff2cc] text-xl font-bold text-[#075b35]">
+                  #
                 </div>
               </div>
             </div>
 
-            {/* STATUS */}
             <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
@@ -196,8 +223,8 @@ export default function DashboardPage() {
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Diiwaangeli alaab, adeeg, shaqaale ama kharash kale oo
-                  shirkadda galay.
+                  Diiwaangeli kharashka dhismaha ama kharashka
+                  productiga.
                 </p>
               </div>
 

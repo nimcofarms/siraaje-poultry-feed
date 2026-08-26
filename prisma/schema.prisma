@@ -17,24 +17,51 @@ model User {
 }
 
 model Expense {
-  id              String   @id @default(cuid())
-  category        String
-  name            String
-  description     String?
-  date            DateTime
-  purchasePlace   String?
-  quantity        Float?
-  unit            String?
-  unitPrice       Float?
-  workers         Int?
-  workDays        Float?
-  laborCost       Float?
-  amount          Float
-  currency        String   @default("ETB")
-  paymentMethod   String?
-  supplier        String?
-  receiptNumber   String?
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  category      String
+  name          String
+  description   String?
+  date          DateTime
+  purchasePlace String?
+  quantity      Float?
+  unit          String?
+  unitPrice     Float?
+  workers       Int?
+  workDays      Float?
+  laborCost     Float?
+  amount        Float
+  currency      String   @default("ETB")
+  paymentMethod String?
+  supplier      String?
+  receiptNumber String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ConstructionExpense {
+  id        String   @id @default(cuid())
+  date      DateTime
+  name      String
+  type      String
+  quantity  Float
+  price     Float
+  total     Float
+  currency  String   @default("ETB")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductExpense {
+  id        String   @id @default(cuid())
+  date      DateTime
+  name      String
+  type      String
+  quantity  Float
+  price     Float
+  transport Float    @default(0)
+  total     Float
+  currency  String   @default("ETB")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
