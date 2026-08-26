@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -469,10 +469,6 @@ export default function DashboardPage() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-slate-500">
-                    Maamulka
-                  </p>
-
                   <h3 className="mt-1 text-lg font-extrabold text-[#064b2c]">
                     Kharashka Dhismaha
                   </h3>
@@ -505,10 +501,6 @@ export default function DashboardPage() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-slate-500">
-                    Maamulka
-                  </p>
-
                   <h3 className="mt-1 text-lg font-extrabold text-[#064b2c]">
                     Kharashka Productiga
                   </h3>
@@ -534,7 +526,7 @@ export default function DashboardPage() {
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-400">
-            © 2026 Siraaje Poultry & Feeds Company
+            Â© 2026 Siraaje Poultry & Feeds Company
           </p>
         </section>
       </div>
