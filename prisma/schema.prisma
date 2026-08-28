@@ -108,3 +108,38 @@ model Feed {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+model ChickenVaccination {
+  id               String   @id @default(cuid())
+  date             DateTime
+  stage            String
+  vaccineName      String
+  disease          String
+  application      String
+  givenBy          String
+  numberOfChickens Int
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ChickenVitamin {
+  id               String   @id @default(cuid())
+  date             DateTime
+  vitaminName      String
+  givenBy          String
+  numberOfChickens Int
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ChickenCalcium {
+  id               String   @id @default(cuid())
+  date             DateTime
+  calciumName      String
+  givenBy          String
+  numberOfChickens Int
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

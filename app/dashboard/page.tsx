@@ -356,6 +356,33 @@ export default function DashboardPage() {
 
               Quudinta / Feeds
             </Link>
+
+            {/* POULTRY HEALTH */}
+            <Link
+              href="/dashboard/poultry-health"
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3v18"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 12h18"
+                />
+              </svg>
+
+              Daaweynta Digaagga / Poultry Health
+            </Link>
           </nav>
         </aside>
 
@@ -642,6 +669,65 @@ export default function DashboardPage() {
                   </svg>
 
                   Fur Quudinta / Open Feeds
+                </Link>
+              </div>
+            </div>
+
+            {/* POULTRY HEALTH QUICK ACTION */}
+            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex h-full flex-col justify-between gap-5">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e7f5eb] text-[#075b35]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 3v18"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 12h18"
+                        />
+                      </svg>
+                    </div>
+
+                    <h3 className="text-xl font-extrabold text-[#064b2c]">
+                      Daaweynta Digaagga / Poultry Health
+                    </h3>
+                  </div>
+
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Diiwaangeli tallaalka, vitamin-ka iyo calcium-ka
+                    digaagga, kadibna ka maamul dhammaan diiwaannada
+                    caafimaadka digaagga.
+                  </p>
+                </div>
+
+                <Link
+                  href="/dashboard/poultry-health"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#075b35] px-6 font-bold text-white shadow-md transition hover:bg-[#064b2c]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-5 w-5"
+                  >
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
+
+                  Fur Daaweynta / Open Poultry Health
                 </Link>
               </div>
             </div>
