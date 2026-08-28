@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+const ALLOWED_CUSTOMER_TYPES = [
+  "Dukaan",
+  "Restaurant",
+  "Hotel",
+  "Cafeteria",
+];
+
 export async function GET() {
   try {
     const sales = await prisma.eggSale.findMany({
@@ -27,15 +34,26 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const customerType = String(body.customerType || "").trim();
     const companyName = String(body.companyName || "").trim();
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
-    if (!body.date || !companyName) {
+    if (!body.date || !customerType || !companyName) {
       return NextResponse.json(
         {
           error:
-            "Fadlan buuxi taariikhda iyo magaca macmiilka. / Please enter the date and customer/company name.",
+            "Fadlan buuxi taariikhda, nooca macmiilka iyo magaca macmiilka. / Please enter the date, customer type and customer name.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+      return NextResponse.json(
+        {
+          error:
+            "Nooca macmiilka waa inuu noqdaa Dukaan, Restaurant, Hotel ama Cafeteria. / Customer type must be Shop, Restaurant, Hotel or Cafeteria.",
         },
         { status: 400 }
       );
@@ -61,6 +79,7 @@ export async function POST(request: Request) {
     const sale = await prisma.eggSale.create({
       data: {
         date: new Date(`${body.date}T12:00:00`),
+        customerType,
         companyName,
         quantity,
         price,
@@ -88,6 +107,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
 
     const id = String(body.id || "").trim();
+    const customerType = String(body.customerType || "").trim();
     const companyName = String(body.companyName || "").trim();
     const quantity = Number(body.quantity);
     const price = Number(body.price);
@@ -101,11 +121,21 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!body.date || !companyName) {
+    if (!body.date || !customerType || !companyName) {
       return NextResponse.json(
         {
           error:
-            "Fadlan buuxi taariikhda iyo magaca macmiilka. / Please enter the date and customer/company name.",
+            "Fadlan buuxi taariikhda, nooca macmiilka iyo magaca macmiilka. / Please enter the date, customer type and customer name.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+      return NextResponse.json(
+        {
+          error:
+            "Nooca macmiilka waa inuu noqdaa Dukaan, Restaurant, Hotel ama Cafeteria. / Customer type must be Shop, Restaurant, Hotel or Cafeteria.",
         },
         { status: 400 }
       );
@@ -134,6 +164,7 @@ export async function PUT(request: Request) {
       },
       data: {
         date: new Date(`${body.date}T12:00:00`),
+        customerType,
         companyName,
         quantity,
         price,

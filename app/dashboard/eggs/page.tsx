@@ -19,6 +19,7 @@ type PurchasedEgg = {
 type EggSale = {
   id: string;
   date: string;
+  customerType: string | null;
   companyName: string;
   quantity: number;
   price: number;
@@ -36,6 +37,7 @@ type PurchaseForm = {
 
 type SaleForm = {
   date: string;
+  customerType: string;
   companyName: string;
   quantity: string;
   price: string;
@@ -62,6 +64,12 @@ function formatMoney(value: number) {
   return Number(value || 0).toLocaleString(undefined, {
     maximumFractionDigits: 2,
   });
+}
+
+function formatCustomerType(customerType: string | null) {
+  if (!customerType) return "—";
+  if (customerType === "Dukaan") return "Dukaan / Shop";
+  return customerType;
 }
 
 export default function EggsPage() {
@@ -100,6 +108,7 @@ export default function EggsPage() {
 
   const [saleForm, setSaleForm] = useState<SaleForm>({
     date: today(),
+    customerType: "",
     companyName: "",
     quantity: "",
     price: "",
@@ -195,6 +204,7 @@ export default function EggsPage() {
   function resetSaleForm() {
     setSaleForm({
       date: today(),
+      customerType: "",
       companyName: "",
       quantity: "",
       price: "",
@@ -234,6 +244,7 @@ export default function EggsPage() {
 
     setSaleForm({
       date: sale.date.slice(0, 10),
+      customerType: sale.customerType ?? "",
       companyName: sale.companyName,
       quantity: String(sale.quantity),
       price: String(sale.price),
@@ -335,9 +346,13 @@ export default function EggsPage() {
       const quantity = Number(saleForm.quantity);
       const price = Number(saleForm.price);
 
-      if (!saleForm.date || !saleForm.companyName.trim()) {
+      if (
+        !saleForm.date ||
+        !saleForm.customerType ||
+        !saleForm.companyName.trim()
+      ) {
         setSaleError(
-          "Fadlan buuxi dhammaan xogta loo baahan yahay. / Please complete all required fields."
+          "Fadlan buuxi taariikhda, nooca macmiilka iyo magaca macmiilka. / Please complete the date, customer type and customer name."
         );
         return;
       }
@@ -362,6 +377,7 @@ export default function EggsPage() {
         body: JSON.stringify({
           ...(editingSaleId ? { id: editingSaleId } : {}),
           date: saleForm.date,
+          customerType: saleForm.customerType,
           companyName: saleForm.companyName.trim(),
           quantity,
           price,
@@ -652,8 +668,7 @@ export default function EggsPage() {
               </p>
             </div>
           </div>
-
-          {/* PURCHASED EGGS */}
+                    {/* PURCHASED EGGS */}
           <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-[#eee9df] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -763,7 +778,8 @@ export default function EggsPage() {
               </table>
             </div>
           </div>
-                    {/* SOLD EGGS */}
+
+          {/* SOLD EGGS */}
           <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-[#eee9df] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -772,8 +788,8 @@ export default function EggsPage() {
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Iibka hotel, restaurant ama dukaan. / Sales to hotels,
-                  restaurants or shops.
+                  Iibka hotel, restaurant, cafeteria ama dukaan. / Sales to
+                  hotels, restaurants, cafeterias or shops.
                 </p>
               </div>
 
@@ -787,11 +803,16 @@ export default function EggsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] text-left">
+              <table className="w-full min-w-[1000px] text-left">
                 <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-5 py-4">Taariikhda / Date</th>
-                    <th className="px-5 py-4">Macmiilka / Customer</th>
+                    <th className="px-5 py-4">
+                      Nooca Macmiilka / Customer Type
+                    </th>
+                    <th className="px-5 py-4">
+                      Magaca Macmiilka / Customer Name
+                    </th>
                     <th className="px-5 py-4">Tirada / Amount</th>
                     <th className="px-5 py-4">Qiimaha / Price</th>
                     <th className="px-5 py-4">Wadarta / Total</th>
@@ -803,7 +824,7 @@ export default function EggsPage() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Xogta waa la soo qaadayaa... / Loading...
@@ -812,7 +833,7 @@ export default function EggsPage() {
                   ) : sales.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Weli wax iib ukun ah lama diiwaangelin. / No egg sales
@@ -824,6 +845,10 @@ export default function EggsPage() {
                       <tr key={sale.id} className="hover:bg-slate-50/70">
                         <td className="whitespace-nowrap px-5 py-4 text-sm">
                           {formatDate(sale.date)}
+                        </td>
+
+                        <td className="px-5 py-4 text-sm font-bold text-slate-700">
+                          {formatCustomerType(sale.customerType)}
                         </td>
 
                         <td className="px-5 py-4 text-sm font-medium">
@@ -1061,8 +1086,8 @@ export default function EggsPage() {
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Geli xogta macmiilka iyo ukumaha la iibiyay. / Enter the
-                  customer and egg sale information.
+                  Geli nooca macmiilka, magaca macmiilka iyo xogta iibka. /
+                  Enter the customer type, customer name and sale information.
                 </p>
               </div>
 
@@ -1098,16 +1123,16 @@ export default function EggsPage() {
 
                 <label className="block">
                   <span className="mb-2 block text-sm font-bold text-slate-700">
-                    Macmiilka / Customer or Company
+                    Nooca Macmiilka / Customer Type
                   </span>
 
                   <select
                     required
-                    value={saleForm.companyName}
+                    value={saleForm.customerType}
                     onChange={(event) =>
                       setSaleForm((current) => ({
                         ...current,
-                        companyName: event.target.value,
+                        customerType: event.target.value,
                       }))
                     }
                     className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
@@ -1116,7 +1141,28 @@ export default function EggsPage() {
                     <option value="Dukaan">Dukaan / Shop</option>
                     <option value="Restaurant">Restaurant</option>
                     <option value="Hotel">Hotel</option>
+                    <option value="Cafeteria">Cafeteria</option>
                   </select>
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <span className="mb-2 block text-sm font-bold text-slate-700">
+                    Magaca Macmiilka / Customer Name
+                  </span>
+
+                  <input
+                    type="text"
+                    required
+                    placeholder="Tusaale: Sheraton Hotel ama ABC Cafeteria"
+                    value={saleForm.companyName}
+                    onChange={(event) =>
+                      setSaleForm((current) => ({
+                        ...current,
+                        companyName: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                  />
                 </label>
 
                 <label className="block">
