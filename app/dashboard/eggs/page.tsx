@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -589,7 +589,7 @@ export default function EggsPage() {
               href="/dashboard/eggs"
               className="flex items-center gap-3 rounded-2xl bg-[#075b35] px-4 py-3 font-bold text-white"
             >
-              <span className="text-lg">🥚</span>
+              <span className="text-lg">ðŸ¥š</span>
               Ukumaha / Eggs
             </Link>
           </nav>
@@ -869,7 +869,7 @@ export default function EggsPage() {
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-400">
-            © 2026 Siraaje Poultry & Feeds Company
+            Â© 2026 Siraaje Poultry & Feeds Company
           </p>
         </section>
       </div>
@@ -897,7 +897,7 @@ export default function EggsPage() {
                 onClick={closePurchaseModal}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
               >
-                ×
+                Ã—
               </button>
             </div>
 
@@ -1069,7 +1069,7 @@ export default function EggsPage() {
                 onClick={closeSaleModal}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
               >
-                ×
+                Ã—
               </button>
             </div>
 
@@ -1099,10 +1099,8 @@ export default function EggsPage() {
                     Macmiilka / Customer or Company
                   </span>
 
-                  <input
-                    type="text"
+                  <select
                     required
-                    placeholder="Hotel, restaurant, dukaan..."
                     value={saleForm.companyName}
                     onChange={(event) =>
                       setSaleForm((current) => ({
@@ -1110,8 +1108,13 @@ export default function EggsPage() {
                         companyName: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
-                  />
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                  >
+                    <option value="">Dooro / Select</option>
+                    <option value="Dukaan">Dukaan / Shop</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Hotel">Hotel</option>
+                  </select>
                 </label>
 
                 <label className="block">
