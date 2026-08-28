@@ -67,3 +67,29 @@ model ProductExpense {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+model PurchasedEgg {
+  id          String   @id @default(cuid())
+  date        DateTime
+  location    String
+  companyName String
+  quantity    Float
+  price       Float
+  total       Float
+  currency    String   @default("ETB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EggSale {model EggSale 
+  id          String   @id @default(cuid())
+  date        DateTime
+  companyName String
+  quantity    Float
+  price       Float
+  total       Float
+  currency    String   @default("ETB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("InternalEgg")
+}

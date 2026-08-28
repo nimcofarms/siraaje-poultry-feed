@@ -213,11 +213,13 @@ export default function DashboardPage() {
                         strokeLinejoin="round"
                         d="M10 17l5-5-5-5"
                       />
+
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         d="M15 12H3"
                       />
+
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -238,6 +240,7 @@ export default function DashboardPage() {
         {/* SIDEBAR */}
         <aside className="h-fit rounded-3xl border border-[#e7e1d4] bg-white p-4 shadow-sm">
           <nav className="space-y-2">
+            {/* DASHBOARD */}
             <Link
               href="/dashboard"
               className="flex items-center gap-3 rounded-2xl bg-[#075b35] px-4 py-3 font-bold text-white"
@@ -254,11 +257,13 @@ export default function DashboardPage() {
                   strokeLinejoin="round"
                   d="M3 10.5 12 3l9 7.5"
                 />
+
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   d="M5 9.5V21h14V9.5"
                 />
+
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -269,6 +274,7 @@ export default function DashboardPage() {
               Dashboard
             </Link>
 
+            {/* EXPENSES */}
             <Link
               href="/dashboard/expenses"
               className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
@@ -287,15 +293,39 @@ export default function DashboardPage() {
                   height="14"
                   rx="2"
                 />
+
                 <path d="M3 9h18" />
                 <path d="M7 15h3" />
               </svg>
 
-              Kharashaadka
+              Kharashaadka / Expenses
+            </Link>
+
+            {/* EGGS */}
+            <Link
+              href="/dashboard/eggs"
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
+                />
+              </svg>
+
+              Ukumaha / Eggs
             </Link>
           </nav>
         </aside>
-                {/* DASHBOARD CONTENT */}
+
+        {/* DASHBOARD CONTENT */}
         <section>
           <div className="mb-7">
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-[#b38420]">
@@ -341,6 +371,7 @@ export default function DashboardPage() {
                       height="14"
                       rx="2"
                     />
+
                     <path d="M3 9h18" />
                     <path d="M16 14h2" />
                   </svg>
@@ -412,63 +443,118 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* QUICK ACTION */}
-          <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
-            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-[#075b35]">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="h-5 w-5"
-                    >
-                      <path d="M12 5v14" />
-                      <path d="M5 12h14" />
-                    </svg>
+          {/* QUICK ACTIONS */}
+          <div className="mt-7 grid gap-5 xl:grid-cols-2">
+            {/* EXPENSE QUICK ACTION */}
+            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex h-full flex-col justify-between gap-5">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-[#075b35]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-5 w-5"
+                      >
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                      </svg>
+                    </div>
+
+                    <h3 className="text-xl font-extrabold text-[#064b2c]">
+                      Kharash cusub / New Expense
+                    </h3>
                   </div>
 
-                  <h3 className="text-xl font-extrabold text-[#064b2c]">
-                    Kharash cusub
-                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Diiwaangeli kharashka dhismaha ama kharashka
+                    productiga, kadibna ka maamul qaybta Kharashaadka.
+                  </p>
                 </div>
 
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  Diiwaangeli kharashka dhismaha ama kharashka
-                  productiga, kadibna ka maamul qaybta Kharashaadka.
-                </p>
-              </div>
-
-              <Link
-                href="/dashboard/expenses"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#075b35] px-6 font-bold text-white shadow-md transition hover:bg-[#064b2c]"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-5 w-5"
+                <Link
+                  href="/dashboard/expenses"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#075b35] px-6 font-bold text-white shadow-md transition hover:bg-[#064b2c]"
                 >
-                  <path d="M12 5v14" />
-                  <path d="M5 12h14" />
-                </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-5 w-5"
+                  >
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
 
-                Ku Dar Kharash
-              </Link>
+                  Ku Dar Kharash / Add Expense
+                </Link>
+              </div>
+            </div>
+
+            {/* EGGS QUICK ACTION */}
+            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex h-full flex-col justify-between gap-5">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff3d6] text-[#9a6b08]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
+                        />
+                      </svg>
+                    </div>
+
+                    <h3 className="text-xl font-extrabold text-[#064b2c]">
+                      Ukumaha / Eggs
+                    </h3>
+                  </div>
+
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Diiwaangeli ukumaha la soo gatay iyo ukumaha la iibiyay,
+                    kadibna ka maamul dhammaan diiwaannada qaybta Ukumaha.
+                  </p>
+                </div>
+
+                <Link
+                  href="/dashboard/eggs"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#b38420] px-6 font-bold text-white shadow-md transition hover:bg-[#966d15]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
+                    />
+                  </svg>
+
+                  Fur Ukumaha / Open Eggs
+                </Link>
+              </div>
             </div>
           </div>
 
-          
-
           <p className="mt-8 text-center text-xs text-slate-400">
-            Â© 2026 Siraaje Poultry & Feeds Company
+            © 2026 Siraaje Poultry & Feeds Company
           </p>
         </section>
       </div>
     </main>
   );
 }
-
