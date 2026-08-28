@@ -24,14 +24,18 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const location = String(body.location || "").trim();
     const name = String(body.name || "").trim();
     const type = String(body.type || "").trim();
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
-    if (!body.date || !name || !type) {
+    if (!body.date || !location || !name || !type) {
       return NextResponse.json(
-        { error: "Fadlan buuxi taariikhda, magaca iyo nooca." },
+        {
+          error:
+            "Fadlan buuxi taariikhda, location-ka, magaca iyo nooca.",
+        },
         { status: 400 }
       );
     }
@@ -53,6 +57,7 @@ export async function POST(request: Request) {
     const expense = await prisma.constructionExpense.create({
       data: {
         date: new Date(`${body.date}T12:00:00`),
+        location,
         name,
         type,
         quantity,
@@ -78,6 +83,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
 
     const id = String(body.id || "");
+    const location = String(body.location || "").trim();
     const name = String(body.name || "").trim();
     const type = String(body.type || "").trim();
     const quantity = Number(body.quantity);
@@ -90,9 +96,12 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!body.date || !name || !type) {
+    if (!body.date || !location || !name || !type) {
       return NextResponse.json(
-        { error: "Fadlan buuxi dhammaan xogta muhiimka ah." },
+        {
+          error:
+            "Fadlan buuxi taariikhda, location-ka, magaca iyo nooca.",
+        },
         { status: 400 }
       );
     }
@@ -115,6 +124,7 @@ export async function PUT(request: Request) {
       where: { id },
       data: {
         date: new Date(`${body.date}T12:00:00`),
+        location,
         name,
         type,
         quantity,
