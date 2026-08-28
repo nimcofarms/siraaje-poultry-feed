@@ -660,6 +660,7 @@ export default function EggsPage() {
                 <h3 className="text-xl font-extrabold text-[#064b2c]">
                   Ukumaha la soo gatay / Purchased Eggs
                 </h3>
+
                 <p className="mt-1 text-sm text-slate-500">
                   Diiwaanka ukumaha shirkaddu soo iibsatay. / Record of eggs
                   purchased by the company.
@@ -674,7 +675,8 @@ export default function EggsPage() {
                 + Ku Dar / Add
               </button>
             </div>
-                        <div className="overflow-x-auto">
+
+            <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left">
                 <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
                   <tr>
@@ -761,8 +763,7 @@ export default function EggsPage() {
               </table>
             </div>
           </div>
-
-          {/* SOLD EGGS */}
+                    {/* SOLD EGGS */}
           <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-[#eee9df] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -771,8 +772,8 @@ export default function EggsPage() {
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Iibka hotel, restaurant, dukaan ama macmiil kale. / Sales to
-                  hotels, restaurants, shops or other customers.
+                  Iibka hotel, restaurant ama dukaan. / Sales to hotels,
+                  restaurants or shops.
                 </p>
               </div>
 
@@ -1008,6 +1009,7 @@ export default function EggsPage() {
                 <p className="text-sm font-bold text-slate-500">
                   Wadarta / Total
                 </p>
+
                 <p className="mt-1 text-2xl font-extrabold text-[#075b35]">
                   {formatMoney(purchaseFormTotal)} ETB
                 </p>
@@ -1099,10 +1101,8 @@ export default function EggsPage() {
                     Macmiilka / Customer or Company
                   </span>
 
-                  <input
-                    type="text"
+                  <select
                     required
-                    placeholder="Hotel, restaurant, dukaan..."
                     value={saleForm.companyName}
                     onChange={(event) =>
                       setSaleForm((current) => ({
@@ -1110,8 +1110,13 @@ export default function EggsPage() {
                         companyName: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
-                  />
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                  >
+                    <option value="">Dooro / Select</option>
+                    <option value="Dukaan">Dukaan / Shop</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Hotel">Hotel</option>
+                  </select>
                 </label>
 
                 <label className="block">
