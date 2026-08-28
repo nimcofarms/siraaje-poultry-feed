@@ -6,6 +6,7 @@ import Link from "next/link";
 type ConstructionExpense = {
   id: string;
   date: string;
+  location: string | null;
   name: string;
   type: string;
   quantity: number;
@@ -17,6 +18,7 @@ type ConstructionExpense = {
 type ProductExpense = {
   id: string;
   date: string;
+  location: string | null;
   name: string;
   type: string;
   quantity: number;
@@ -33,6 +35,7 @@ const today = () => new Date().toISOString().split("T")[0];
 
 const initialConstructionForm = {
   date: today(),
+  location: "",
   name: "",
   type: "",
   quantity: "",
@@ -41,6 +44,7 @@ const initialConstructionForm = {
 
 const initialProductForm = {
   date: today(),
+  location: "",
   name: "Gallay",
   type: "",
   quantity: "",
@@ -188,6 +192,7 @@ export default function ExpensesPage() {
 
     setConstructionForm({
       date: new Date(expense.date).toISOString().split("T")[0],
+      location: expense.location || "",
       name: expense.name,
       type: expense.type,
       quantity: String(expense.quantity),
@@ -204,6 +209,7 @@ export default function ExpensesPage() {
 
     setProductForm({
       date: new Date(expense.date).toISOString().split("T")[0],
+      location: expense.location || "",
       name: expense.name,
       type: expense.type,
       quantity: String(expense.quantity),
@@ -564,10 +570,11 @@ export default function ExpensesPage() {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1050px] text-left">
+                <table className="w-full min-w-[1200px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
                       <th className="px-6 py-4">Taariikhda</th>
+                      <th className="px-6 py-4">Location</th>
                       <th className="px-6 py-4">Magaca</th>
                       <th className="px-6 py-4">Nooca</th>
                       <th className="px-6 py-4 text-right">Tirada</th>
@@ -587,6 +594,10 @@ export default function ExpensesPage() {
                       >
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                           {formatDate(expense.date)}
+                        </td>
+
+                        <td className="px-6 py-4 text-slate-600">
+                          {expense.location || "—"}
                         </td>
 
                         <td className="px-6 py-4 font-bold text-slate-800">
@@ -646,7 +657,8 @@ export default function ExpensesPage() {
             )}
           </section>
         )}
-                {section === "product" && (
+
+        {section === "product" && (
           <section className="mt-8 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
               <div>
@@ -677,10 +689,11 @@ export default function ExpensesPage() {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1200px] text-left">
+                <table className="w-full min-w-[1350px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
                       <th className="px-6 py-4">Taariikhda</th>
+                      <th className="px-6 py-4">Location</th>
                       <th className="px-6 py-4">Magaca</th>
                       <th className="px-6 py-4">Nooca</th>
                       <th className="px-6 py-4 text-right">Quantity</th>
@@ -699,6 +712,10 @@ export default function ExpensesPage() {
                       >
                         <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
                           {formatDate(expense.date)}
+                        </td>
+
+                        <td className="px-6 py-4 text-slate-600">
+                          {expense.location || "—"}
                         </td>
 
                         <td className="px-6 py-4 font-bold text-slate-800">
@@ -758,8 +775,7 @@ export default function ExpensesPage() {
           </section>
         )}
       </div>
-
-      {/* DHISMAHA FORM */}
+            {/* DHISMAHA FORM */}
       {modal === "construction" && (
         <Modal
           title={
@@ -783,6 +799,22 @@ export default function ExpensesPage() {
                       date: e.target.value,
                     })
                   }
+                  required
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Location *">
+                <input
+                  type="text"
+                  value={constructionForm.location}
+                  onChange={(e) =>
+                    setConstructionForm({
+                      ...constructionForm,
+                      location: e.target.value,
+                    })
+                  }
+                  placeholder="Tusaale: Jigjiga, Addis Ababa..."
                   required
                   className={inputClass}
                 />
@@ -900,6 +932,22 @@ export default function ExpensesPage() {
                       date: e.target.value,
                     })
                   }
+                  required
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Location *">
+                <input
+                  type="text"
+                  value={productForm.location}
+                  onChange={(e) =>
+                    setProductForm({
+                      ...productForm,
+                      location: e.target.value,
+                    })
+                  }
+                  placeholder="Tusaale: Jigjiga, Addis Ababa..."
                   required
                   className={inputClass}
                 />
