@@ -13,6 +13,7 @@ const allowedProducts = [
 ];
 
 function validateProduct(body: any) {
+  const location = String(body.location || "").trim();
   const name = String(body.name || "").trim();
   const type = String(body.type || "").trim();
   const quantity = Number(body.quantity);
@@ -26,6 +27,7 @@ function validateProduct(body: any) {
       : Number(body.transport);
 
   return {
+    location,
     name,
     type,
     quantity,
@@ -57,12 +59,15 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const { name, type, quantity, price, transport } =
+    const { location, name, type, quantity, price, transport } =
       validateProduct(body);
 
-    if (!body.date || !name || !type) {
+    if (!body.date || !location || !name || !type) {
       return NextResponse.json(
-        { error: "Fadlan buuxi taariikhda, magaca iyo nooca." },
+        {
+          error:
+            "Fadlan buuxi taariikhda, location-ka, magaca iyo nooca.",
+        },
         { status: 400 }
       );
     }
@@ -93,6 +98,7 @@ export async function POST(request: Request) {
     const expense = await prisma.productExpense.create({
       data: {
         date: new Date(`${body.date}T12:00:00`),
+        location,
         name,
         type,
         quantity,
@@ -120,7 +126,7 @@ export async function PUT(request: Request) {
 
     const id = String(body.id || "");
 
-    const { name, type, quantity, price, transport } =
+    const { location, name, type, quantity, price, transport } =
       validateProduct(body);
 
     if (!id) {
@@ -130,9 +136,12 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!body.date || !name || !type) {
+    if (!body.date || !location || !name || !type) {
       return NextResponse.json(
-        { error: "Fadlan buuxi dhammaan xogta muhiimka ah." },
+        {
+          error:
+            "Fadlan buuxi taariikhda, location-ka, magaca iyo nooca.",
+        },
         { status: 400 }
       );
     }
@@ -164,6 +173,7 @@ export async function PUT(request: Request) {
       where: { id },
       data: {
         date: new Date(`${body.date}T12:00:00`),
+        location,
         name,
         type,
         quantity,
