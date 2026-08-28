@@ -224,7 +224,7 @@ export default function ExpensesPage() {
 
   async function deleteExpense(type: Section, id: string) {
     const confirmed = window.confirm(
-      "Ma hubtaa inaad rabto inaad tirtirto kharashkan? Xogtan dib looma soo celin karo."
+      "Ma hubtaa inaad rabto inaad tirtirto kharashkan? / Are you sure you want to delete this expense?"
     );
 
     if (!confirmed) return;
@@ -249,7 +249,7 @@ export default function ExpensesPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || "Kharashka lama tirtiri karin."
+          data.error || "Kharashka lama tirtiri karin. / Expense could not be deleted."
         );
       }
 
@@ -258,7 +258,7 @@ export default function ExpensesPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Kharashka lama tirtiri karin."
+          : "Kharashka lama tirtiri karin. / Expense could not be deleted."
       );
     } finally {
       setDeletingId(null);
@@ -297,8 +297,8 @@ export default function ExpensesPage() {
 
       setSuccess(
         editingId
-          ? "Kharashka dhismaha waa la beddelay."
-          : "Kharashka dhismaha waa la kaydiyay."
+          ? "Kharashka dhismaha waa la beddelay. / Construction expense updated."
+          : "Kharashka dhismaha waa la kaydiyay. / Construction expense saved."
       );
 
       setEditingId(null);
@@ -356,8 +356,8 @@ export default function ExpensesPage() {
 
       setSuccess(
         editingId
-          ? "Kharashka productiga waa la beddelay."
-          : "Kharashka productiga waa la kaydiyay."
+          ? "Kharashka productiga waa la beddelay. / Product expense updated."
+          : "Kharashka productiga waa la kaydiyay. / Product expense saved."
       );
 
       setEditingId(null);
@@ -411,7 +411,7 @@ export default function ExpensesPage() {
             </h1>
 
             <p className="mt-1 text-sm text-green-100">
-              Nidaamka Maamulka Kharashaadka
+              Nidaamka Maamulka Kharashaadka / Expense Management System
             </p>
           </div>
 
@@ -419,7 +419,7 @@ export default function ExpensesPage() {
             href="/dashboard"
             className="rounded-xl bg-white/10 px-5 py-2.5 text-sm font-bold transition hover:bg-white/20"
           >
-            ← Bogga Maamulka
+            ← Bogga Maamulka / Dashboard
           </Link>
         </div>
       </header>
@@ -427,29 +427,29 @@ export default function ExpensesPage() {
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
         <div>
           <h2 className="text-3xl font-extrabold text-[#064b2c]">
-            Kharashaadka
+            Kharashaadka / Expenses
           </h2>
 
           <p className="mt-2 text-slate-500">
-            La soco kharashka dhismaha iyo kharashka productiga.
+            La soco kharashka dhismaha iyo kharashka productiga. / Track construction and product expenses.
           </p>
         </div>
 
         <div className="mt-8 grid gap-5 md:grid-cols-3">
           <SummaryCard
-            title="Kharashka Dhismaha"
+            title="Kharashka Dhismaha / Construction Expenses"
             value={formatMoney(constructionTotal)}
             icon="🏗️"
           />
 
           <SummaryCard
-            title="Kharashka Productiga"
+            title="Kharashka Productiga / Product Expenses"
             value={formatMoney(productTotal)}
             icon="🌾"
           />
 
           <SummaryCard
-            title="Wadarta Guud"
+            title="Wadarta Guud / Grand Total"
             value={formatMoney(grandTotal)}
             icon="💰"
           />
@@ -478,7 +478,7 @@ export default function ExpensesPage() {
 
               <div>
                 <h3 className="text-xl font-extrabold">
-                  Kharashka Dhismaha
+                  Kharashka Dhismaha / Construction Expenses
                 </h3>
 
                 <p
@@ -488,7 +488,7 @@ export default function ExpensesPage() {
                       : "text-slate-500"
                   }`}
                 >
-                  Alaabta iyo kharashaadka dhismaha.
+                  Alaabta iyo kharashaadka dhismaha. / Construction materials and expenses.
                 </p>
               </div>
             </div>
@@ -516,7 +516,7 @@ export default function ExpensesPage() {
 
               <div>
                 <h3 className="text-xl font-extrabold">
-                  Kharashka Productiga
+                  Kharashka Productiga / Product Expenses
                 </h3>
 
                 <p
@@ -526,7 +526,7 @@ export default function ExpensesPage() {
                       : "text-slate-500"
                   }`}
                 >
-                  Quudka iyo alaabta wax-soo-saarka.
+                  Quudka iyo alaabta wax-soo-saarka. / Feed and production materials.
                 </p>
               </div>
             </div>
@@ -544,11 +544,11 @@ export default function ExpensesPage() {
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
               <div>
                 <h3 className="text-xl font-extrabold text-[#064b2c]">
-                  Kharashka Dhismaha
+                  Kharashka Dhismaha / Construction Expenses
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Wadarta: {formatMoney(constructionTotal)}
+                  Wadarta / Total: {formatMoney(constructionTotal)}
                 </p>
               </div>
 
@@ -557,7 +557,7 @@ export default function ExpensesPage() {
                 onClick={() => openModal("construction")}
                 className="rounded-xl bg-[#075b35] px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#064b2c]"
               >
-                + Ku Dar Kharash
+                + Ku Dar Kharash / Add Expense
               </button>
             </div>
 
@@ -566,22 +566,28 @@ export default function ExpensesPage() {
             ) : constructionExpenses.length === 0 ? (
               <EmptyState
                 icon="🏗️"
-                text="Weli kharash dhisme lama diiwaangelin."
+                text="Weli kharash dhisme lama diiwaangelin. / No construction expenses recorded yet."
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1200px] text-left">
+                <table className="w-full min-w-[1350px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
-                      <th className="px-6 py-4">Taariikhda</th>
-                      <th className="px-6 py-4">Location</th>
-                      <th className="px-6 py-4">Magaca</th>
-                      <th className="px-6 py-4">Nooca</th>
-                      <th className="px-6 py-4 text-right">Tirada</th>
-                      <th className="px-6 py-4 text-right">Qiimaha</th>
-                      <th className="px-6 py-4 text-right">Total</th>
+                      <th className="px-6 py-4">Taariikhda / Date</th>
+                      <th className="px-6 py-4">Goobta / Location</th>
+                      <th className="px-6 py-4">Magaca / Name</th>
+                      <th className="px-6 py-4">Nooca / Type</th>
+                      <th className="px-6 py-4 text-right">
+                        Tirada / Quantity
+                      </th>
+                      <th className="px-6 py-4 text-right">
+                        Qiimaha / Price
+                      </th>
+                      <th className="px-6 py-4 text-right">
+                        Wadarta / Total
+                      </th>
                       <th className="px-6 py-4 text-center">
-                        Maamul
+                        Maamul / Actions
                       </th>
                     </tr>
                   </thead>
@@ -624,12 +630,10 @@ export default function ExpensesPage() {
                           <div className="flex justify-center gap-2">
                             <button
                               type="button"
-                              onClick={() =>
-                                editConstruction(expense)
-                              }
+                              onClick={() => editConstruction(expense)}
                               className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
                             >
-                              ✎ Edit
+                              ✎ Beddel / Edit
                             </button>
 
                             <button
@@ -645,7 +649,7 @@ export default function ExpensesPage() {
                             >
                               {deletingId === expense.id
                                 ? "..."
-                                : "Delete"}
+                                : "Tirtir / Delete"}
                             </button>
                           </div>
                         </td>
@@ -663,11 +667,11 @@ export default function ExpensesPage() {
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
               <div>
                 <h3 className="text-xl font-extrabold text-[#064b2c]">
-                  Kharashka Productiga
+                  Kharashka Productiga / Product Expenses
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Wadarta: {formatMoney(productTotal)}
+                  Wadarta / Total: {formatMoney(productTotal)}
                 </p>
               </div>
 
@@ -676,7 +680,7 @@ export default function ExpensesPage() {
                 onClick={() => openModal("product")}
                 className="rounded-xl bg-[#075b35] px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#064b2c]"
               >
-                + Ku Dar Kharash
+                + Ku Dar Kharash / Add Expense
               </button>
             </div>
 
@@ -685,22 +689,32 @@ export default function ExpensesPage() {
             ) : productExpenses.length === 0 ? (
               <EmptyState
                 icon="🌾"
-                text="Weli kharash product lama diiwaangelin."
+                text="Weli kharash product lama diiwaangelin. / No product expenses recorded yet."
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1350px] text-left">
+                <table className="w-full min-w-[1500px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
-                      <th className="px-6 py-4">Taariikhda</th>
-                      <th className="px-6 py-4">Location</th>
-                      <th className="px-6 py-4">Magaca</th>
-                      <th className="px-6 py-4">Nooca</th>
-                      <th className="px-6 py-4 text-right">Quantity</th>
-                      <th className="px-6 py-4 text-right">Price</th>
-                      <th className="px-6 py-4 text-right">Transport</th>
-                      <th className="px-6 py-4 text-right">Total</th>
-                      <th className="px-6 py-4 text-center">Maamul</th>
+                      <th className="px-6 py-4">Taariikhda / Date</th>
+                      <th className="px-6 py-4">Goobta / Location</th>
+                      <th className="px-6 py-4">Magaca / Name</th>
+                      <th className="px-6 py-4">Nooca / Type</th>
+                      <th className="px-6 py-4 text-right">
+                        Tirada / Quantity
+                      </th>
+                      <th className="px-6 py-4 text-right">
+                        Qiimaha / Price
+                      </th>
+                      <th className="px-6 py-4 text-right">
+                        Gaadiidka / Transport
+                      </th>
+                      <th className="px-6 py-4 text-right">
+                        Wadarta / Total
+                      </th>
+                      <th className="px-6 py-4 text-center">
+                        Maamul / Actions
+                      </th>
                     </tr>
                   </thead>
 
@@ -749,7 +763,7 @@ export default function ExpensesPage() {
                               onClick={() => editProduct(expense)}
                               className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
                             >
-                              ✎ Edit
+                              ✎ Beddel / Edit
                             </button>
 
                             <button
@@ -762,7 +776,7 @@ export default function ExpensesPage() {
                             >
                               {deletingId === expense.id
                                 ? "..."
-                                : "Delete"}
+                                : "Tirtir / Delete"}
                             </button>
                           </div>
                         </td>
@@ -780,8 +794,8 @@ export default function ExpensesPage() {
         <Modal
           title={
             editingId
-              ? "Wax Ka Beddel Kharashka Dhismaha"
-              : "Ku Dar Kharashka Dhismaha"
+              ? "Wax Ka Beddel Kharashka Dhismaha / Edit Construction Expense"
+              : "Ku Dar Kharashka Dhismaha / Add Construction Expense"
           }
           onClose={closeModal}
         >
@@ -789,7 +803,7 @@ export default function ExpensesPage() {
             <Messages error={error} success={success} />
 
             <div className="grid gap-5 md:grid-cols-2">
-              <Field label="Taariikhda *">
+              <Field label="Taariikhda / Date *">
                 <input
                   type="date"
                   value={constructionForm.date}
@@ -804,7 +818,7 @@ export default function ExpensesPage() {
                 />
               </Field>
 
-              <Field label="Location *">
+              <Field label="Goobta / Location *">
                 <input
                   type="text"
                   value={constructionForm.location}
@@ -814,14 +828,15 @@ export default function ExpensesPage() {
                       location: e.target.value,
                     })
                   }
-                  placeholder="Tusaale: Jigjiga, Addis Ababa..."
+                  placeholder="Tusaale / Example: Jigjiga, Addis Ababa"
                   required
                   className={inputClass}
                 />
               </Field>
 
-              <Field label="Magaca *">
+              <Field label="Magaca / Name *">
                 <input
+                  type="text"
                   value={constructionForm.name}
                   onChange={(e) =>
                     setConstructionForm({
@@ -829,14 +844,15 @@ export default function ExpensesPage() {
                       name: e.target.value,
                     })
                   }
-                  placeholder="Tusaale: Sibidh, Bir, Alwaax..."
+                  placeholder="Tusaale / Example: Sibidh, Bir, Alwaax"
                   required
                   className={inputClass}
                 />
               </Field>
 
-              <Field label="Nooca *">
+              <Field label="Nooca / Type *">
                 <input
+                  type="text"
                   value={constructionForm.type}
                   onChange={(e) =>
                     setConstructionForm({
@@ -844,7 +860,7 @@ export default function ExpensesPage() {
                       type: e.target.value,
                     })
                   }
-                  placeholder="Tusaale: Qalab dhisme"
+                  placeholder="Tusaale / Example: Qalab dhisme"
                   required
                   className={inputClass}
                 />
@@ -868,7 +884,7 @@ export default function ExpensesPage() {
                 />
               </Field>
 
-              <Field label="Qiimaha halkii xabbo / unit *">
+              <Field label="Qiimaha Halkii Xabbo / Unit Price *">
                 <input
                   type="number"
                   step="any"
@@ -886,7 +902,7 @@ export default function ExpensesPage() {
                 />
               </Field>
 
-              <Field label="Total">
+              <Field label="Wadarta / Total">
                 <input
                   value={formatMoney(constructionPreviewTotal)}
                   readOnly
@@ -900,8 +916,8 @@ export default function ExpensesPage() {
               onCancel={closeModal}
               label={
                 editingId
-                  ? "Kaydi Isbeddelka"
-                  : "Kaydi Kharashka"
+                  ? "Kaydi Isbeddelka / Save Changes"
+                  : "Kaydi Kharashka / Save Expense"
               }
             />
           </form>
@@ -913,8 +929,8 @@ export default function ExpensesPage() {
         <Modal
           title={
             editingId
-              ? "Wax Ka Beddel Kharashka Productiga"
-              : "Ku Dar Kharashka Productiga"
+              ? "Wax Ka Beddel Kharashka Productiga / Edit Product Expense"
+              : "Ku Dar Kharashka Productiga / Add Product Expense"
           }
           onClose={closeModal}
         >
@@ -922,7 +938,7 @@ export default function ExpensesPage() {
             <Messages error={error} success={success} />
 
             <div className="grid gap-5 md:grid-cols-2">
-              <Field label="Taariikhda *">
+              <Field label="Taariikhda / Date *">
                 <input
                   type="date"
                   value={productForm.date}
@@ -937,7 +953,7 @@ export default function ExpensesPage() {
                 />
               </Field>
 
-              <Field label="Location *">
+              <Field label="Goobta / Location *">
                 <input
                   type="text"
                   value={productForm.location}
@@ -947,13 +963,13 @@ export default function ExpensesPage() {
                       location: e.target.value,
                     })
                   }
-                  placeholder="Tusaale: Jigjiga, Addis Ababa..."
+                  placeholder="Tusaale / Example: Jigjiga, Addis Ababa"
                   required
                   className={inputClass}
                 />
               </Field>
 
-              <Field label="Magaca Productiga *">
+              <Field label="Magaca Productiga / Product Name *">
                 <select
                   value={productForm.name}
                   onChange={(e) =>
@@ -975,6 +991,7 @@ export default function ExpensesPage() {
 
               <Field label="Nooca / Type *">
                 <input
+                  type="text"
                   value={productForm.type}
                   onChange={(e) =>
                     setProductForm({
@@ -982,13 +999,13 @@ export default function ExpensesPage() {
                       type: e.target.value,
                     })
                   }
-                  placeholder="Tusaale: Kiish, kg, ton..."
+                  placeholder="Tusaale / Example: Kiish, kg, ton"
                   required
                   className={inputClass}
                 />
               </Field>
 
-              <Field label="Quantity *">
+              <Field label="Tirada / Quantity *">
                 <input
                   type="number"
                   step="any"
@@ -1006,7 +1023,7 @@ export default function ExpensesPage() {
                 />
               </Field>
 
-              <Field label="Price *">
+              <Field label="Qiimaha / Price *">
                 <input
                   type="number"
                   step="any"
@@ -1024,7 +1041,7 @@ export default function ExpensesPage() {
                 />
               </Field>
 
-              <Field label="Transport">
+              <Field label="Gaadiidka / Transport">
                 <input
                   type="number"
                   step="any"
@@ -1041,7 +1058,7 @@ export default function ExpensesPage() {
                 />
               </Field>
 
-              <Field label="Total">
+              <Field label="Wadarta / Total">
                 <input
                   value={formatMoney(productPreviewTotal)}
                   readOnly
@@ -1055,8 +1072,8 @@ export default function ExpensesPage() {
               onCancel={closeModal}
               label={
                 editingId
-                  ? "Kaydi Isbeddelka"
-                  : "Kaydi Kharashka"
+                  ? "Kaydi Isbeddelka / Save Changes"
+                  : "Kaydi Kharashka / Save Expense"
               }
             />
           </form>
@@ -1120,7 +1137,7 @@ function Field({
 function Loading() {
   return (
     <div className="p-12 text-center text-slate-500">
-      Kharashaadka waa la soo qaadayaa...
+      Kharashaadka waa la soo qaadayaa... / Loading expenses...
     </div>
   );
 }
@@ -1162,7 +1179,7 @@ function Modal({
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Geli xogta kharashka hoose.
+              Geli xogta kharashka hoose. / Enter the expense details below.
             </p>
           </div>
 
@@ -1221,7 +1238,7 @@ function FormButtons({
         onClick={onCancel}
         className="rounded-xl border border-slate-300 px-6 py-3 font-bold text-slate-600 transition hover:bg-slate-50"
       >
-        Jooji
+        Jooji / Cancel
       </button>
 
       <button
@@ -1229,7 +1246,9 @@ function FormButtons({
         disabled={saving}
         className="rounded-xl bg-[#075b35] px-7 py-3 font-bold text-white shadow-md transition hover:bg-[#064b2c] disabled:opacity-60"
       >
-        {saving ? "Waa la kaydinayaa..." : label}
+        {saving
+          ? "Waa la kaydinayaa... / Saving..."
+          : label}
       </button>
     </div>
   );
