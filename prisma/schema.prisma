@@ -95,3 +95,16 @@ model EggSale {
 
   @@map("InternalEgg")
 }
+model Feed {
+  id             String   @id @default(cuid())
+  date           DateTime
+  feedType       String
+  companyName    String
+  suppliedBy     String
+  quantity       Float
+  price          Float
+  total          Float
+  currency       String   @default("ETB")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

@@ -322,6 +322,40 @@ export default function DashboardPage() {
 
               Ukumaha / Eggs
             </Link>
+
+            {/* FEEDS */}
+            <Link
+              href="/dashboard/feeds"
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 21V10"
+                />
+
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 14c-4 0-7-2.5-7-6 4 0 7 2.5 7 6Z"
+                />
+
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 10c4 0 7-2.5 7-6-4 0-7 2.5-7 6Z"
+                />
+              </svg>
+
+              Quudinta / Feeds
+            </Link>
           </nav>
         </aside>
 
@@ -442,8 +476,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-
-          {/* QUICK ACTIONS */}
+                    {/* QUICK ACTIONS */}
           <div className="mt-7 grid gap-5 xl:grid-cols-2">
             {/* EXPENSE QUICK ACTION */}
             <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
@@ -545,6 +578,70 @@ export default function DashboardPage() {
                   </svg>
 
                   Fur Ukumaha / Open Eggs
+                </Link>
+              </div>
+            </div>
+
+            {/* FEEDS QUICK ACTION */}
+            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex h-full flex-col justify-between gap-5">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e5f5e9] text-[#075b35]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-5 w-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 21V10"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 14c-4 0-7-2.5-7-6 4 0 7 2.5 7 6Z"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 10c4 0 7-2.5 7-6-4 0-7 2.5-7 6Z"
+                        />
+                      </svg>
+                    </div>
+
+                    <h3 className="text-xl font-extrabold text-[#064b2c]">
+                      Quudinta / Feeds
+                    </h3>
+                  </div>
+
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Diiwaangeli Starter Feed, Grower Feed iyo Layer Feed,
+                    kadibna ka maamul dhammaan diiwaannada qaybta Quudinta.
+                  </p>
+                </div>
+
+                <Link
+                  href="/dashboard/feeds"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#075b35] px-6 font-bold text-white shadow-md transition hover:bg-[#064b2c]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-5 w-5"
+                  >
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
+
+                  Fur Quudinta / Open Feeds
                 </Link>
               </div>
             </div>
