@@ -357,6 +357,28 @@ export default function DashboardPage() {
               Quudinta / Feeds
             </Link>
 
+            {/* DOCUMENTS */}
+            <Link
+              href="/dashboard/documents"
+              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"
+                />
+              </svg>
+
+              Documents
+            </Link>
+
             {/* POULTRY HEALTH */}
             <Link
               href="/dashboard/poultry-health"
