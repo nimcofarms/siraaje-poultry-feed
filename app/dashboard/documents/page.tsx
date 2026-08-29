@@ -194,30 +194,6 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Forms & Templates",
-    description:
-      "Printable forms and reusable templates for everyday company operations.",
-    icon: FileText,
-    documents: [
-      {
-        name: "General Request Form",
-        code: "SPF-FRM-001",
-        version: "1.0",
-      },
-      {
-        name: "Incident Report Form",
-        code: "SPF-FRM-002",
-        version: "1.0",
-      },
-      {
-        name: "Asset Handover Form",
-        code: "SPF-FRM-003",
-        version: "1.0",
-      },
-    ],
-  },
-
-  {
     title: "Certificates & Legal",
     description:
       "Company certificates, licences and important legal documents.",
