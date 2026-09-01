@@ -139,7 +139,7 @@ export default function Home() {
                 htmlFor="email"
                 className="mb-2 block text-sm font-bold text-[#172019]"
               >
-                Cinwaanka Email/ 
+                Email/Cinwaanka 
               </label>
 
               <div className="relative">
