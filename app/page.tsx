@@ -139,7 +139,7 @@ export default function Home() {
                 htmlFor="email"
                 className="mb-2 block text-sm font-bold text-[#172019]"
               >
-                Cinwaanka Iimaylka
+                Cinwaanka Email/ 
               </label>
 
               <div className="relative">
@@ -173,7 +173,7 @@ export default function Home() {
                 htmlFor="password"
                 className="mb-2 block text-sm font-bold text-[#172019]"
               >
-                Erayga Sirta ah
+                password/Sirta ah
               </label>
 
               <div className="relative">
