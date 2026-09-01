@@ -15,29 +15,183 @@ type ProductExpense = {
   total: number;
 };
 
+type Permissions = {
+  dashboardView: boolean;
+
+  expensesView: boolean;
+  expensesAdd: boolean;
+  expensesEdit: boolean;
+  expensesDelete: boolean;
+
+  eggsView: boolean;
+  eggsAdd: boolean;
+  eggsEdit: boolean;
+  eggsDelete: boolean;
+
+  feedsView: boolean;
+  feedsAdd: boolean;
+  feedsEdit: boolean;
+  feedsDelete: boolean;
+
+  poultryHealthView: boolean;
+  poultryHealthAdd: boolean;
+  poultryHealthEdit: boolean;
+  poultryHealthDelete: boolean;
+
+  documentsView: boolean;
+  documentsAdd: boolean;
+  documentsEdit: boolean;
+  documentsDelete: boolean;
+};
+
+type CurrentUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isOwner: boolean;
+  permissions: Permissions | null;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
 
+  const [currentUser, setCurrentUser] =
+    useState<CurrentUser | null>(null);
+
+  const [userLoading, setUserLoading] = useState(true);
+
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [expenseCount, setExpenseCount] = useState(0);
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const isOwner = currentUser?.isOwner === true;
+
+  const canDashboard =
+    isOwner ||
+    currentUser?.permissions?.dashboardView === true;
+
+  const canExpenses =
+    isOwner ||
+    currentUser?.permissions?.expensesView === true;
+
+  const canEggs =
+    isOwner ||
+    currentUser?.permissions?.eggsView === true;
+
+  const canFeeds =
+    isOwner ||
+    currentUser?.permissions?.feedsView === true;
+
+  const canDocuments =
+    isOwner ||
+    currentUser?.permissions?.documentsView === true;
+
+  const canPoultryHealth =
+    isOwner ||
+    currentUser?.permissions?.poultryHealthView === true;
+
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const response = await fetch("/api/me", {
+          cache: "no-store",
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+          router.replace("/");
+          return;
+        }
+
+        if (!response.ok || !data.user) {
+          throw new Error(
+            data.error || "Could not load user."
+          );
+        }
+
+        setCurrentUser(data.user);
+      } catch (error) {
+        console.error("Current user error:", error);
+      } finally {
+        setUserLoading(false);
+      }
+    }
+
+    void loadCurrentUser();
+  }, [router]);
+
+  useEffect(() => {
+    if (userLoading || !currentUser) {
+      return;
+    }
+
+    if (!canDashboard) {
+      if (canExpenses) {
+        router.replace("/dashboard/expenses");
+        return;
+      }
+
+      if (canEggs) {
+        router.replace("/dashboard/eggs");
+        return;
+      }
+
+      if (canFeeds) {
+        router.replace("/dashboard/feeds");
+        return;
+      }
+
+      if (canDocuments) {
+        router.replace("/dashboard/documents");
+        return;
+      }
+
+      if (canPoultryHealth) {
+        router.replace("/dashboard/poultry-health");
+        return;
+      }
+    }
+  }, [
+    userLoading,
+    currentUser,
+    canDashboard,
+    canExpenses,
+    canEggs,
+    canFeeds,
+    canDocuments,
+    canPoultryHealth,
+    router,
+  ]);
+
   useEffect(() => {
     async function loadExpenses() {
-      try {
-        const [constructionResponse, productResponse] = await Promise.all([
-          fetch("/api/construction-expenses", {
-            cache: "no-store",
-          }),
-          fetch("/api/product-expenses", {
-            cache: "no-store",
-          }),
-        ]);
+      if (!canExpenses) {
+        setTotalExpenses(0);
+        setExpenseCount(0);
+        return;
+      }
 
-        if (!constructionResponse.ok || !productResponse.ok) {
+      try {
+        const [constructionResponse, productResponse] =
+          await Promise.all([
+            fetch("/api/construction-expenses", {
+              cache: "no-store",
+            }),
+            fetch("/api/product-expenses", {
+              cache: "no-store",
+            }),
+          ]);
+
+        if (
+          !constructionResponse.ok ||
+          !productResponse.ok
+        ) {
           return;
         }
 
@@ -47,43 +201,61 @@ export default function DashboardPage() {
         const productData: ProductExpense[] =
           await productResponse.json();
 
-        const constructionTotal = constructionData.reduce(
-          (sum, expense) => sum + Number(expense.total || 0),
-          0
-        );
+        const constructionTotal =
+          constructionData.reduce(
+            (sum, expense) =>
+              sum + Number(expense.total || 0),
+            0
+          );
 
         const productTotal = productData.reduce(
-          (sum, expense) => sum + Number(expense.total || 0),
+          (sum, expense) =>
+            sum + Number(expense.total || 0),
           0
         );
 
-        setTotalExpenses(constructionTotal + productTotal);
+        setTotalExpenses(
+          constructionTotal + productTotal
+        );
 
         setExpenseCount(
           constructionData.length + productData.length
         );
       } catch (error) {
-        console.error("Dashboard expense error:", error);
+        console.error(
+          "Dashboard expense error:",
+          error
+        );
       }
     }
 
-    loadExpenses();
-  }, []);
+    if (currentUser) {
+      void loadExpenses();
+    }
+  }, [currentUser, canExpenses]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       if (
         profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
+        !profileRef.current.contains(
+          event.target as Node
+        )
       ) {
         setProfileOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
     };
   }, []);
 
@@ -106,6 +278,88 @@ export default function DashboardPage() {
       setLoggingOut(false);
     }
   }
+
+  if (userLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed]">
+        <div className="rounded-3xl border border-[#e7e1d4] bg-white px-8 py-7 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#dce9df] border-t-[#075b35]" />
+
+          <p className="mt-4 font-bold text-[#064b2c]">
+            Loading Siraaje Poultry Feed...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!currentUser) {
+    return null;
+  }
+
+  if (
+    !canDashboard &&
+    !canExpenses &&
+    !canEggs &&
+    !canFeeds &&
+    !canDocuments &&
+    !canPoultryHealth
+  ) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed] px-5">
+        <div className="max-w-lg rounded-3xl border border-[#e7e1d4] bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-7 w-7"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M9 9l6 6" />
+              <path d="M15 9l-6 6" />
+            </svg>
+          </div>
+
+          <h1 className="mt-5 text-2xl font-extrabold text-[#064b2c]">
+            No Access Assigned
+          </h1>
+
+          <p className="mt-3 text-slate-500">
+            Your account is active, but an administrator
+            has not assigned access to any section yet.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-6 rounded-2xl bg-[#075b35] px-6 py-3 font-bold text-white"
+          >
+            Log Out
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (!canDashboard) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed]">
+        <p className="font-bold text-[#064b2c]">
+          Opening your permitted section...
+        </p>
+      </main>
+    );
+  }
+
+  const initial =
+    currentUser.name?.trim().charAt(0).toUpperCase() ||
+    "U";
+
+  const roleLabel = isOwner
+    ? "Maamule / Administrator"
+    : "Shaqaale / Worker";
 
   return (
     <main className="min-h-screen bg-[#f7f5ed]">
@@ -140,21 +394,27 @@ export default function DashboardPage() {
           <div ref={profileRef} className="relative">
             <button
               type="button"
-              onClick={() => setProfileOpen((current) => !current)}
+              onClick={() =>
+                setProfileOpen(
+                  (current) => !current
+                )
+              }
               className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5 transition hover:bg-white/15 sm:px-4"
               aria-expanded={profileOpen}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-extrabold text-[#075b35] shadow-sm">
-                K
+                {initial}
               </div>
 
               <div className="hidden min-w-[80px] text-left sm:block">
-                <p className="text-sm font-extrabold leading-tight">
-                  Keyse
+                <p className="max-w-[160px] truncate text-sm font-extrabold leading-tight">
+                  {currentUser.name}
                 </p>
 
                 <p className="mt-1 text-xs text-green-100">
-                  Maamule
+                  {isOwner
+                    ? "Maamule"
+                    : "Shaqaale"}
                 </p>
               </div>
 
@@ -177,19 +437,23 @@ export default function DashboardPage() {
 
             {/* PROFILE DROPDOWN */}
             {profileOpen && (
-              <div className="absolute right-0 top-[calc(100%+10px)] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
+              <div className="absolute right-0 top-[calc(100%+10px)] w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
                 <div className="flex items-center gap-3 px-5 py-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e7f5eb] font-extrabold text-[#075b35]">
-                    K
+                    {initial}
                   </div>
 
                   <div className="min-w-0">
                     <p className="truncate font-extrabold text-[#064b2c]">
-                      Keyse
+                      {currentUser.name}
                     </p>
 
-                    <p className="mt-0.5 text-sm text-slate-500">
-                      Maamule
+                    <p className="mt-0.5 truncate text-sm text-slate-500">
+                      {currentUser.email}
+                    </p>
+
+                    <p className="mt-1 text-xs font-bold text-[#075b35]">
+                      {roleLabel}
                     </p>
                   </div>
                 </div>
@@ -227,7 +491,9 @@ export default function DashboardPage() {
                       />
                     </svg>
 
-                    {loggingOut ? "Waa laga baxayaa..." : "Ka Bax"}
+                    {loggingOut
+                      ? "Waa laga baxayaa..."
+                      : "Ka Bax / Log Out"}
                   </button>
                 </div>
               </div>
@@ -241,175 +507,77 @@ export default function DashboardPage() {
         <aside className="h-fit rounded-3xl border border-[#e7e1d4] bg-white p-4 shadow-sm">
           <nav className="space-y-2">
             {/* DASHBOARD */}
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-3 rounded-2xl bg-[#075b35] px-4 py-3 font-bold text-white"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 10.5 12 3l9 7.5"
-                />
-
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 9.5V21h14V9.5"
-                />
-
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 21v-7h6v7"
-                />
-              </svg>
-
-              Dashboard
-            </Link>
+            {canDashboard && (
+              <SidebarLink
+                href="/dashboard"
+                label="Dashboard"
+                active
+                icon={<DashboardIcon />}
+              />
+            )}
 
             {/* EXPENSES */}
-            <Link
-              href="/dashboard/expenses"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-5 w-5"
-              >
-                <rect
-                  x="3"
-                  y="5"
-                  width="18"
-                  height="14"
-                  rx="2"
-                />
-
-                <path d="M3 9h18" />
-                <path d="M7 15h3" />
-              </svg>
-
-              Kharashaadka / Expenses
-            </Link>
+            {canExpenses && (
+              <SidebarLink
+                href="/dashboard/expenses"
+                label="Kharashaadka / Expenses"
+                icon={<ExpensesIcon />}
+              />
+            )}
 
             {/* EGGS */}
-            <Link
-              href="/dashboard/eggs"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
-                />
-              </svg>
-
-              Ukumaha / Eggs
-            </Link>
+            {canEggs && (
+              <SidebarLink
+                href="/dashboard/eggs"
+                label="Ukumaha / Eggs"
+                icon={<EggIcon />}
+              />
+            )}
 
             {/* FEEDS */}
-            <Link
-              href="/dashboard/feeds"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 21V10"
-                />
-
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 14c-4 0-7-2.5-7-6 4 0 7 2.5 7 6Z"
-                />
-
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 10c4 0 7-2.5 7-6-4 0-7 2.5-7 6Z"
-                />
-              </svg>
-
-              Quudinta / Feeds
-            </Link>
+            {canFeeds && (
+              <SidebarLink
+                href="/dashboard/feeds"
+                label="Quudinta / Feeds"
+                icon={<FeedIcon />}
+              />
+            )}
 
             {/* DOCUMENTS */}
-            <Link
-              href="/dashboard/documents"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"
-                />
-              </svg>
-
-              Documents
-            </Link>
+            {canDocuments && (
+              <SidebarLink
+                href="/dashboard/documents"
+                label="Documents"
+                icon={<DocumentsIcon />}
+              />
+            )}
 
             {/* POULTRY HEALTH */}
-            <Link
-              href="/dashboard/poultry-health"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 3v18"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 12h18"
-                />
-              </svg>
+            {canPoultryHealth && (
+              <SidebarLink
+                href="/dashboard/poultry-health"
+                label="Daaweynta Digaagga / Poultry Health"
+                icon={<HealthIcon />}
+              />
+            )}
 
-              Daaweynta Digaagga / Poultry Health
-            </Link>
+            {/* WORKERS & ACCESS - OWNER/ADMIN ONLY */}
+            {isOwner && (
+              <>
+                <div className="my-3 border-t border-[#eee9de]" />
+
+                <SidebarLink
+                  href="/dashboard/workers"
+                  label="Workers & Access"
+                  icon={<WorkersIcon />}
+                />
+              </>
+            )}
           </nav>
         </aside>
 
         {/* DASHBOARD CONTENT */}
-        <section>
+        <section className="min-w-0">
           <div className="mb-7">
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-[#b38420]">
               Maamulka
@@ -420,79 +588,54 @@ export default function DashboardPage() {
             </h2>
 
             <p className="mt-2 text-slate-500">
-              Ku soo dhawoow nidaamka maamulka Siraaje Poultry Feed.
+              Ku soo dhawoow nidaamka maamulka Siraaje
+              Poultry Feed, {currentUser.name}.
             </p>
           </div>
 
           {/* SUMMARY CARDS */}
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {/* TOTAL EXPENSES */}
-            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold text-slate-500">
-                    Wadarta Kharashaadka
-                  </p>
+            {canExpenses && (
+              <>
+                {/* TOTAL EXPENSES */}
+                <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-slate-500">
+                        Wadarta Kharashaadka
+                      </p>
 
-                  <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
-                    {totalExpenses.toLocaleString()} ETB
-                  </p>
+                      <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
+                        {totalExpenses.toLocaleString()} ETB
+                      </p>
+                    </div>
+
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5f5e9] text-[#075b35]">
+                      <ExpensesIcon />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5f5e9] text-[#075b35]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-6 w-6"
-                  >
-                    <rect
-                      x="3"
-                      y="5"
-                      width="18"
-                      height="14"
-                      rx="2"
-                    />
+                {/* EXPENSE COUNT */}
+                <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-slate-500">
+                        Diiwaannada Kharashaadka
+                      </p>
 
-                    <path d="M3 9h18" />
-                    <path d="M16 14h2" />
-                  </svg>
+                      <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
+                        {expenseCount}
+                      </p>
+                    </div>
+
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff3d6] text-[#9a6b08]">
+                      <ListIcon />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* EXPENSE COUNT */}
-            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold text-slate-500">
-                    Diiwaannada Kharashaadka
-                  </p>
-
-                  <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
-                    {expenseCount}
-                  </p>
-                </div>
-
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff3d6] text-[#9a6b08]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-6 w-6"
-                  >
-                    <path d="M9 5h11" />
-                    <path d="M9 12h11" />
-                    <path d="M9 19h11" />
-                    <path d="M4 5h.01" />
-                    <path d="M4 12h.01" />
-                    <path d="M4 19h.01" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
 
             {/* SYSTEM STATUS */}
             <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
@@ -505,254 +648,83 @@ export default function DashboardPage() {
                   <p className="mt-3 text-2xl font-extrabold text-[#075b35]">
                     Shaqaynaya
                   </p>
+
+                  <p className="mt-1 text-xs font-semibold text-slate-400">
+                    {isOwner
+                      ? "Administrator access"
+                      : "Worker access"}
+                  </p>
                 </div>
 
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#dcf7e6] text-[#075b35]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    className="h-6 w-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="m5 12 4 4L19 6"
-                    />
-                  </svg>
+                  <CheckIcon />
                 </div>
               </div>
             </div>
           </div>
-                    {/* QUICK ACTIONS */}
+
+          {/* QUICK ACTIONS */}
           <div className="mt-7 grid gap-5 xl:grid-cols-2">
-            {/* EXPENSE QUICK ACTION */}
-            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
-              <div className="flex h-full flex-col justify-between gap-5">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-[#075b35]">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-5 w-5"
-                      >
-                        <path d="M12 5v14" />
-                        <path d="M5 12h14" />
-                      </svg>
-                    </div>
+            {canExpenses && (
+              <QuickActionCard
+                title="Kharash cusub / New Expense"
+                description="Diiwaangeli kharashka dhismaha ama kharashka productiga, kadibna ka maamul qaybta Kharashaadka."
+                href="/dashboard/expenses"
+                buttonLabel="Ku Dar Kharash / Add Expense"
+                icon={<ExpensesIcon />}
+              />
+            )}
 
-                    <h3 className="text-xl font-extrabold text-[#064b2c]">
-                      Kharash cusub / New Expense
-                    </h3>
-                  </div>
+            {canEggs && (
+              <QuickActionCard
+                title="Ukumaha / Eggs"
+                description="Diiwaangeli ukumaha la soo gatay iyo ukumaha la iibiyay, kadibna ka maamul dhammaan diiwaannada qaybta Ukumaha."
+                href="/dashboard/eggs"
+                buttonLabel="Fur Ukumaha / Open Eggs"
+                icon={<EggIcon />}
+                gold
+              />
+            )}
 
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    Diiwaangeli kharashka dhismaha ama kharashka
-                    productiga, kadibna ka maamul qaybta Kharashaadka.
-                  </p>
-                </div>
+            {canFeeds && (
+              <QuickActionCard
+                title="Quudinta / Feeds"
+                description="Diiwaangeli Starter Feed, Grower Feed iyo Layer Feed, kadibna ka maamul dhammaan diiwaannada qaybta Quudinta."
+                href="/dashboard/feeds"
+                buttonLabel="Fur Quudinta / Open Feeds"
+                icon={<FeedIcon />}
+              />
+            )}
 
-                <Link
-                  href="/dashboard/expenses"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#075b35] px-6 font-bold text-white shadow-md transition hover:bg-[#064b2c]"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-5 w-5"
-                  >
-                    <path d="M12 5v14" />
-                    <path d="M5 12h14" />
-                  </svg>
+            {canPoultryHealth && (
+              <QuickActionCard
+                title="Daaweynta Digaagga / Poultry Health"
+                description="Diiwaangeli tallaalka, vitamin-ka iyo calcium-ka digaagga, kadibna ka maamul dhammaan diiwaannada caafimaadka digaagga."
+                href="/dashboard/poultry-health"
+                buttonLabel="Fur Daaweynta / Open Poultry Health"
+                icon={<HealthIcon />}
+              />
+            )}
 
-                  Ku Dar Kharash / Add Expense
-                </Link>
-              </div>
-            </div>
+            {canDocuments && (
+              <QuickActionCard
+                title="Documents"
+                description="Fur oo maamul dukumentiyada shirkadda iyo faylasha loo oggolaaday isticmaalaha."
+                href="/dashboard/documents"
+                buttonLabel="Fur Documents / Open Documents"
+                icon={<DocumentsIcon />}
+              />
+            )}
 
-            {/* EGGS QUICK ACTION */}
-            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
-              <div className="flex h-full flex-col justify-between gap-5">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff3d6] text-[#9a6b08]">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-5 w-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
-                        />
-                      </svg>
-                    </div>
-
-                    <h3 className="text-xl font-extrabold text-[#064b2c]">
-                      Ukumaha / Eggs
-                    </h3>
-                  </div>
-
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    Diiwaangeli ukumaha la soo gatay iyo ukumaha la iibiyay,
-                    kadibna ka maamul dhammaan diiwaannada qaybta Ukumaha.
-                  </p>
-                </div>
-
-                <Link
-                  href="/dashboard/eggs"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#b38420] px-6 font-bold text-white shadow-md transition hover:bg-[#966d15]"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-5 w-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
-                    />
-                  </svg>
-
-                  Fur Ukumaha / Open Eggs
-                </Link>
-              </div>
-            </div>
-
-            {/* FEEDS QUICK ACTION */}
-            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
-              <div className="flex h-full flex-col justify-between gap-5">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e5f5e9] text-[#075b35]">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-5 w-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 21V10"
-                        />
-
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 14c-4 0-7-2.5-7-6 4 0 7 2.5 7 6Z"
-                        />
-
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 10c4 0 7-2.5 7-6-4 0-7 2.5-7 6Z"
-                        />
-                      </svg>
-                    </div>
-
-                    <h3 className="text-xl font-extrabold text-[#064b2c]">
-                      Quudinta / Feeds
-                    </h3>
-                  </div>
-
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    Diiwaangeli Starter Feed, Grower Feed iyo Layer Feed,
-                    kadibna ka maamul dhammaan diiwaannada qaybta Quudinta.
-                  </p>
-                </div>
-
-                <Link
-                  href="/dashboard/feeds"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#075b35] px-6 font-bold text-white shadow-md transition hover:bg-[#064b2c]"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-5 w-5"
-                  >
-                    <path d="M12 5v14" />
-                    <path d="M5 12h14" />
-                  </svg>
-
-                  Fur Quudinta / Open Feeds
-                </Link>
-              </div>
-            </div>
-
-            {/* POULTRY HEALTH QUICK ACTION */}
-            <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
-              <div className="flex h-full flex-col justify-between gap-5">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e7f5eb] text-[#075b35]">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-5 w-5"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 3v18"
-                        />
-
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M3 12h18"
-                        />
-                      </svg>
-                    </div>
-
-                    <h3 className="text-xl font-extrabold text-[#064b2c]">
-                      Daaweynta Digaagga / Poultry Health
-                    </h3>
-                  </div>
-
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    Diiwaangeli tallaalka, vitamin-ka iyo calcium-ka
-                    digaagga, kadibna ka maamul dhammaan diiwaannada
-                    caafimaadka digaagga.
-                  </p>
-                </div>
-
-                <Link
-                  href="/dashboard/poultry-health"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#075b35] px-6 font-bold text-white shadow-md transition hover:bg-[#064b2c]"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-5 w-5"
-                  >
-                    <path d="M12 5v14" />
-                    <path d="M5 12h14" />
-                  </svg>
-
-                  Fur Daaweynta / Open Poultry Health
-                </Link>
-              </div>
-            </div>
+            {isOwner && (
+              <QuickActionCard
+                title="Workers & Access"
+                description="Ku dar shaqaale cusub oo dooro qaybaha uu arki karo iyo waxa uu ku samayn karo nidaamka."
+                href="/dashboard/workers"
+                buttonLabel="Manage Workers"
+                icon={<WorkersIcon />}
+              />
+            )}
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-400">
@@ -761,5 +733,292 @@ export default function DashboardPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+function SidebarLink({
+  href,
+  label,
+  icon,
+  active = false,
+}: {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
+        active
+          ? "bg-[#075b35] font-bold text-white"
+          : "font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
+      }`}
+    >
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+        {icon}
+      </span>
+
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+function QuickActionCard({
+  title,
+  description,
+  href,
+  buttonLabel,
+  icon,
+  gold = false,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  buttonLabel: string;
+  icon: React.ReactNode;
+  gold?: boolean;
+}) {
+  return (
+    <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-8">
+      <div className="flex h-full flex-col justify-between gap-5">
+        <div>
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                gold
+                  ? "bg-[#fff3d6] text-[#9a6b08]"
+                  : "bg-[#e5f5e9] text-[#075b35]"
+              }`}
+            >
+              {icon}
+            </div>
+
+            <h3 className="text-xl font-extrabold text-[#064b2c]">
+              {title}
+            </h3>
+          </div>
+
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            {description}
+          </p>
+        </div>
+
+        <Link
+          href={href}
+          className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-6 font-bold text-white shadow-md transition ${
+            gold
+              ? "bg-[#b38420] hover:bg-[#966d15]"
+              : "bg-[#075b35] hover:bg-[#064b2c]"
+          }`}
+        >
+          {buttonLabel}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function DashboardIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 10.5 12 3l9 7.5"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 9.5V21h14V9.5"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 21v-7h6v7"
+      />
+    </svg>
+  );
+}
+
+function ExpensesIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="14"
+        rx="2"
+      />
+      <path d="M3 9h18" />
+      <path d="M7 15h3" />
+    </svg>
+  );
+}
+
+function EggIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
+      />
+    </svg>
+  );
+}
+
+function FeedIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 21V10"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 14c-4 0-7-2.5-7-6 4 0 7 2.5 7 6Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 10c4 0 7-2.5 7-6-4 0-7 2.5-7 6Z"
+      />
+    </svg>
+  );
+}
+
+function DocumentsIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"
+      />
+    </svg>
+  );
+}
+
+function HealthIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3v18"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 12h18"
+      />
+    </svg>
+  );
+}
+
+function WorkersIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+      />
+      <circle cx="9" cy="7" r="4" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19 8v6"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M22 11h-6"
+      />
+    </svg>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-6 w-6"
+    >
+      <path d="M9 5h11" />
+      <path d="M9 12h11" />
+      <path d="M9 19h11" />
+      <path d="M4 5h.01" />
+      <path d="M4 12h.01" />
+      <path d="M4 19h.01" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      className="h-6 w-6"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m5 12 4 4L19 6"
+      />
+    </svg>
   );
 }

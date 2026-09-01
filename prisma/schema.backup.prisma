@@ -11,54 +11,9 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      String   @default("WORKER")
+  role      String   @default("ADMIN")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  permissions UserPermission?
-}
-
-model UserPermission {
-  id     String @id @default(cuid())
-  userId String @unique
-
-  // Dashboard
-  dashboardView Boolean @default(false)
-
-  // Expenses
-  expensesView   Boolean @default(false)
-  expensesAdd    Boolean @default(false)
-  expensesEdit   Boolean @default(false)
-  expensesDelete Boolean @default(false)
-
-  // Eggs
-  eggsView   Boolean @default(false)
-  eggsAdd    Boolean @default(false)
-  eggsEdit   Boolean @default(false)
-  eggsDelete Boolean @default(false)
-
-  // Feeds
-  feedsView   Boolean @default(false)
-  feedsAdd    Boolean @default(false)
-  feedsEdit   Boolean @default(false)
-  feedsDelete Boolean @default(false)
-
-  // Poultry Health
-  poultryHealthView   Boolean @default(false)
-  poultryHealthAdd    Boolean @default(false)
-  poultryHealthEdit   Boolean @default(false)
-  poultryHealthDelete Boolean @default(false)
-
-  // Documents
-  documentsView   Boolean @default(false)
-  documentsAdd    Boolean @default(false)
-  documentsEdit   Boolean @default(false)
-  documentsDelete Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
@@ -140,21 +95,19 @@ model EggSale {
 
   @@map("InternalEgg")
 }
-
 model Feed {
-  id          String   @id @default(cuid())
-  date        DateTime
-  feedType    String
-  companyName String
-  suppliedBy  String
-  quantity    Float
-  price       Float
-  total       Float
-  currency    String   @default("ETB")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  date           DateTime
+  feedType       String
+  companyName    String
+  suppliedBy     String
+  quantity       Float
+  price          Float
+  total          Float
+  currency       String   @default("ETB")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
-
 model ChickenVaccination {
   id               String   @id @default(cuid())
   date             DateTime
@@ -190,7 +143,6 @@ model ChickenCalcium {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
-
 model CompanyDocument {
   id           String   @id @default(cuid())
   code         String   @unique
