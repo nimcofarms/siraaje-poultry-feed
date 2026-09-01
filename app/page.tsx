@@ -122,7 +122,7 @@ export default function Home() {
 
             <div>
               <h2 className="text-3xl font-extrabold text-[#064b2c]">
-                Soo Gal
+                Soo Gal / Login
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-500">
@@ -269,7 +269,7 @@ export default function Home() {
                     <path d="M15 12H3" />
                     <path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" />
                   </svg>
-                  Soo Gal
+                  Soo Gal / Login
                 </>
               )}
             </button>
