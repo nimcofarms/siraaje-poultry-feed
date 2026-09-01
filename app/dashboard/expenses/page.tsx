@@ -1,7 +1,10 @@
-"use client";
+﻿"use client";
+
+
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type ConstructionExpense = {
   id: string;
@@ -26,6 +29,39 @@ type ProductExpense = {
   transport: number;
   total: number;
   currency: string;
+};
+
+type Permissions = {
+  dashboardView: boolean;
+  expensesView: boolean;
+  expensesAdd: boolean;
+  expensesEdit: boolean;
+  expensesDelete: boolean;
+  eggsView: boolean;
+  eggsAdd: boolean;
+  eggsEdit: boolean;
+  eggsDelete: boolean;
+  feedsView: boolean;
+  feedsAdd: boolean;
+  feedsEdit: boolean;
+  feedsDelete: boolean;
+  poultryHealthView: boolean;
+  poultryHealthAdd: boolean;
+  poultryHealthEdit: boolean;
+  poultryHealthDelete: boolean;
+  documentsView: boolean;
+  documentsAdd: boolean;
+  documentsEdit: boolean;
+  documentsDelete: boolean;
+};
+
+type CurrentUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isOwner: boolean;
+  permissions: Permissions | null;
 };
 
 type Section = "construction" | "product";
@@ -64,6 +100,9 @@ const products = [
 ];
 
 export default function ExpensesPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [permissionLoading, setPermissionLoading] = useState(true);
   const [section, setSection] = useState<Section>("construction");
   const [modal, setModal] = useState<ModalType>(null);
 
@@ -86,6 +125,42 @@ export default function ExpensesPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const isOwner = currentUser?.isOwner === true;
+  const canView = isOwner || currentUser?.permissions?.expensesView === true;
+  const canAdd = isOwner || currentUser?.permissions?.expensesAdd === true;
+  const canEdit = isOwner || currentUser?.permissions?.expensesEdit === true;
+  const canDelete = isOwner || currentUser?.permissions?.expensesDelete === true;
+
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const response = await fetch("/api/me", { cache: "no-store" });
+        const data = await response.json();
+
+        if (response.status === 401) {
+          router.replace("/");
+          return;
+        }
+
+        if (!response.ok || !data.user) {
+          throw new Error(data.error || "Could not load your account permissions.");
+        }
+
+        setCurrentUser(data.user);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not load your account permissions."
+        );
+      } finally {
+        setPermissionLoading(false);
+      }
+    }
+
+    void loadCurrentUser();
+  }, [router]);
 
   async function loadExpenses() {
     try {
@@ -128,8 +203,10 @@ export default function ExpensesPage() {
   }
 
   useEffect(() => {
-    loadExpenses();
-  }, []);
+    if (!permissionLoading && currentUser && canView) {
+      void loadExpenses();
+    }
+  }, [permissionLoading, currentUser, canView]);
 
   const constructionTotal = useMemo(
     () =>
@@ -161,6 +238,7 @@ export default function ExpensesPage() {
     (Number(productForm.transport) || 0);
 
   function openModal(type: Section) {
+    if (!canAdd) return;
     setEditingId(null);
     setError("");
     setSuccess("");
@@ -188,6 +266,7 @@ export default function ExpensesPage() {
   }
 
   function editConstruction(expense: ConstructionExpense) {
+    if (!canEdit) return;
     setEditingId(expense.id);
 
     setConstructionForm({
@@ -205,6 +284,7 @@ export default function ExpensesPage() {
   }
 
   function editProduct(expense: ProductExpense) {
+    if (!canEdit) return;
     setEditingId(expense.id);
 
     setProductForm({
@@ -223,6 +303,7 @@ export default function ExpensesPage() {
   }
 
   async function deleteExpense(type: Section, id: string) {
+    if (!canDelete) return;
     const confirmed = window.confirm(
       "Ma hubtaa inaad rabto inaad tirtirto kharashkan? / Are you sure you want to delete this expense?"
     );
@@ -267,6 +348,7 @@ export default function ExpensesPage() {
 
   async function submitConstruction(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (editingId ? !canEdit : !canAdd) return;
 
     try {
       setSaving(true);
@@ -326,6 +408,7 @@ export default function ExpensesPage() {
 
   async function submitProduct(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (editingId ? !canEdit : !canAdd) return;
 
     try {
       setSaving(true);
@@ -401,6 +484,34 @@ export default function ExpensesPage() {
     return new Date(date).toLocaleDateString("en-GB");
   }
 
+  if (permissionLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f6f7f2]">
+        <div className="rounded-3xl border border-slate-100 bg-white px-8 py-7 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-green-100 border-t-[#075b35]" />
+          <p className="mt-4 font-bold text-[#064b2c]">Checking access...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!currentUser) return null;
+
+  if (!canView) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f6f7f2] px-5">
+        <div className="max-w-lg rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-sm">
+          <div className="text-5xl">ðŸ”’</div>
+          <h1 className="mt-4 text-2xl font-extrabold text-[#064b2c]">Access Not Allowed</h1>
+          <p className="mt-3 text-slate-500">You do not have permission to view Expenses.</p>
+          <Link href="/dashboard" className="mt-6 inline-flex rounded-xl bg-[#075b35] px-6 py-3 font-bold text-white">
+            Back to Dashboard
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#f6f7f2]">
       <header className="bg-[#075b35] text-white shadow-md">
@@ -419,7 +530,7 @@ export default function ExpensesPage() {
             href="/dashboard"
             className="rounded-xl bg-white/10 px-5 py-2.5 text-sm font-bold transition hover:bg-white/20"
           >
-            ← Bogga Maamulka / Dashboard
+            â† Bogga Maamulka / Dashboard
           </Link>
         </div>
       </header>
@@ -439,19 +550,19 @@ export default function ExpensesPage() {
           <SummaryCard
             title="Kharashka Dhismaha / Construction Expenses"
             value={formatMoney(constructionTotal)}
-            icon="🏗️"
+            icon="ðŸ—ï¸"
           />
 
           <SummaryCard
             title="Kharashka Productiga / Product Expenses"
             value={formatMoney(productTotal)}
-            icon="🌾"
+            icon="ðŸŒ¾"
           />
 
           <SummaryCard
             title="Wadarta Guud / Grand Total"
             value={formatMoney(grandTotal)}
-            icon="💰"
+            icon="ðŸ’°"
           />
         </div>
 
@@ -473,7 +584,7 @@ export default function ExpensesPage() {
                     : "bg-green-50"
                 }`}
               >
-                🏗️
+                ðŸ—ï¸
               </div>
 
               <div>
@@ -511,7 +622,7 @@ export default function ExpensesPage() {
                     : "bg-green-50"
                 }`}
               >
-                🌾
+                ðŸŒ¾
               </div>
 
               <div>
@@ -552,20 +663,22 @@ export default function ExpensesPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => openModal("construction")}
-                className="rounded-xl bg-[#075b35] px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#064b2c]"
-              >
-                + Ku Dar Kharash / Add Expense
-              </button>
+              {canAdd && (
+                <button
+                  type="button"
+                  onClick={() => openModal("construction")}
+                  className="rounded-xl bg-[#075b35] px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#064b2c]"
+                >
+                  + Ku Dar Kharash / Add Expense
+                </button>
+              )}
             </div>
 
             {loading ? (
               <Loading />
             ) : constructionExpenses.length === 0 ? (
               <EmptyState
-                icon="🏗️"
+                icon="ðŸ—ï¸"
                 text="Weli kharash dhisme lama diiwaangelin. / No construction expenses recorded yet."
               />
             ) : (
@@ -586,9 +699,11 @@ export default function ExpensesPage() {
                       <th className="px-6 py-4 text-right">
                         Wadarta / Total
                       </th>
-                      <th className="px-6 py-4 text-center">
-                        Maamul / Actions
-                      </th>
+                      {(canEdit || canDelete) && (
+                        <th className="px-6 py-4 text-center">
+                          Maamul / Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
 
@@ -603,7 +718,7 @@ export default function ExpensesPage() {
                         </td>
 
                         <td className="px-6 py-4 text-slate-600">
-                          {expense.location || "—"}
+                          {expense.location || "â€”"}
                         </td>
 
                         <td className="px-6 py-4 font-bold text-slate-800">
@@ -626,33 +741,32 @@ export default function ExpensesPage() {
                           {formatMoney(expense.total)}
                         </td>
 
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => editConstruction(expense)}
-                              className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
-                            >
-                              ✎ Beddel / Edit
-                            </button>
+                        {(canEdit || canDelete) && (
+                          <td className="px-6 py-4">
+                            <div className="flex justify-center gap-2">
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => editConstruction(expense)}
+                                  className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
+                                >
+                                  âœŽ Beddel / Edit
+                                </button>
+                              )}
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteExpense(
-                                  "construction",
-                                  expense.id
-                                )
-                              }
-                              disabled={deletingId === expense.id}
-                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-                            >
-                              {deletingId === expense.id
-                                ? "..."
-                                : "Tirtir / Delete"}
-                            </button>
-                          </div>
-                        </td>
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteExpense("construction", expense.id)}
+                                  disabled={deletingId === expense.id}
+                                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                                >
+                                  {deletingId === expense.id ? "..." : "Tirtir / Delete"}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -675,20 +789,22 @@ export default function ExpensesPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => openModal("product")}
-                className="rounded-xl bg-[#075b35] px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#064b2c]"
-              >
-                + Ku Dar Kharash / Add Expense
-              </button>
+              {canAdd && (
+                <button
+                  type="button"
+                  onClick={() => openModal("product")}
+                  className="rounded-xl bg-[#075b35] px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#064b2c]"
+                >
+                  + Ku Dar Kharash / Add Expense
+                </button>
+              )}
             </div>
 
             {loading ? (
               <Loading />
             ) : productExpenses.length === 0 ? (
               <EmptyState
-                icon="🌾"
+                icon="ðŸŒ¾"
                 text="Weli kharash product lama diiwaangelin. / No product expenses recorded yet."
               />
             ) : (
@@ -712,9 +828,11 @@ export default function ExpensesPage() {
                       <th className="px-6 py-4 text-right">
                         Wadarta / Total
                       </th>
-                      <th className="px-6 py-4 text-center">
-                        Maamul / Actions
-                      </th>
+                      {(canEdit || canDelete) && (
+                        <th className="px-6 py-4 text-center">
+                          Maamul / Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
 
@@ -729,7 +847,7 @@ export default function ExpensesPage() {
                         </td>
 
                         <td className="px-6 py-4 text-slate-600">
-                          {expense.location || "—"}
+                          {expense.location || "â€”"}
                         </td>
 
                         <td className="px-6 py-4 font-bold text-slate-800">
@@ -756,30 +874,32 @@ export default function ExpensesPage() {
                           {formatMoney(expense.total)}
                         </td>
 
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => editProduct(expense)}
-                              className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
-                            >
-                              ✎ Beddel / Edit
-                            </button>
+                        {(canEdit || canDelete) && (
+                          <td className="px-6 py-4">
+                            <div className="flex justify-center gap-2">
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => editProduct(expense)}
+                                  className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
+                                >
+                                  âœŽ Beddel / Edit
+                                </button>
+                              )}
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteExpense("product", expense.id)
-                              }
-                              disabled={deletingId === expense.id}
-                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-                            >
-                              {deletingId === expense.id
-                                ? "..."
-                                : "Tirtir / Delete"}
-                            </button>
-                          </div>
-                        </td>
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteExpense("product", expense.id)}
+                                  disabled={deletingId === expense.id}
+                                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                                >
+                                  {deletingId === expense.id ? "..." : "Tirtir / Delete"}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -790,7 +910,7 @@ export default function ExpensesPage() {
         )}
       </div>
             {/* DHISMAHA FORM */}
-      {modal === "construction" && (
+      {modal === "construction" && (editingId ? canEdit : canAdd) && (
         <Modal
           title={
             editingId
@@ -925,7 +1045,7 @@ export default function ExpensesPage() {
       )}
 
       {/* PRODUCT FORM */}
-      {modal === "product" && (
+      {modal === "product" && (editingId ? canEdit : canAdd) && (
         <Modal
           title={
             editingId
@@ -1188,7 +1308,7 @@ function Modal({
             onClick={onClose}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 transition hover:bg-slate-200"
           >
-            ×
+            Ã—
           </button>
         </div>
 
@@ -1215,7 +1335,7 @@ function Messages({
 
       {success && (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
-          ✓ {success}
+          âœ“ {success}
         </div>
       )}
     </>

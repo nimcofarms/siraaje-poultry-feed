@@ -1,4 +1,6 @@
-"use client";
+﻿"use client";
+
+
 
 import Image from "next/image";
 import Link from "next/link";
@@ -67,13 +69,48 @@ function formatMoney(value: number) {
 }
 
 function formatCustomerType(customerType: string | null) {
-  if (!customerType) return "—";
+  if (!customerType) return "â€”";
   if (customerType === "Dukaan") return "Dukaan / Shop";
   return customerType;
 }
 
+type Permissions = {
+  dashboardView: boolean;
+  expensesView: boolean;
+  expensesAdd: boolean;
+  expensesEdit: boolean;
+  expensesDelete: boolean;
+  eggsView: boolean;
+  eggsAdd: boolean;
+  eggsEdit: boolean;
+  eggsDelete: boolean;
+  feedsView: boolean;
+  feedsAdd: boolean;
+  feedsEdit: boolean;
+  feedsDelete: boolean;
+  poultryHealthView: boolean;
+  poultryHealthAdd: boolean;
+  poultryHealthEdit: boolean;
+  poultryHealthDelete: boolean;
+  documentsView: boolean;
+  documentsAdd: boolean;
+  documentsEdit: boolean;
+  documentsDelete: boolean;
+};
+
+type CurrentUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isOwner: boolean;
+  permissions: Permissions | null;
+};
+
 export default function EggsPage() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [permissionLoading, setPermissionLoading] = useState(true);
 
   const [purchases, setPurchases] = useState<PurchasedEgg[]>([]);
   const [sales, setSales] = useState<EggSale[]>([]);
@@ -114,6 +151,38 @@ export default function EggsPage() {
     price: "",
   });
 
+  const isOwner = currentUser?.isOwner === true;
+  const canView = isOwner || currentUser?.permissions?.eggsView === true;
+  const canAdd = isOwner || currentUser?.permissions?.eggsAdd === true;
+  const canEdit = isOwner || currentUser?.permissions?.eggsEdit === true;
+  const canDelete = isOwner || currentUser?.permissions?.eggsDelete === true;
+
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const response = await fetch("/api/me", { cache: "no-store" });
+        const data = await response.json();
+
+        if (response.status === 401) {
+          router.replace("/");
+          return;
+        }
+
+        if (!response.ok || !data.user) {
+          throw new Error(data.error || "Could not load your account permissions.");
+        }
+
+        setCurrentUser(data.user);
+      } catch (error) {
+        console.error("Permission load error:", error);
+      } finally {
+        setPermissionLoading(false);
+      }
+    }
+
+    void loadCurrentUser();
+  }, [router]);
+
   async function loadEggs() {
     try {
       setLoading(true);
@@ -148,8 +217,10 @@ export default function EggsPage() {
   }
 
   useEffect(() => {
-    loadEggs();
-  }, []);
+    if (!permissionLoading && currentUser && canView) {
+      void loadEggs();
+    }
+  }, [permissionLoading, currentUser, canView]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -215,16 +286,19 @@ export default function EggsPage() {
   }
 
   function openNewPurchase() {
+    if (!canAdd) return;
     resetPurchaseForm();
     setPurchaseModalOpen(true);
   }
 
   function openNewSale() {
+    if (!canAdd) return;
     resetSaleForm();
     setSaleModalOpen(true);
   }
 
   function openEditPurchase(expense: PurchasedEgg) {
+    if (!canEdit) return;
     setEditingPurchaseId(expense.id);
 
     setPurchaseForm({
@@ -240,6 +314,7 @@ export default function EggsPage() {
   }
 
   function openEditSale(sale: EggSale) {
+    if (!canEdit) return;
     setEditingSaleId(sale.id);
 
     setSaleForm({
@@ -270,6 +345,7 @@ export default function EggsPage() {
 
   async function handlePurchaseSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (editingPurchaseId ? !canEdit : !canAdd) return;
 
     try {
       setSavingPurchase(true);
@@ -338,6 +414,7 @@ export default function EggsPage() {
 
   async function handleSaleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (editingSaleId ? !canEdit : !canAdd) return;
 
     try {
       setSavingSale(true);
@@ -405,6 +482,7 @@ export default function EggsPage() {
   }
 
   async function deletePurchase(id: string) {
+    if (!canDelete) return;
     const confirmed = window.confirm(
       "Ma hubtaa inaad tirtirayso diiwaankan? / Are you sure you want to delete this record?"
     );
@@ -438,6 +516,7 @@ export default function EggsPage() {
   }
 
   async function deleteSale(id: string) {
+    if (!canDelete) return;
     const confirmed = window.confirm(
       "Ma hubtaa inaad tirtirayso iibkan? / Are you sure you want to delete this sale?"
     );
@@ -494,6 +573,34 @@ export default function EggsPage() {
   const saleFormTotal =
     Number(saleForm.quantity || 0) * Number(saleForm.price || 0);
 
+  if (permissionLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed]">
+        <div className="rounded-3xl border border-[#e7e1d4] bg-white px-8 py-7 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-green-100 border-t-[#075b35]" />
+          <p className="mt-4 font-bold text-[#064b2c]">Checking access...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!currentUser) return null;
+
+  if (!canView) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed] px-5">
+        <div className="max-w-lg rounded-3xl border border-[#e7e1d4] bg-white p-8 text-center shadow-sm">
+          <div className="text-5xl">ðŸ”’</div>
+          <h1 className="mt-4 text-2xl font-extrabold text-[#064b2c]">Access Not Allowed</h1>
+          <p className="mt-3 text-slate-500">You do not have permission to view Eggs.</p>
+          <Link href="/dashboard" className="mt-6 inline-flex rounded-xl bg-[#075b35] px-6 py-3 font-bold text-white">
+            Back to Dashboard
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f5ed]">
       {/* HEADER */}
@@ -529,12 +636,12 @@ export default function EggsPage() {
               className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5 transition hover:bg-white/15 sm:px-4"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-extrabold text-[#075b35]">
-                K
+                {currentUser.name.charAt(0).toUpperCase()}
               </div>
 
               <div className="hidden min-w-[80px] text-left sm:block">
-                <p className="text-sm font-extrabold leading-tight">Keyse</p>
-                <p className="mt-1 text-xs text-green-100">Maamule</p>
+                <p className="text-sm font-extrabold leading-tight">{currentUser.name}</p>
+                <p className="mt-1 text-xs text-green-100">{isOwner ? "Maamule" : "Shaqaale"}</p>
               </div>
 
               <svg
@@ -558,12 +665,12 @@ export default function EggsPage() {
               <div className="absolute right-0 top-[calc(100%+10px)] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
                 <div className="flex items-center gap-3 px-5 py-4">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e7f5eb] font-extrabold text-[#075b35]">
-                    K
+                    {currentUser.name.charAt(0).toUpperCase()}
                   </div>
 
                   <div>
-                    <p className="font-extrabold text-[#064b2c]">Keyse</p>
-                    <p className="mt-0.5 text-sm text-slate-500">Maamule</p>
+                    <p className="font-extrabold text-[#064b2c]">{currentUser.name}</p>
+                    <p className="mt-0.5 text-sm text-slate-500">{isOwner ? "Maamule" : "Shaqaale"}</p>
                   </div>
                 </div>
 
@@ -587,25 +694,29 @@ export default function EggsPage() {
         {/* SIDEBAR */}
         <aside className="h-fit rounded-3xl border border-[#e7e1d4] bg-white p-4 shadow-sm">
           <nav className="space-y-2">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
-            >
-              Dashboard
-            </Link>
+            {(isOwner || currentUser.permissions?.dashboardView) && (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
+              >
+                Dashboard
+              </Link>
+            )}
 
-            <Link
-              href="/dashboard/expenses"
-              className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
-            >
-              Kharashaadka / Expenses
-            </Link>
+            {(isOwner || currentUser.permissions?.expensesView) && (
+              <Link
+                href="/dashboard/expenses"
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold text-[#17452f] transition hover:bg-[#edf6ef]"
+              >
+                Kharashaadka / Expenses
+              </Link>
+            )}
 
             <Link
               href="/dashboard/eggs"
               className="flex items-center gap-3 rounded-2xl bg-[#075b35] px-4 py-3 font-bold text-white"
             >
-              <span className="text-lg">🥚</span>
+              <span className="text-lg">ðŸ¥š</span>
               Ukumaha / Eggs
             </Link>
           </nav>
@@ -682,13 +793,19 @@ export default function EggsPage() {
                 </p>
               </div>
 
-              <button
+              {canAdd && (
+
+
+                <button
                 type="button"
                 onClick={openNewPurchase}
                 className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#075b35] px-5 font-bold text-white transition hover:bg-[#064b2c]"
               >
                 + Ku Dar / Add
               </button>
+
+
+              )}
             </div>
 
             <div className="overflow-x-auto">
@@ -701,7 +818,9 @@ export default function EggsPage() {
                     <th className="px-5 py-4">Tirada / Amount</th>
                     <th className="px-5 py-4">Qiimaha / Price</th>
                     <th className="px-5 py-4">Wadarta / Total</th>
-                    <th className="px-5 py-4 text-right">Maamul / Actions</th>
+                    {(canEdit || canDelete) && (
+                      <th className="px-5 py-4 text-right">Maamul / Actions</th>
+                    )}
                   </tr>
                 </thead>
 
@@ -709,7 +828,7 @@ export default function EggsPage() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={canEdit || canDelete ? 7 : 6}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Xogta waa la soo qaadayaa... / Loading...
@@ -718,7 +837,7 @@ export default function EggsPage() {
                   ) : purchases.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={canEdit || canDelete ? 7 : 6}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Weli wax ukun ah lama diiwaangelin. / No purchased eggs
@@ -752,25 +871,31 @@ export default function EggsPage() {
                           {formatMoney(purchase.total)} ETB
                         </td>
 
-                        <td className="px-5 py-4">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openEditPurchase(purchase)}
-                              className="rounded-xl bg-[#edf6ef] px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-[#dcefe1]"
-                            >
-                              Beddel / Edit
-                            </button>
+                        {(canEdit || canDelete) && (
+                          <td className="px-5 py-4">
+                            <div className="flex justify-end gap-2">
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEditPurchase(purchase)}
+                                  className="rounded-xl bg-[#edf6ef] px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-[#dcefe1]"
+                                >
+                                  Beddel / Edit
+                                </button>
+                              )}
 
-                            <button
-                              type="button"
-                              onClick={() => deletePurchase(purchase.id)}
-                              className="rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
-                            >
-                              Tirtir / Delete
-                            </button>
-                          </div>
-                        </td>
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => deletePurchase(purchase.id)}
+                                  className="rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
+                                >
+                                  Tirtir / Delete
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
@@ -793,13 +918,19 @@ export default function EggsPage() {
                 </p>
               </div>
 
-              <button
+              {canAdd && (
+
+
+                <button
                 type="button"
                 onClick={openNewSale}
                 className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#b38420] px-5 font-bold text-white transition hover:bg-[#966d15]"
               >
                 + Ku Dar Iib / Add Sale
               </button>
+
+
+              )}
             </div>
 
             <div className="overflow-x-auto">
@@ -816,7 +947,9 @@ export default function EggsPage() {
                     <th className="px-5 py-4">Tirada / Amount</th>
                     <th className="px-5 py-4">Qiimaha / Price</th>
                     <th className="px-5 py-4">Wadarta / Total</th>
-                    <th className="px-5 py-4 text-right">Maamul / Actions</th>
+                    {(canEdit || canDelete) && (
+                      <th className="px-5 py-4 text-right">Maamul / Actions</th>
+                    )}
                   </tr>
                 </thead>
 
@@ -824,7 +957,7 @@ export default function EggsPage() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={canEdit || canDelete ? 7 : 6}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Xogta waa la soo qaadayaa... / Loading...
@@ -833,7 +966,7 @@ export default function EggsPage() {
                   ) : sales.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={canEdit || canDelete ? 7 : 6}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Weli wax iib ukun ah lama diiwaangelin. / No egg sales
@@ -867,25 +1000,31 @@ export default function EggsPage() {
                           {formatMoney(sale.total)} ETB
                         </td>
 
-                        <td className="px-5 py-4">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openEditSale(sale)}
-                              className="rounded-xl bg-[#edf6ef] px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-[#dcefe1]"
-                            >
-                              Beddel / Edit
-                            </button>
+                        {(canEdit || canDelete) && (
+                          <td className="px-5 py-4">
+                            <div className="flex justify-end gap-2">
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEditSale(sale)}
+                                  className="rounded-xl bg-[#edf6ef] px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-[#dcefe1]"
+                                >
+                                  Beddel / Edit
+                                </button>
+                              )}
 
-                            <button
-                              type="button"
-                              onClick={() => deleteSale(sale.id)}
-                              className="rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
-                            >
-                              Tirtir / Delete
-                            </button>
-                          </div>
-                        </td>
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSale(sale.id)}
+                                  className="rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
+                                >
+                                  Tirtir / Delete
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
@@ -895,13 +1034,13 @@ export default function EggsPage() {
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-400">
-            © 2026 Siraaje Poultry & Feeds Company
+            Â© 2026 Siraaje Poultry & Feeds Company
           </p>
         </section>
       </div>
 
       {/* PURCHASE MODAL */}
-      {purchaseModalOpen && (
+      {purchaseModalOpen && (editingPurchaseId ? canEdit : canAdd) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4">
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
@@ -923,7 +1062,7 @@ export default function EggsPage() {
                 onClick={closePurchaseModal}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
               >
-                ×
+                Ã—
               </button>
             </div>
 
@@ -1074,7 +1213,7 @@ export default function EggsPage() {
       )}
 
       {/* SALE MODAL */}
-      {saleModalOpen && (
+      {saleModalOpen && (editingSaleId ? canEdit : canAdd) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4">
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
@@ -1096,7 +1235,7 @@ export default function EggsPage() {
                 onClick={closeSaleModal}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
               >
-                ×
+                Ã—
               </button>
             </div>
 
