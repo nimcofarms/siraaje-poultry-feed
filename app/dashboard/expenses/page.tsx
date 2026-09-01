@@ -501,7 +501,7 @@ export default function ExpensesPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f6f7f2] px-5">
         <div className="max-w-lg rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-sm">
-          <div className="text-5xl">ðŸ”’</div>
+          <div className="text-5xl">🔒</div>
           <h1 className="mt-4 text-2xl font-extrabold text-[#064b2c]">Access Not Allowed</h1>
           <p className="mt-3 text-slate-500">You do not have permission to view Expenses.</p>
           <Link href="/dashboard" className="mt-6 inline-flex rounded-xl bg-[#075b35] px-6 py-3 font-bold text-white">
@@ -530,7 +530,7 @@ export default function ExpensesPage() {
             href="/dashboard"
             className="rounded-xl bg-white/10 px-5 py-2.5 text-sm font-bold transition hover:bg-white/20"
           >
-            â† Bogga Maamulka / Dashboard
+            ← Bogga Maamulka / Dashboard
           </Link>
         </div>
       </header>
@@ -550,19 +550,19 @@ export default function ExpensesPage() {
           <SummaryCard
             title="Kharashka Dhismaha / Construction Expenses"
             value={formatMoney(constructionTotal)}
-            icon="ðŸ—ï¸"
+            icon="🏗️"
           />
 
           <SummaryCard
             title="Kharashka Productiga / Product Expenses"
             value={formatMoney(productTotal)}
-            icon="ðŸŒ¾"
+            icon="🌾"
           />
 
           <SummaryCard
             title="Wadarta Guud / Grand Total"
             value={formatMoney(grandTotal)}
-            icon="ðŸ’°"
+            icon="💰"
           />
         </div>
 
@@ -584,7 +584,7 @@ export default function ExpensesPage() {
                     : "bg-green-50"
                 }`}
               >
-                ðŸ—ï¸
+                🏗️
               </div>
 
               <div>
@@ -622,7 +622,7 @@ export default function ExpensesPage() {
                     : "bg-green-50"
                 }`}
               >
-                ðŸŒ¾
+                🌾
               </div>
 
               <div>
@@ -678,7 +678,7 @@ export default function ExpensesPage() {
               <Loading />
             ) : constructionExpenses.length === 0 ? (
               <EmptyState
-                icon="ðŸ—ï¸"
+                icon="🏗️"
                 text="Weli kharash dhisme lama diiwaangelin. / No construction expenses recorded yet."
               />
             ) : (
@@ -718,7 +718,7 @@ export default function ExpensesPage() {
                         </td>
 
                         <td className="px-6 py-4 text-slate-600">
-                          {expense.location || "â€”"}
+                          {expense.location || "—"}
                         </td>
 
                         <td className="px-6 py-4 font-bold text-slate-800">
@@ -750,7 +750,7 @@ export default function ExpensesPage() {
                                   onClick={() => editConstruction(expense)}
                                   className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
                                 >
-                                  âœŽ Beddel / Edit
+                                  ✎ Beddel / Edit
                                 </button>
                               )}
 
@@ -804,7 +804,7 @@ export default function ExpensesPage() {
               <Loading />
             ) : productExpenses.length === 0 ? (
               <EmptyState
-                icon="ðŸŒ¾"
+                icon="🌾"
                 text="Weli kharash product lama diiwaangelin. / No product expenses recorded yet."
               />
             ) : (
@@ -847,7 +847,7 @@ export default function ExpensesPage() {
                         </td>
 
                         <td className="px-6 py-4 text-slate-600">
-                          {expense.location || "â€”"}
+                          {expense.location || "—"}
                         </td>
 
                         <td className="px-6 py-4 font-bold text-slate-800">
@@ -883,7 +883,7 @@ export default function ExpensesPage() {
                                   onClick={() => editProduct(expense)}
                                   className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-bold text-[#075b35] transition hover:bg-green-100"
                                 >
-                                  âœŽ Beddel / Edit
+                                  ✎ Beddel / Edit
                                 </button>
                               )}
 
@@ -1308,7 +1308,7 @@ function Modal({
             onClick={onClose}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 transition hover:bg-slate-200"
           >
-            Ã—
+            ×
           </button>
         </div>
 
@@ -1335,7 +1335,7 @@ function Messages({
 
       {success && (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
-          âœ“ {success}
+          ✓ {success}
         </div>
       )}
     </>

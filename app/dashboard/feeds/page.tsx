@@ -48,7 +48,7 @@ function createEmptyForm(feedType: FeedType = "Starter"): FeedForm {
 }
 
 function formatDate(date: string) {
-  if (!date) return "â€”";
+  if (!date) return "—";
 
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
@@ -80,22 +80,22 @@ const sidebarItems = [
   {
     href: "/dashboard",
     label: "Dashboard",
-    icon: "â–¦",
+    icon: "◦",
   },
   {
     href: "/dashboard/expenses",
     label: "Kharashaadka / Expenses",
-    icon: "ðŸ’°",
+    icon: "💰",
   },
   {
     href: "/dashboard/eggs",
     label: "Ukumaha / Eggs",
-    icon: "ðŸ¥š",
+    icon: "🥚",
   },
   {
     href: "/dashboard/feeds",
     label: "Quudinta / Feeds",
-    icon: "ðŸŒ¾",
+    icon: "🌾",
   },
   {
     href: "/dashboard/documents",
@@ -589,7 +589,7 @@ export default function FeedsPage() {
 
           <div className="border-t border-slate-200 p-4">
             <p className="text-xs text-slate-400">
-              Â© 2026 Siraaje Poultry & Feeds Company
+              © 2026 Siraaje Poultry & Feeds Company
             </p>
           </div>
         </aside>
@@ -779,7 +779,7 @@ export default function FeedsPage() {
                 onClick={closeForm}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xl font-bold text-slate-500 transition hover:bg-slate-200"
               >
-                Ã—
+                ×
               </button>
             </div>
 
@@ -930,7 +930,7 @@ export default function FeedsPage() {
                     </div>
 
                     <p className="mt-1 text-xs text-emerald-600">
-                      Tirada Ã— Qiimaha / Quantity Ã— Price
+                      Tirada × Qiimaha / Quantity × Price
                     </p>
                   </div>
                 </div>

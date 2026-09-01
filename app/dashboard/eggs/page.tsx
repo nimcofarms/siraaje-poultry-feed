@@ -69,7 +69,7 @@ function formatMoney(value: number) {
 }
 
 function formatCustomerType(customerType: string | null) {
-  if (!customerType) return "â€”";
+  if (!customerType) return "—";
   if (customerType === "Dukaan") return "Dukaan / Shop";
   return customerType;
 }
@@ -590,7 +590,7 @@ export default function EggsPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed] px-5">
         <div className="max-w-lg rounded-3xl border border-[#e7e1d4] bg-white p-8 text-center shadow-sm">
-          <div className="text-5xl">ðŸ”’</div>
+          <div className="text-5xl">🔒</div>
           <h1 className="mt-4 text-2xl font-extrabold text-[#064b2c]">Access Not Allowed</h1>
           <p className="mt-3 text-slate-500">You do not have permission to view Eggs.</p>
           <Link href="/dashboard" className="mt-6 inline-flex rounded-xl bg-[#075b35] px-6 py-3 font-bold text-white">
@@ -716,7 +716,7 @@ export default function EggsPage() {
               href="/dashboard/eggs"
               className="flex items-center gap-3 rounded-2xl bg-[#075b35] px-4 py-3 font-bold text-white"
             >
-              <span className="text-lg">ðŸ¥š</span>
+              <span className="text-lg">🥚</span>
               Ukumaha / Eggs
             </Link>
           </nav>
@@ -1034,7 +1034,7 @@ export default function EggsPage() {
           </div>
 
           <p className="mt-8 text-center text-xs text-slate-400">
-            Â© 2026 Siraaje Poultry & Feeds Company
+            © 2026 Siraaje Poultry & Feeds Company
           </p>
         </section>
       </div>
@@ -1062,7 +1062,7 @@ export default function EggsPage() {
                 onClick={closePurchaseModal}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
               >
-                Ã—
+                ×
               </button>
             </div>
 
@@ -1235,7 +1235,7 @@ export default function EggsPage() {
                 onClick={closeSaleModal}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
               >
-                Ã—
+                ×
               </button>
             </div>
 
