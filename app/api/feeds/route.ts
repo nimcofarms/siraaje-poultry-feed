@@ -1,10 +1,55 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  getCurrentUser,
+  hasPermission,
+  type PermissionKey,
+} from "@/lib/auth";
 
 const ALLOWED_FEED_TYPES = ["Starter", "Grower", "Layer"];
 
+async function authorize(permission: PermissionKey) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return {
+      user: null,
+      response: NextResponse.json(
+        {
+          error: "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  if (!hasPermission(user, permission)) {
+    return {
+      user,
+      response: NextResponse.json(
+        {
+          error:
+            "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    user,
+    response: null,
+  };
+}
+
 export async function GET() {
   try {
+    const auth = await authorize("feedsView");
+
+    if (auth.response) {
+      return auth.response;
+    }
+
     const feeds = await prisma.feed.findMany({
       orderBy: {
         date: "desc",
@@ -27,6 +72,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await authorize("feedsAdd");
+
+    if (auth.response) {
+      return auth.response;
+    }
+
     const body = await request.json();
 
     const feedType = String(body.feedType || "").trim();
@@ -101,6 +152,12 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const auth = await authorize("feedsEdit");
+
+    if (auth.response) {
+      return auth.response;
+    }
+
     const body = await request.json();
 
     const id = String(body.id || "").trim();
@@ -187,6 +244,12 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = await authorize("feedsDelete");
+
+    if (auth.response) {
+      return auth.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

@@ -1,6 +1,11 @@
 import { del, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  getCurrentUser,
+  hasPermission,
+  type PermissionKey,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -18,11 +23,51 @@ function getErrorMessage(error: unknown) {
   return "Unknown server error.";
 }
 
+async function authorize(permission: PermissionKey) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return {
+      user: null,
+      response: NextResponse.json(
+        {
+          error: "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  if (!hasPermission(user, permission)) {
+    return {
+      user,
+      response: NextResponse.json(
+        {
+          error:
+            "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    user,
+    response: null,
+  };
+}
+
 // =========================================================
 // GET ALL UPLOADED COMPANY DOCUMENTS
 // =========================================================
 export async function GET() {
   try {
+    const auth = await authorize("documentsView");
+
+    if (auth.response) {
+      return auth.response;
+    }
+
     const documents = await prisma.companyDocument.findMany({
       orderBy: {
         uploadedAt: "desc",
@@ -48,6 +93,20 @@ export async function GET() {
 // =========================================================
 export async function POST(request: Request) {
   try {
+    // -----------------------------------------------------
+    // USER MUST AT LEAST BE LOGGED IN
+    // -----------------------------------------------------
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
 
     const file = formData.get("file");
@@ -64,6 +123,33 @@ export async function POST(request: Request) {
           error: "Document code, name and category are required.",
         },
         { status: 400 }
+      );
+    }
+
+    // -----------------------------------------------------
+    // CHECK WHETHER DOCUMENT ALREADY EXISTS
+    // -----------------------------------------------------
+    const existingDocument =
+      await prisma.companyDocument.findUnique({
+        where: {
+          code,
+        },
+      });
+
+    // -----------------------------------------------------
+    // CHECK ADD / EDIT PERMISSION
+    // -----------------------------------------------------
+    const requiredPermission: PermissionKey = existingDocument
+      ? "documentsEdit"
+      : "documentsAdd";
+
+    if (!hasPermission(user, requiredPermission)) {
+      return NextResponse.json(
+        {
+          error:
+            "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
+        },
+        { status: 403 }
       );
     }
 
@@ -111,16 +197,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    // -----------------------------------------------------
-    // CHECK WHETHER DOCUMENT ALREADY EXISTS
-    // -----------------------------------------------------
-    const existingDocument =
-      await prisma.companyDocument.findUnique({
-        where: {
-          code,
-        },
-      });
 
     // -----------------------------------------------------
     // CREATE SAFE BLOB FILE NAME
@@ -280,6 +356,12 @@ export async function POST(request: Request) {
 // =========================================================
 export async function DELETE(request: Request) {
   try {
+    const auth = await authorize("documentsDelete");
+
+    if (auth.response) {
+      return auth.response;
+    }
+
     const { searchParams } = new URL(request.url);
 
     const code = String(

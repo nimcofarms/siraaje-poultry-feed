@@ -1,6 +1,7 @@
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -15,9 +16,42 @@ export async function GET(
   context: RouteContext
 ) {
   try {
+    // =====================================================
+    // AUTHENTICATION
+    // =====================================================
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
+    // =====================================================
+    // DOCUMENT VIEW PERMISSION
+    // =====================================================
+    if (!hasPermission(user, "documentsView")) {
+      return NextResponse.json(
+        {
+          error:
+            "Ma lihid oggolaanshaha dukumentiyada. / You do not have permission to view documents.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // =====================================================
+    // GET DOCUMENT CODE
+    // =====================================================
     const { code } = await context.params;
     const documentCode = decodeURIComponent(code);
 
+    // =====================================================
+    // FIND DOCUMENT
+    // =====================================================
     const document = await prisma.companyDocument.findUnique({
       where: {
         code: documentCode,
@@ -33,6 +67,9 @@ export async function GET(
       );
     }
 
+    // =====================================================
+    // GET PRIVATE PDF FROM VERCEL BLOB
+    // =====================================================
     const result = await get(document.blobPathname, {
       access: "private",
     });
@@ -46,6 +83,9 @@ export async function GET(
       );
     }
 
+    // =====================================================
+    // INLINE VIEW OR DOWNLOAD
+    // =====================================================
     const { searchParams } = new URL(request.url);
     const download = searchParams.get("download") === "1";
 
@@ -53,6 +93,9 @@ export async function GET(
       .replace(/[\r\n"]/g, "")
       .replace(/[^\x20-\x7E]/g, "_");
 
+    // =====================================================
+    // RETURN PRIVATE PDF
+    // =====================================================
     return new Response(result.stream, {
       headers: {
         "Content-Type": "application/pdf",

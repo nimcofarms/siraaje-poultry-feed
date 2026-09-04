@@ -37,6 +37,29 @@ export type CurrentUser = {
   } | null;
 };
 
+export type PermissionKey =
+  | "dashboardView"
+  | "expensesView"
+  | "expensesAdd"
+  | "expensesEdit"
+  | "expensesDelete"
+  | "eggsView"
+  | "eggsAdd"
+  | "eggsEdit"
+  | "eggsDelete"
+  | "feedsView"
+  | "feedsAdd"
+  | "feedsEdit"
+  | "feedsDelete"
+  | "poultryHealthView"
+  | "poultryHealthAdd"
+  | "poultryHealthEdit"
+  | "poultryHealthDelete"
+  | "documentsView"
+  | "documentsAdd"
+  | "documentsEdit"
+  | "documentsDelete";
+
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     const cookieStore = await cookies();
@@ -87,10 +110,31 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   }
 }
 
-export function isOwner(user: CurrentUser | null) {
+export function isOwner(user: CurrentUser | null): boolean {
   if (!user) {
     return false;
   }
 
   return user.role === "OWNER" || user.role === "ADMIN";
+}
+
+export function hasPermission(
+  user: CurrentUser | null,
+  permission: PermissionKey
+): boolean {
+  if (!user) {
+    return false;
+  }
+
+  // OWNER and ADMIN always have full access.
+  if (isOwner(user)) {
+    return true;
+  }
+
+  // Workers without a permission record have no access.
+  if (!user.permissions) {
+    return false;
+  }
+
+  return user.permissions[permission] === true;
 }
