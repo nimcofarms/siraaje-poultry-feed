@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type Permissions = {
   dashboardView: boolean;
@@ -27,6 +27,11 @@ type Permissions = {
   poultryHealthAdd: boolean;
   poultryHealthEdit: boolean;
   poultryHealthDelete: boolean;
+
+  chickenView: boolean;
+  chickenAdd: boolean;
+  chickenEdit: boolean;
+  chickenDelete: boolean;
 
   documentsView: boolean;
   documentsAdd: boolean;
@@ -66,6 +71,11 @@ const emptyPermissions: Permissions = {
   poultryHealthEdit: false,
   poultryHealthDelete: false,
 
+  chickenView: false,
+  chickenAdd: false,
+  chickenEdit: false,
+  chickenDelete: false,
+
   documentsView: false,
   documentsAdd: false,
   documentsEdit: false,
@@ -86,6 +96,13 @@ const permissionGroups = [
     add: "eggsAdd",
     edit: "eggsEdit",
     delete: "eggsDelete",
+  },
+  {
+    title: "Digaag / Chicken",
+    view: "chickenView",
+    add: "chickenAdd",
+    edit: "chickenEdit",
+    delete: "chickenDelete",
   },
   {
     title: "Quudinta / Feeds",
@@ -358,6 +375,11 @@ export default function WorkersPage() {
             />
 
             <SidebarLink
+              href="/dashboard/chicken"
+              text="Digaag / Chicken"
+            />
+
+            <SidebarLink
               href="/dashboard/feeds"
               text="Quudinta / Feeds"
             />
@@ -491,14 +513,14 @@ export default function WorkersPage() {
                 />
               </Field>
             </div>
-
-            {/* DASHBOARD */}
+                        {/* DASHBOARD */}
             <div className="mt-8 rounded-2xl border border-[#e7e1d4] bg-[#faf9f5] p-5">
               <label className="flex cursor-pointer items-center justify-between gap-4">
                 <div>
                   <p className="font-extrabold text-[#064b2c]">
                     Dashboard
                   </p>
+
                   <p className="mt-1 text-sm text-slate-500">
                     Allow this worker to open the main dashboard.
                   </p>
@@ -526,15 +548,19 @@ export default function WorkersPage() {
                     <th className="px-5 py-4">
                       Section
                     </th>
+
                     <th className="px-4 py-4 text-center">
                       View
                     </th>
+
                     <th className="px-4 py-4 text-center">
                       Add
                     </th>
+
                     <th className="px-4 py-4 text-center">
                       Edit
                     </th>
+
                     <th className="px-4 py-4 text-center">
                       Delete
                     </th>
@@ -767,12 +793,15 @@ function UserIcon() {
         strokeLinejoin="round"
         d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
       />
+
       <circle cx="9" cy="7" r="4" />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M19 8v6"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

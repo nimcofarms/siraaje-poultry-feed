@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isOwner } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
@@ -115,7 +115,6 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-
     const permissions = body.permissions || {};
 
     const user = await prisma.user.create({
@@ -156,6 +155,12 @@ export async function POST(request: Request) {
             poultryHealthDelete: Boolean(
               permissions.poultryHealthDelete
             ),
+
+            // CHICKEN / DIGAAG
+            chickenView: Boolean(permissions.chickenView),
+            chickenAdd: Boolean(permissions.chickenAdd),
+            chickenEdit: Boolean(permissions.chickenEdit),
+            chickenDelete: Boolean(permissions.chickenDelete),
 
             documentsView: Boolean(permissions.documentsView),
             documentsAdd: Boolean(permissions.documentsAdd),

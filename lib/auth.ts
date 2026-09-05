@@ -1,6 +1,6 @@
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { jwtVerify } from "jose";
+import { cookies } from "next/headers";
 
 export type CurrentUser = {
   id: string;
@@ -30,6 +30,11 @@ export type CurrentUser = {
     poultryHealthEdit: boolean;
     poultryHealthDelete: boolean;
 
+    chickenView: boolean;
+    chickenAdd: boolean;
+    chickenEdit: boolean;
+    chickenDelete: boolean;
+
     documentsView: boolean;
     documentsAdd: boolean;
     documentsEdit: boolean;
@@ -55,6 +60,10 @@ export type PermissionKey =
   | "poultryHealthAdd"
   | "poultryHealthEdit"
   | "poultryHealthDelete"
+  | "chickenView"
+  | "chickenAdd"
+  | "chickenEdit"
+  | "chickenDelete"
   | "documentsView"
   | "documentsAdd"
   | "documentsEdit"

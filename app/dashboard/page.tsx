@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 type ConstructionExpense = {
   id: string;
@@ -37,6 +37,11 @@ type Permissions = {
   poultryHealthAdd: boolean;
   poultryHealthEdit: boolean;
   poultryHealthDelete: boolean;
+
+  chickenView: boolean;
+  chickenAdd: boolean;
+  chickenEdit: boolean;
+  chickenDelete: boolean;
 
   documentsView: boolean;
   documentsAdd: boolean;
@@ -82,6 +87,10 @@ export default function DashboardPage() {
   const canEggs =
     isOwner ||
     currentUser?.permissions?.eggsView === true;
+
+  const canChicken =
+    isOwner ||
+    currentUser?.permissions?.chickenView === true;
 
   const canFeeds =
     isOwner ||
@@ -142,6 +151,11 @@ export default function DashboardPage() {
         return;
       }
 
+      if (canChicken) {
+        router.replace("/dashboard/chicken");
+        return;
+      }
+
       if (canFeeds) {
         router.replace("/dashboard/feeds");
         return;
@@ -163,6 +177,7 @@ export default function DashboardPage() {
     canDashboard,
     canExpenses,
     canEggs,
+    canChicken,
     canFeeds,
     canDocuments,
     canPoultryHealth,
@@ -301,6 +316,7 @@ export default function DashboardPage() {
     !canDashboard &&
     !canExpenses &&
     !canEggs &&
+    !canChicken &&
     !canFeeds &&
     !canDocuments &&
     !canPoultryHealth
@@ -534,6 +550,15 @@ export default function DashboardPage() {
               />
             )}
 
+            {/* CHICKEN */}
+            {canChicken && (
+              <SidebarLink
+                href="/dashboard/chicken"
+                label="Digaag / Chicken"
+                icon={<ChickenIcon />}
+              />
+            )}
+
             {/* FEEDS */}
             {canFeeds && (
               <SidebarLink
@@ -592,8 +617,7 @@ export default function DashboardPage() {
               Poultry Feed, {currentUser.name}.
             </p>
           </div>
-
-          {/* SUMMARY CARDS */}
+                    {/* SUMMARY CARDS */}
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {canExpenses && (
               <>
@@ -683,6 +707,16 @@ export default function DashboardPage() {
                 buttonLabel="Fur Ukumaha / Open Eggs"
                 icon={<EggIcon />}
                 gold
+              />
+            )}
+
+            {canChicken && (
+              <QuickActionCard
+                title="Digaag / Chicken"
+                description="Diiwaangeli digaagga nool iyo hilibka digaagga la soo iibsaday ama la iibiyay, kadibna ka maamul dhammaan diiwaannada qaybta Digaagga."
+                href="/dashboard/chicken"
+                buttonLabel="Fur Digaagga / Open Chicken"
+                icon={<ChickenIcon />}
               />
             )}
 
@@ -883,6 +917,60 @@ function EggIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M12 3C8.8 3 6 8.4 6 13a6 6 0 0 0 12 0c0-4.6-2.8-10-6-10Z"
+      />
+    </svg>
+  );
+}
+
+function ChickenIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 14c0-4 2.5-7 6-7 2.5 0 4.5 1.5 5 4-1.2 3.8-4.2 6-8 6H8v-3Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M14 7c0-2 1-3 2-4"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16 7c1-2 2-2.5 3-2"
+      />
+      <circle cx="16.5" cy="10" r=".7" fill="currentColor" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 14 5 12"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M11 17v3"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 16.5V20"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.5 20H12"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M13.5 20H16"
       />
     </svg>
   );

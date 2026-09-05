@@ -49,6 +49,12 @@ model UserPermission {
   poultryHealthEdit   Boolean @default(false)
   poultryHealthDelete Boolean @default(false)
 
+  // Chicken
+  chickenView   Boolean @default(false)
+  chickenAdd    Boolean @default(false)
+  chickenEdit   Boolean @default(false)
+  chickenDelete Boolean @default(false)
+
   // Documents
   documentsView   Boolean @default(false)
   documentsAdd    Boolean @default(false)
@@ -189,6 +195,71 @@ model ChickenCalcium {
   notes            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+//
+// CHICKEN / DIGAAG
+//
+
+// Live Chicken - Purchases
+model LiveChickenPurchase {
+  id          String   @id @default(cuid())
+  date        DateTime
+  chickenType String
+  location    String
+  ageNumber   Int
+  ageUnit     String
+  quantity    Int
+  price       Float
+  total       Float
+  currency    String   @default("ETB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Live Chicken - Sales
+model LiveChickenSale {
+  id          String   @id @default(cuid())
+  date        DateTime
+  chickenType String
+  location    String
+  ageNumber   Int
+  ageUnit     String
+  quantity    Int
+  price       Float
+  total       Float
+  currency    String   @default("ETB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Chicken Meat - Purchases
+model ChickenMeatPurchase {
+  id          String   @id @default(cuid())
+  date        DateTime
+  location    String
+  companyName String
+  quantity    Int
+  price       Float
+  total       Float
+  currency    String   @default("ETB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Chicken Meat - Sales
+model ChickenMeatSale {
+  id           String   @id @default(cuid())
+  date         DateTime
+  location     String
+  customerType String
+  branch       String
+  quantity     Int
+  price        Float
+  total        Float
+  currency     String   @default("ETB")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model CompanyDocument {

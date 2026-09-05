@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isOwner } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
@@ -13,6 +13,7 @@ type RouteContext = {
 
 // =========================================================
 // UPDATE WORKER
+// OWNER / ADMIN ONLY
 // =========================================================
 export async function PATCH(
   request: Request,
@@ -52,7 +53,8 @@ export async function PATCH(
     if (worker.role === "OWNER" || worker.role === "ADMIN") {
       return NextResponse.json(
         {
-          error: "Owner/administrator accounts cannot be changed here.",
+          error:
+            "Owner/administrator accounts cannot be changed here.",
         },
         { status: 403 }
       );
@@ -61,7 +63,9 @@ export async function PATCH(
     const body = await request.json();
 
     const name = String(body.name || "").trim();
-    const email = String(body.email || "").trim().toLowerCase();
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
     const password = String(body.password || "");
 
     if (!name || !email) {
@@ -94,7 +98,8 @@ export async function PATCH(
     if (password && password.length < 8) {
       return NextResponse.json(
         {
-          error: "New password must contain at least 8 characters.",
+          error:
+            "New password must contain at least 8 characters.",
         },
         { status: 400 }
       );
@@ -108,6 +113,49 @@ export async function PATCH(
         }
       : {};
 
+    const permissionData = {
+      dashboardView: Boolean(permissions.dashboardView),
+
+      expensesView: Boolean(permissions.expensesView),
+      expensesAdd: Boolean(permissions.expensesAdd),
+      expensesEdit: Boolean(permissions.expensesEdit),
+      expensesDelete: Boolean(permissions.expensesDelete),
+
+      eggsView: Boolean(permissions.eggsView),
+      eggsAdd: Boolean(permissions.eggsAdd),
+      eggsEdit: Boolean(permissions.eggsEdit),
+      eggsDelete: Boolean(permissions.eggsDelete),
+
+      feedsView: Boolean(permissions.feedsView),
+      feedsAdd: Boolean(permissions.feedsAdd),
+      feedsEdit: Boolean(permissions.feedsEdit),
+      feedsDelete: Boolean(permissions.feedsDelete),
+
+      poultryHealthView: Boolean(
+        permissions.poultryHealthView
+      ),
+      poultryHealthAdd: Boolean(
+        permissions.poultryHealthAdd
+      ),
+      poultryHealthEdit: Boolean(
+        permissions.poultryHealthEdit
+      ),
+      poultryHealthDelete: Boolean(
+        permissions.poultryHealthDelete
+      ),
+
+      // CHICKEN / DIGAAG
+      chickenView: Boolean(permissions.chickenView),
+      chickenAdd: Boolean(permissions.chickenAdd),
+      chickenEdit: Boolean(permissions.chickenEdit),
+      chickenDelete: Boolean(permissions.chickenDelete),
+
+      documentsView: Boolean(permissions.documentsView),
+      documentsAdd: Boolean(permissions.documentsAdd),
+      documentsEdit: Boolean(permissions.documentsEdit),
+      documentsDelete: Boolean(permissions.documentsDelete),
+    };
+
     const user = await prisma.user.update({
       where: {
         id,
@@ -120,79 +168,8 @@ export async function PATCH(
 
         permissions: {
           upsert: {
-            create: {
-              dashboardView: Boolean(permissions.dashboardView),
-
-              expensesView: Boolean(permissions.expensesView),
-              expensesAdd: Boolean(permissions.expensesAdd),
-              expensesEdit: Boolean(permissions.expensesEdit),
-              expensesDelete: Boolean(permissions.expensesDelete),
-
-              eggsView: Boolean(permissions.eggsView),
-              eggsAdd: Boolean(permissions.eggsAdd),
-              eggsEdit: Boolean(permissions.eggsEdit),
-              eggsDelete: Boolean(permissions.eggsDelete),
-
-              feedsView: Boolean(permissions.feedsView),
-              feedsAdd: Boolean(permissions.feedsAdd),
-              feedsEdit: Boolean(permissions.feedsEdit),
-              feedsDelete: Boolean(permissions.feedsDelete),
-
-              poultryHealthView: Boolean(
-                permissions.poultryHealthView
-              ),
-              poultryHealthAdd: Boolean(
-                permissions.poultryHealthAdd
-              ),
-              poultryHealthEdit: Boolean(
-                permissions.poultryHealthEdit
-              ),
-              poultryHealthDelete: Boolean(
-                permissions.poultryHealthDelete
-              ),
-
-              documentsView: Boolean(permissions.documentsView),
-              documentsAdd: Boolean(permissions.documentsAdd),
-              documentsEdit: Boolean(permissions.documentsEdit),
-              documentsDelete: Boolean(permissions.documentsDelete),
-            },
-
-            update: {
-              dashboardView: Boolean(permissions.dashboardView),
-
-              expensesView: Boolean(permissions.expensesView),
-              expensesAdd: Boolean(permissions.expensesAdd),
-              expensesEdit: Boolean(permissions.expensesEdit),
-              expensesDelete: Boolean(permissions.expensesDelete),
-
-              eggsView: Boolean(permissions.eggsView),
-              eggsAdd: Boolean(permissions.eggsAdd),
-              eggsEdit: Boolean(permissions.eggsEdit),
-              eggsDelete: Boolean(permissions.eggsDelete),
-
-              feedsView: Boolean(permissions.feedsView),
-              feedsAdd: Boolean(permissions.feedsAdd),
-              feedsEdit: Boolean(permissions.feedsEdit),
-              feedsDelete: Boolean(permissions.feedsDelete),
-
-              poultryHealthView: Boolean(
-                permissions.poultryHealthView
-              ),
-              poultryHealthAdd: Boolean(
-                permissions.poultryHealthAdd
-              ),
-              poultryHealthEdit: Boolean(
-                permissions.poultryHealthEdit
-              ),
-              poultryHealthDelete: Boolean(
-                permissions.poultryHealthDelete
-              ),
-
-              documentsView: Boolean(permissions.documentsView),
-              documentsAdd: Boolean(permissions.documentsAdd),
-              documentsEdit: Boolean(permissions.documentsEdit),
-              documentsDelete: Boolean(permissions.documentsDelete),
-            },
+            create: permissionData,
+            update: permissionData,
           },
         },
       },
@@ -226,6 +203,7 @@ export async function PATCH(
 
 // =========================================================
 // DELETE WORKER
+// OWNER / ADMIN ONLY
 // =========================================================
 export async function DELETE(
   _request: Request,
@@ -277,7 +255,8 @@ export async function DELETE(
     if (worker.role === "OWNER" || worker.role === "ADMIN") {
       return NextResponse.json(
         {
-          error: "Owner/administrator accounts cannot be deleted here.",
+          error:
+            "Owner/administrator accounts cannot be deleted here.",
         },
         { status: 403 }
       );
