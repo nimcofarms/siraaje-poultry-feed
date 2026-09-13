@@ -140,27 +140,27 @@ const CATEGORY_OPTIONS: {
 }[] = [
   {
     value: "chicken",
-    label: "Digaag / Chicken",
+    label: "Digaag",
     description:
-      "Live chicken and chicken meat purchases and sales.",
+      "Digaagga nool iyo hilibka digaagga ee la soo iibsaday ama la iibiyay.",
   },
   {
     value: "eggs",
-    label: "Ukumaha / Eggs",
+    label: "Ukumo",
     description:
-      "Egg purchases and egg sales.",
+      "Ukumaha la soo iibsaday iyo kuwa la iibiyay.",
   },
   {
     value: "feeds",
-    label: "Quudinta / Feeds",
+    label: "Quudinta",
     description:
-      "Feed purchases recorded during the selected month.",
+      "Quudinta la soo iibsaday bishan la doortay.",
   },
   {
     value: "expenses",
-    label: "Kharashaadka / Expenses",
+    label: "Kharashaadka",
     description:
-      "General, construction and product expenses.",
+      "Kharashaadka guud, dhismaha iyo alaabta.",
   },
 ];
 
@@ -185,10 +185,12 @@ function formatMoney(
   currency: string
 ) {
   try {
-    return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount) + ` ${currency}`;
+    return (
+      new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount) + ` ${currency}`
+    );
   } catch {
     return `${amount.toFixed(2)} ${currency}`;
   }
@@ -227,16 +229,22 @@ function formatMonthLabel(month: string) {
     .split("-")
     .map(Number);
 
-  const date = new Date(
-    year,
-    monthNumber - 1,
-    1
-  );
+  const monthNames = [
+    "Janaayo",
+    "Febraayo",
+    "Maarso",
+    "Abriil",
+    "Maajo",
+    "Juun",
+    "Luulyo",
+    "Agoosto",
+    "Sebtembar",
+    "Oktoobar",
+    "Nofeembar",
+    "Diseembar",
+  ];
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    year: "numeric",
-  }).format(date);
+  return `${monthNames[monthNumber - 1]} ${year}`;
 }
 
 function isOwnerOrAdmin(user: CurrentUser | null) {
@@ -252,14 +260,14 @@ function isOwnerOrAdmin(user: CurrentUser | null) {
 
 function typeLabel(type: EntryType) {
   if (type === "SALE") {
-    return "Sale";
+    return "Iib";
   }
 
   if (type === "PURCHASE") {
-    return "Purchase";
+    return "Soo Iibsi";
   }
 
-  return "Expense";
+  return "Kharash";
 }
 
 function typeClass(type: EntryType) {
@@ -332,7 +340,7 @@ export default function MonthlyAccountsPage() {
         if (!response.ok) {
           throw new Error(
             result.error ||
-              "Your account could not be loaded."
+              "Akoonkaaga lama soo gelin karin."
           );
         }
 
@@ -360,7 +368,7 @@ export default function MonthlyAccountsPage() {
         setError(
           error instanceof Error
             ? error.message
-            : "Your account could not be loaded."
+            : "Akoonkaaga lama soo gelin karin."
         );
       } finally {
         if (active) {
@@ -384,7 +392,7 @@ export default function MonthlyAccountsPage() {
     if (selectedCategories.length === 0) {
       setData(null);
       setError(
-        "Select at least one category."
+        "Fadlan dooro ugu yaraan hal qayb."
       );
       return;
     }
@@ -424,7 +432,7 @@ export default function MonthlyAccountsPage() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-            "Monthly accounts could not be loaded."
+            "Xisaabta bishan lama soo gelin karin."
         );
       }
 
@@ -435,7 +443,7 @@ export default function MonthlyAccountsPage() {
       setError(
         error instanceof Error
           ? error.message
-          : "Monthly accounts could not be loaded."
+          : "Xisaabta bishan lama soo gelin karin."
       );
     } finally {
       setLoading(false);
@@ -524,7 +532,7 @@ export default function MonthlyAccountsPage() {
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d9eadf] border-t-[#075b35]" />
 
           <p className="font-extrabold text-[#064b2c]">
-            Loading Monthly Accounts...
+            Xisaabta waa la soo gelinayaa...
           </p>
         </div>
       </main>
@@ -565,7 +573,7 @@ export default function MonthlyAccountsPage() {
 
           <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
             <p className="text-sm font-bold">
-              Xisaab Xir / Monthly Accounts
+              Xisaab Xirka Bilaha
             </p>
           </div>
         </div>
@@ -577,50 +585,50 @@ export default function MonthlyAccountsPage() {
           <nav className="space-y-2">
             <SidebarLink
               href="/dashboard"
-              text="Dashboard"
+              text="Bogga Guud"
             />
 
             <SidebarLink
               href="/dashboard/expenses"
-              text="Kharashaadka / Expenses"
+              text="Kharashaadka"
             />
 
             <SidebarLink
               href="/dashboard/eggs"
-              text="Ukumaha / Eggs"
+              text="Ukumaha"
             />
 
             <SidebarLink
               href="/dashboard/chicken"
-              text="Digaag / Chicken"
+              text="Digaagga"
             />
 
             <SidebarLink
               href="/dashboard/feeds"
-              text="Quudinta / Feeds"
+              text="Quudinta"
             />
 
             <SidebarLink
               href="/dashboard/documents"
-              text="Documents"
+              text="Dukumentiyada"
             />
 
             <SidebarLink
               href="/dashboard/poultry-health"
-              text="Daaweynta / Poultry Health"
+              text="Caafimaadka Digaagga"
             />
 
             {isOwnerOrAdmin(currentUser) && (
               <SidebarLink
                 href="/dashboard/workers"
-                text="Workers & Access"
+                text="Shaqaalaha & Ogolaanshaha"
               />
             )}
 
             <div className="my-4 border-t border-[#e7e1d4]" />
 
             <p className="px-3 pb-1 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#9a7a32]">
-              Accounting
+              Xisaabaadka
             </p>
 
             <Link
@@ -628,8 +636,9 @@ export default function MonthlyAccountsPage() {
               className="flex items-center gap-3 rounded-2xl bg-[#075b35] px-4 py-3 font-bold text-white"
             >
               <AccountsIcon />
+
               <span>
-                Xisaab Xir / Monthly Accounts
+                Xisaab Xirka Bilaha
               </span>
             </Link>
           </nav>
@@ -645,7 +654,7 @@ export default function MonthlyAccountsPage() {
               </h1>
 
               <p className="mt-1 font-semibold">
-                Monthly Accounts — {monthLabel}
+                Xisaab Xirka Bisha — {monthLabel}
               </p>
             </div>
           </div>
@@ -654,7 +663,7 @@ export default function MonthlyAccountsPage() {
           <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.15em] text-[#b38420]">
-                Accounting
+                Xisaabaadka
               </p>
 
               <h2 className="mt-1 text-3xl font-extrabold text-[#064b2c] sm:text-4xl">
@@ -662,9 +671,9 @@ export default function MonthlyAccountsPage() {
               </h2>
 
               <p className="mt-2 max-w-3xl text-slate-500">
-                Review purchases, expenses and sales
-                recorded during a selected month and see
-                the calculated monthly result.
+                Eeg iibka, wax iibsiga iyo kharashaadka
+                la diiwaangeliyay bisha aad doorato, kadibna
+                si otomaatig ah u arag natiijada xisaabta.
               </p>
             </div>
 
@@ -674,23 +683,22 @@ export default function MonthlyAccountsPage() {
               disabled={!data || loading}
               className="print:hidden min-h-11 rounded-2xl border border-[#075b35] bg-white px-5 font-extrabold text-[#075b35] transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Print Accounts
+              Daabac Xisaabta
             </button>
           </div>
 
           {/* IMPORTANT ACCOUNTING NOTE */}
           <div className="mb-6 rounded-2xl border border-[#ead9a6] bg-[#fffaf0] px-5 py-4">
             <p className="font-extrabold text-[#725b25]">
-              Monthly operating result
+              Natiijada xisaabta bisha
             </p>
 
             <p className="mt-1 text-sm leading-6 text-[#806d3f]">
-              Net Result on this page means recorded sales
-              minus recorded purchases and expenses for the
-              selected categories and month. It is an
-              operational summary of records in this system,
-              not a complete statutory profit-and-loss
-              statement.
+              Natiijada Xisaabtu waxay ka dhigan tahay
+              iibka la diiwaangeliyay oo laga jaray wax
+              iibsiga iyo kharashaadka la diiwaangeliyay
+              bisha iyo qaybaha aad dooratay. Waa soo
+              koobidda xogta ku jirta nidaamkan.
             </p>
           </div>
 
@@ -699,7 +707,7 @@ export default function MonthlyAccountsPage() {
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
               <div className="w-full lg:max-w-xs">
                 <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
-                  Select Month
+                  Dooro Bisha
                 </label>
 
                 <input
@@ -719,7 +727,7 @@ export default function MonthlyAccountsPage() {
                   disabled={allSelected}
                   className="rounded-xl border border-[#075b35] px-4 py-2 text-sm font-extrabold text-[#075b35] hover:bg-green-50 disabled:opacity-40"
                 >
-                  Select All
+                  Dooro Dhammaan
                 </button>
 
                 <button
@@ -730,7 +738,7 @@ export default function MonthlyAccountsPage() {
                   }
                   className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-extrabold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
                 >
-                  Clear
+                  Ka Saar Dhammaan
                 </button>
               </div>
             </div>
@@ -787,8 +795,9 @@ export default function MonthlyAccountsPage() {
 
             <div className="mt-5 flex flex-col justify-between gap-3 border-t border-[#ece7dc] pt-5 sm:flex-row sm:items-center">
               <p className="text-sm text-slate-500">
-                {selectedCategories.length} of{" "}
-                {CATEGORY_OPTIONS.length} categories selected
+                {selectedCategories.length} ka mid ah{" "}
+                {CATEGORY_OPTIONS.length} qaybood ayaa la
+                doortay
               </p>
 
               <button
@@ -804,8 +813,8 @@ export default function MonthlyAccountsPage() {
                 className="min-h-11 rounded-2xl bg-[#075b35] px-6 font-extrabold text-white transition hover:bg-[#064b2c] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading
-                  ? "Calculating..."
-                  : "Calculate Accounts"}
+                  ? "Xisaabinta..."
+                  : "Xisaabi"}
               </button>
             </div>
           </div>
@@ -823,7 +832,8 @@ export default function MonthlyAccountsPage() {
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d9eadf] border-t-[#075b35]" />
 
               <p className="font-extrabold text-[#064b2c]">
-                Calculating {monthLabel} accounts...
+                Xisaabta {monthLabel} waa la
+                xisaabinayaa...
               </p>
             </div>
           )}
@@ -834,7 +844,7 @@ export default function MonthlyAccountsPage() {
               <div className="mt-7 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                    Monthly Closing
+                    Xisaab Xirka Bisha
                   </p>
 
                   <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
@@ -844,14 +854,11 @@ export default function MonthlyAccountsPage() {
 
                 <div className="flex flex-wrap gap-2">
                   <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
-                    {data.summary.totalRecords} records
+                    {data.summary.totalRecords} diiwaan
                   </span>
 
                   <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
-                    {currencyCount}{" "}
-                    {currencyCount === 1
-                      ? "currency"
-                      : "currencies"}
+                    {currencyCount} nooc lacag ah
                   </span>
                 </div>
               </div>
@@ -864,12 +871,12 @@ export default function MonthlyAccountsPage() {
                   </div>
 
                   <h4 className="mt-4 text-xl font-extrabold text-[#064b2c]">
-                    No records found
+                    Wax xog ah lama helin
                   </h4>
 
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                    There are no financial records for the
-                    selected categories in {monthLabel}.
+                    Wax diiwaan maaliyadeed ah lagama helin
+                    qaybaha aad dooratay bisha {monthLabel}.
                   </p>
                 </div>
               ) : (
@@ -883,7 +890,7 @@ export default function MonthlyAccountsPage() {
                         <div className="mb-5 flex items-center justify-between gap-3">
                           <div>
                             <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-slate-400">
-                              Currency
+                              Lacagta
                             </p>
 
                             <h4 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
@@ -892,51 +899,51 @@ export default function MonthlyAccountsPage() {
                           </div>
 
                           <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
-                            {summary.records} records
+                            {summary.records} diiwaan
                           </span>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                           <SummaryCard
-                            label="Total Sales"
+                            label="Wadarta Iibka"
                             value={formatMoney(
                               summary.sales,
                               summary.currency
                             )}
-                            description="Money recorded from sales"
+                            description="Lacagta ka soo gashay iibka"
                             variant="positive"
                           />
 
                           <SummaryCard
-                            label="Purchases"
+                            label="Wax Iibsiga"
                             value={formatMoney(
                               summary.purchases,
                               summary.currency
                             )}
-                            description="Chicken, eggs and feed purchases"
+                            description="Digaag, ukumo iyo quudin la soo iibsaday"
                             variant="warning"
                           />
 
                           <SummaryCard
-                            label="Other Expenses"
+                            label="Kharashaadka Kale"
                             value={formatMoney(
                               summary.expenses,
                               summary.currency
                             )}
-                            description="General and other expenses"
+                            description="Kharashaadka guud iyo kuwa kale"
                             variant="negative"
                           />
 
                           <SummaryCard
-                            label="Net Result"
+                            label="Natiijada Xisaabta"
                             value={formatMoney(
                               summary.netResult,
                               summary.currency
                             )}
-                            description={`Sales - ${formatMoney(
+                            description={`Iibka laga jaray ${formatMoney(
                               summary.outgoing,
                               summary.currency
-                            )} outgoing`}
+                            )} oo baxay`}
                             variant={
                               summary.netResult >= 0
                                 ? "positive"
@@ -955,16 +962,16 @@ export default function MonthlyAccountsPage() {
                 <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-7">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                      Breakdown
+                      Faahfaahinta
                     </p>
 
                     <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
-                      Category Summary
+                      Soo Koobidda Qaybaha
                     </h3>
 
                     <p className="mt-1 text-sm text-slate-500">
-                      See how each selected section contributed
-                      to the monthly result.
+                      Eeg qayb kasta sida ay uga qayb qaadatay
+                      xisaabta bisha.
                     </p>
                   </div>
 
@@ -973,31 +980,31 @@ export default function MonthlyAccountsPage() {
                       <thead>
                         <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
                           <th className="px-4 py-3">
-                            Category
+                            Qaybta
                           </th>
 
                           <th className="px-4 py-3">
-                            Currency
+                            Lacagta
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Sales
+                            Iibka
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Purchases
+                            Wax Iibsiga
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Expenses
+                            Kharashaadka
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Net Result
+                            Natiijada
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Records
+                            Diiwaannada
                           </th>
                         </tr>
                       </thead>
@@ -1062,27 +1069,28 @@ export default function MonthlyAccountsPage() {
                   </div>
                 </div>
               )}
-                            {/* DETAILED RECORDS */}
+                            {/* DIIWAANNADA FAAHFAAHSAN */}
               {data.entries.length > 0 && (
                 <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-7">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
                       <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                        Monthly Records
+                        Diiwaannada Bisha
                       </p>
 
                       <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
-                        Everything Entered This Month
+                        Dhammaan Xogta Bishan La Geliyay
                       </h3>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        All records included in this monthly
-                        calculation.
+                        Hoos waxaad ka arkaysaa dhammaan
+                        diiwaannada lagu daray xisaabinta
+                        bishan.
                       </p>
                     </div>
 
                     <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
-                      {data.entries.length} records
+                      {data.entries.length} diiwaan
                     </span>
                   </div>
 
@@ -1091,43 +1099,43 @@ export default function MonthlyAccountsPage() {
                       <thead>
                         <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
                           <th className="px-3 py-3">
-                            Date
+                            Taariikhda
                           </th>
 
                           <th className="px-3 py-3">
-                            Category
+                            Qaybta
                           </th>
 
                           <th className="px-3 py-3">
-                            Type
+                            Nooca
                           </th>
 
                           <th className="px-3 py-3">
-                            Source
+                            Isha Xogta
                           </th>
 
                           <th className="px-3 py-3">
-                            Description
+                            Faahfaahin
                           </th>
 
                           <th className="px-3 py-3">
-                            Location
+                            Goobta
                           </th>
 
                           <th className="px-3 py-3">
-                            Company / Customer
+                            Shirkad / Macmiil
                           </th>
 
                           <th className="px-3 py-3 text-right">
-                            Quantity
+                            Tirada
                           </th>
 
                           <th className="px-3 py-3 text-right">
-                            Unit Price
+                            Qiimaha Halkii
                           </th>
 
                           <th className="px-3 py-3 text-right">
-                            Total
+                            Wadarta
                           </th>
                         </tr>
                       </thead>
@@ -1212,36 +1220,38 @@ export default function MonthlyAccountsPage() {
 
                   <div className="mt-5 rounded-2xl bg-[#faf9f5] px-5 py-4">
                     <p className="text-xs leading-5 text-slate-500">
-                      The detailed table shows the records used
-                      to calculate the summary above. Editing
-                      financial records must be done from their
-                      original section, such as Expenses, Eggs,
-                      Feeds or Chicken.
+                      Jadwalkan wuxuu muujinayaa diiwaannada
+                      loo isticmaalay xisaabinta natiijada
+                      kore. Haddii aad rabto inaad wax ka
+                      beddesho diiwaan, ka beddel qaybtii
+                      markii hore lagu geliyay sida
+                      Kharashaadka, Ukumaha, Quudinta ama
+                      Digaagga.
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* PRINT FOOTER */}
+              {/* QAYBTA SAXIIXA MARKA LA DAABACO */}
               <div className="mt-8 hidden border-t border-slate-300 pt-5 print:block">
                 <div className="grid grid-cols-2 gap-10">
                   <div>
                     <p className="text-xs font-bold uppercase text-slate-500">
-                      Prepared By
+                      Waxaa Diyaariyay
                     </p>
 
                     <p className="mt-8 border-t border-slate-400 pt-2 text-sm">
-                      Name / Signature
+                      Magaca / Saxiixa
                     </p>
                   </div>
 
                   <div>
                     <p className="text-xs font-bold uppercase text-slate-500">
-                      Approved By
+                      Waxaa Ansixiyay
                     </p>
 
                     <p className="mt-8 border-t border-slate-400 pt-2 text-sm">
-                      Name / Signature
+                      Magaca / Saxiixa
                     </p>
                   </div>
                 </div>
@@ -1291,7 +1301,7 @@ export default function MonthlyAccountsPage() {
 }
 
 // =========================================================
-// SUMMARY CARD
+// KAARKA SOO KOOBIDDA
 // =========================================================
 
 function SummaryCard({
