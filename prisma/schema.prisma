@@ -46,6 +46,10 @@ model User {
   updatedLiveChickenSales     LiveChickenSale[]     @relation("LiveChickenSaleUpdatedBy")
   updatedChickenMeatPurchases ChickenMeatPurchase[] @relation("ChickenMeatPurchaseUpdatedBy")
   updatedChickenMeatSales     ChickenMeatSale[]     @relation("ChickenMeatSaleUpdatedBy")
+
+  // Worker files
+  workerFilesAssigned WorkerFile[] @relation("WorkerFileAssignedTo")
+  workerFilesUploaded WorkerFile[] @relation("WorkerFileUploadedBy")
 }
 
 model UserPermission {
@@ -418,6 +422,35 @@ model ChickenMeatSale {
 
   @@index([createdById])
   @@index([updatedById])
+}
+
+//
+// WORKER FILES
+//
+
+model WorkerFile {
+  id           String  @id @default(cuid())
+  title        String
+  description  String?
+  category     String?
+  fileName     String
+  fileUrl      String
+  blobPathname String?
+  contentType  String
+  size         Int?
+
+  assignedToId String?
+  uploadedById String
+
+  assignedTo User? @relation("WorkerFileAssignedTo", fields: [assignedToId], references: [id], onDelete: Cascade)
+  uploadedBy User  @relation("WorkerFileUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedToId])
+  @@index([uploadedById])
+  @@index([createdAt])
 }
 
 model CompanyDocument {
