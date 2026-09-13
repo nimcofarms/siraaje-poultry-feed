@@ -64,25 +64,36 @@ export default function DashboardPage() {
   const [currentUser, setCurrentUser] =
     useState<CurrentUser | null>(null);
 
-  const [userLoading, setUserLoading] = useState(true);
+  const [userLoading, setUserLoading] =
+    useState(true);
 
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  const [expenseCount, setExpenseCount] = useState(0);
+  const [totalExpenses, setTotalExpenses] =
+    useState(0);
 
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [expenseCount, setExpenseCount] =
+    useState(0);
 
-  const profileRef = useRef<HTMLDivElement>(null);
+  const [profileOpen, setProfileOpen] =
+    useState(false);
 
-  const isOwner = currentUser?.isOwner === true;
+  const [loggingOut, setLoggingOut] =
+    useState(false);
+
+  const profileRef =
+    useRef<HTMLDivElement>(null);
+
+  const isOwner =
+    currentUser?.isOwner === true;
 
   const canDashboard =
     isOwner ||
-    currentUser?.permissions?.dashboardView === true;
+    currentUser?.permissions?.dashboardView ===
+      true;
 
   const canExpenses =
     isOwner ||
-    currentUser?.permissions?.expensesView === true;
+    currentUser?.permissions?.expensesView ===
+      true;
 
   const canEggs =
     isOwner ||
@@ -90,43 +101,72 @@ export default function DashboardPage() {
 
   const canChicken =
     isOwner ||
-    currentUser?.permissions?.chickenView === true;
+    currentUser?.permissions?.chickenView ===
+      true;
 
   const canFeeds =
     isOwner ||
-    currentUser?.permissions?.feedsView === true;
+    currentUser?.permissions?.feedsView ===
+      true;
 
-  const canDocuments =
-    isOwner ||
-    currentUser?.permissions?.documentsView === true;
+  /*
+   * Company Documents are now strictly
+   * OWNER / ADMIN only.
+   *
+   * We intentionally DO NOT use documentsView
+   * for workers here.
+   */
+  const canDocuments = isOwner;
+
+  /*
+   * Workers receive a completely separate
+   * My Files area.
+   */
+  const canMyFiles = !isOwner;
 
   const canPoultryHealth =
     isOwner ||
-    currentUser?.permissions?.poultryHealthView === true;
+    currentUser?.permissions
+      ?.poultryHealthView === true;
+
+  /* =====================================================
+     LOAD CURRENT USER
+  ====================================================== */
 
   useEffect(() => {
     async function loadCurrentUser() {
       try {
-        const response = await fetch("/api/me", {
-          cache: "no-store",
-        });
+        const response = await fetch(
+          "/api/me",
+          {
+            cache: "no-store",
+          }
+        );
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (response.status === 401) {
           router.replace("/");
           return;
         }
 
-        if (!response.ok || !data.user) {
+        if (
+          !response.ok ||
+          !data.user
+        ) {
           throw new Error(
-            data.error || "Could not load user."
+            data.error ||
+              "Could not load user."
           );
         }
 
         setCurrentUser(data.user);
       } catch (error) {
-        console.error("Current user error:", error);
+        console.error(
+          "Current user error:",
+          error
+        );
       } finally {
         setUserLoading(false);
       }
@@ -135,39 +175,75 @@ export default function DashboardPage() {
     void loadCurrentUser();
   }, [router]);
 
+  /* =====================================================
+     REDIRECT USER TO PERMITTED SECTION
+  ====================================================== */
+
   useEffect(() => {
-    if (userLoading || !currentUser) {
+    if (
+      userLoading ||
+      !currentUser
+    ) {
       return;
     }
 
     if (!canDashboard) {
       if (canExpenses) {
-        router.replace("/dashboard/expenses");
+        router.replace(
+          "/dashboard/expenses"
+        );
         return;
       }
 
       if (canEggs) {
-        router.replace("/dashboard/eggs");
+        router.replace(
+          "/dashboard/eggs"
+        );
         return;
       }
 
       if (canChicken) {
-        router.replace("/dashboard/chicken");
+        router.replace(
+          "/dashboard/chicken"
+        );
         return;
       }
 
       if (canFeeds) {
-        router.replace("/dashboard/feeds");
-        return;
-      }
-
-      if (canDocuments) {
-        router.replace("/dashboard/documents");
+        router.replace(
+          "/dashboard/feeds"
+        );
         return;
       }
 
       if (canPoultryHealth) {
-        router.replace("/dashboard/poultry-health");
+        router.replace(
+          "/dashboard/poultry-health"
+        );
+        return;
+      }
+
+      /*
+       * OWNER / ADMIN can be redirected
+       * to Company Documents.
+       */
+      if (canDocuments) {
+        router.replace(
+          "/dashboard/documents"
+        );
+        return;
+      }
+
+      /*
+       * Worker fallback:
+       * if the worker has no other dashboard
+       * permission, they can still access
+       * their assigned files.
+       */
+      if (canMyFiles) {
+        router.replace(
+          "/dashboard/my-files"
+        );
         return;
       }
     }
@@ -180,9 +256,14 @@ export default function DashboardPage() {
     canChicken,
     canFeeds,
     canDocuments,
+    canMyFiles,
     canPoultryHealth,
     router,
   ]);
+
+  /* =====================================================
+     LOAD EXPENSE SUMMARY
+  ====================================================== */
 
   useEffect(() => {
     async function loadExpenses() {
@@ -193,15 +274,24 @@ export default function DashboardPage() {
       }
 
       try {
-        const [constructionResponse, productResponse] =
-          await Promise.all([
-            fetch("/api/construction-expenses", {
+        const [
+          constructionResponse,
+          productResponse,
+        ] = await Promise.all([
+          fetch(
+            "/api/construction-expenses",
+            {
               cache: "no-store",
-            }),
-            fetch("/api/product-expenses", {
+            }
+          ),
+
+          fetch(
+            "/api/product-expenses",
+            {
               cache: "no-store",
-            }),
-          ]);
+            }
+          ),
+        ]);
 
         if (
           !constructionResponse.ok ||
@@ -219,22 +309,31 @@ export default function DashboardPage() {
         const constructionTotal =
           constructionData.reduce(
             (sum, expense) =>
-              sum + Number(expense.total || 0),
+              sum +
+              Number(
+                expense.total || 0
+              ),
             0
           );
 
-        const productTotal = productData.reduce(
-          (sum, expense) =>
-            sum + Number(expense.total || 0),
-          0
-        );
+        const productTotal =
+          productData.reduce(
+            (sum, expense) =>
+              sum +
+              Number(
+                expense.total || 0
+              ),
+            0
+          );
 
         setTotalExpenses(
-          constructionTotal + productTotal
+          constructionTotal +
+            productTotal
         );
 
         setExpenseCount(
-          constructionData.length + productData.length
+          constructionData.length +
+            productData.length
         );
       } catch (error) {
         console.error(
@@ -247,10 +346,19 @@ export default function DashboardPage() {
     if (currentUser) {
       void loadExpenses();
     }
-  }, [currentUser, canExpenses]);
+  }, [
+    currentUser,
+    canExpenses,
+  ]);
+
+  /* =====================================================
+     PROFILE OUTSIDE CLICK
+  ====================================================== */
 
   useEffect(() => {
-    function handleOutsideClick(event: MouseEvent) {
+    function handleOutsideClick(
+      event: MouseEvent
+    ) {
       if (
         profileRef.current &&
         !profileRef.current.contains(
@@ -274,25 +382,42 @@ export default function DashboardPage() {
     };
   }, []);
 
+  /* =====================================================
+     LOGOUT
+  ====================================================== */
+
   async function handleLogout() {
     try {
       setLoggingOut(true);
 
-      const response = await fetch("/api/logout", {
-        method: "POST",
-      });
+      const response = await fetch(
+        "/api/logout",
+        {
+          method: "POST",
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Logout failed");
+        throw new Error(
+          "Logout failed"
+        );
       }
 
       router.replace("/");
       router.refresh();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error(
+        "Logout error:",
+        error
+      );
+
       setLoggingOut(false);
     }
   }
+
+  /* =====================================================
+     LOADING
+  ====================================================== */
 
   if (userLoading) {
     return (
@@ -301,7 +426,8 @@ export default function DashboardPage() {
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#dce9df] border-t-[#075b35]" />
 
           <p className="mt-4 font-bold text-[#064b2c]">
-            Loading Siraaje Poultry Feed...
+            Loading Siraaje Poultry
+            Feed...
           </p>
         </div>
       </main>
@@ -312,6 +438,11 @@ export default function DashboardPage() {
     return null;
   }
 
+  /*
+   * A worker always has My Files available,
+   * even if no operational permissions have
+   * been assigned.
+   */
   if (
     !canDashboard &&
     !canExpenses &&
@@ -319,6 +450,7 @@ export default function DashboardPage() {
     !canChicken &&
     !canFeeds &&
     !canDocuments &&
+    !canMyFiles &&
     !canPoultryHealth
   ) {
     return (
@@ -332,7 +464,12 @@ export default function DashboardPage() {
               strokeWidth="2"
               className="h-7 w-7"
             >
-              <circle cx="12" cy="12" r="9" />
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+              />
+
               <path d="M9 9l6 6" />
               <path d="M15 9l-6 6" />
             </svg>
@@ -343,8 +480,10 @@ export default function DashboardPage() {
           </h1>
 
           <p className="mt-3 text-slate-500">
-            Your account is active, but an administrator
-            has not assigned access to any section yet.
+            Your account is active,
+            but an administrator has
+            not assigned access to any
+            section yet.
           </p>
 
           <button
@@ -363,15 +502,18 @@ export default function DashboardPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed]">
         <p className="font-bold text-[#064b2c]">
-          Opening your permitted section...
+          Opening your permitted
+          section...
         </p>
       </main>
     );
   }
 
   const initial =
-    currentUser.name?.trim().charAt(0).toUpperCase() ||
-    "U";
+    currentUser.name
+      ?.trim()
+      .charAt(0)
+      .toUpperCase() || "U";
 
   const roleLabel = isOwner
     ? "Maamule / Administrator"
@@ -379,10 +521,14 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f5ed]">
-      {/* HEADER */}
+      {/* =================================================
+          HEADER
+      ================================================== */}
+
       <header className="relative z-50 border-b border-[#e5dfd0] bg-[#075b35] text-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
           {/* LOGO */}
+
           <div className="flex items-center gap-4">
             <div className="relative h-14 w-16 overflow-hidden rounded-xl bg-white">
               <Image
@@ -401,22 +547,30 @@ export default function DashboardPage() {
               </h1>
 
               <p className="text-xs text-green-100 sm:text-sm">
-                Nidaamka Maareynta Quudinta Digaagga
+                Nidaamka Maareynta
+                Quudinta Digaagga
               </p>
             </div>
           </div>
 
           {/* PROFILE */}
-          <div ref={profileRef} className="relative">
+
+          <div
+            ref={profileRef}
+            className="relative"
+          >
             <button
               type="button"
               onClick={() =>
                 setProfileOpen(
-                  (current) => !current
+                  (current) =>
+                    !current
                 )
               }
               className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5 transition hover:bg-white/15 sm:px-4"
-              aria-expanded={profileOpen}
+              aria-expanded={
+                profileOpen
+              }
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-extrabold text-[#075b35] shadow-sm">
                 {initial}
@@ -440,7 +594,9 @@ export default function DashboardPage() {
                 stroke="currentColor"
                 strokeWidth="2"
                 className={`hidden h-4 w-4 transition-transform sm:block ${
-                  profileOpen ? "rotate-180" : ""
+                  profileOpen
+                    ? "rotate-180"
+                    : ""
                 }`}
               >
                 <path
@@ -452,6 +608,7 @@ export default function DashboardPage() {
             </button>
 
             {/* PROFILE DROPDOWN */}
+
             {profileOpen && (
               <div className="absolute right-0 top-[calc(100%+10px)] w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
                 <div className="flex items-center gap-3 px-5 py-4">
@@ -461,11 +618,15 @@ export default function DashboardPage() {
 
                   <div className="min-w-0">
                     <p className="truncate font-extrabold text-[#064b2c]">
-                      {currentUser.name}
+                      {
+                        currentUser.name
+                      }
                     </p>
 
                     <p className="mt-0.5 truncate text-sm text-slate-500">
-                      {currentUser.email}
+                      {
+                        currentUser.email
+                      }
                     </p>
 
                     <p className="mt-1 text-xs font-bold text-[#075b35]">
@@ -477,8 +638,12 @@ export default function DashboardPage() {
                 <div className="border-t border-slate-100 p-2">
                   <button
                     type="button"
-                    onClick={handleLogout}
-                    disabled={loggingOut}
+                    onClick={
+                      handleLogout
+                    }
+                    disabled={
+                      loggingOut
+                    }
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
                   >
                     <svg
@@ -519,29 +684,39 @@ export default function DashboardPage() {
       </header>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-7 sm:px-8 lg:grid-cols-[250px_1fr]">
-        {/* SIDEBAR */}
+        {/* =================================================
+            SIDEBAR
+        ================================================== */}
+
         <aside className="h-fit rounded-3xl border border-[#e7e1d4] bg-white p-4 shadow-sm">
           <nav className="space-y-2">
             {/* DASHBOARD */}
+
             {canDashboard && (
               <SidebarLink
                 href="/dashboard"
                 label="Dashboard"
                 active
-                icon={<DashboardIcon />}
+                icon={
+                  <DashboardIcon />
+                }
               />
             )}
 
             {/* EXPENSES */}
+
             {canExpenses && (
               <SidebarLink
                 href="/dashboard/expenses"
                 label="Kharashaadka / Expenses"
-                icon={<ExpensesIcon />}
+                icon={
+                  <ExpensesIcon />
+                }
               />
             )}
 
             {/* EGGS */}
+
             {canEggs && (
               <SidebarLink
                 href="/dashboard/eggs"
@@ -551,15 +726,19 @@ export default function DashboardPage() {
             )}
 
             {/* CHICKEN */}
+
             {canChicken && (
               <SidebarLink
                 href="/dashboard/chicken"
                 label="Digaag / Chicken"
-                icon={<ChickenIcon />}
+                icon={
+                  <ChickenIcon />
+                }
               />
             )}
 
             {/* FEEDS */}
+
             {canFeeds && (
               <SidebarLink
                 href="/dashboard/feeds"
@@ -568,25 +747,51 @@ export default function DashboardPage() {
               />
             )}
 
-            {/* DOCUMENTS */}
-            {canDocuments && (
-              <SidebarLink
-                href="/dashboard/documents"
-                label="Documents"
-                icon={<DocumentsIcon />}
-              />
-            )}
-
             {/* POULTRY HEALTH */}
+
             {canPoultryHealth && (
               <SidebarLink
                 href="/dashboard/poultry-health"
                 label="Daaweynta Digaagga / Poultry Health"
-                icon={<HealthIcon />}
+                icon={
+                  <HealthIcon />
+                }
               />
             )}
 
-            {/* WORKERS & ACCESS - OWNER/ADMIN ONLY */}
+            {/* ============================================
+                OWNER / ADMIN COMPANY DOCUMENTS
+            ============================================= */}
+
+            {isOwner && (
+              <SidebarLink
+                href="/dashboard/documents"
+                label="Documents"
+                icon={
+                  <DocumentsIcon />
+                }
+              />
+            )}
+
+            {/* ============================================
+                WORKER MY FILES
+            ============================================= */}
+
+            {!isOwner && (
+              <SidebarLink
+                href="/dashboard/my-files"
+                label="Faylashayda / My Files"
+                icon={
+                  <MyFilesIcon />
+                }
+              />
+            )}
+
+            {/* ============================================
+                WORKERS & ACCESS
+                OWNER / ADMIN ONLY
+            ============================================= */}
+
             {isOwner && (
               <>
                 <div className="my-3 border-t border-[#eee9de]" />
@@ -594,14 +799,19 @@ export default function DashboardPage() {
                 <SidebarLink
                   href="/dashboard/workers"
                   label="Workers & Access"
-                  icon={<WorkersIcon />}
+                  icon={
+                    <WorkersIcon />
+                  }
                 />
               </>
             )}
           </nav>
         </aside>
 
-        {/* DASHBOARD CONTENT */}
+        {/* =================================================
+            DASHBOARD CONTENT
+        ================================================== */}
+
         <section className="min-w-0">
           <div className="mb-7">
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-[#b38420]">
@@ -613,24 +823,32 @@ export default function DashboardPage() {
             </h2>
 
             <p className="mt-2 text-slate-500">
-              Ku soo dhawoow nidaamka maamulka Siraaje
-              Poultry Feed, {currentUser.name}.
+              Ku soo dhawoow nidaamka
+              maamulka Siraaje Poultry
+              Feed, {currentUser.name}.
             </p>
           </div>
-                    {/* SUMMARY CARDS */}
+
+          {/* =================================================
+              SUMMARY CARDS
+          ================================================== */}
+
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {canExpenses && (
               <>
                 {/* TOTAL EXPENSES */}
+
                 <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-bold text-slate-500">
-                        Wadarta Kharashaadka
+                        Wadarta
+                        Kharashaadka
                       </p>
 
                       <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
-                        {totalExpenses.toLocaleString()} ETB
+                        {totalExpenses.toLocaleString()}{" "}
+                        ETB
                       </p>
                     </div>
 
@@ -641,11 +859,13 @@ export default function DashboardPage() {
                 </div>
 
                 {/* EXPENSE COUNT */}
+
                 <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-bold text-slate-500">
-                        Diiwaannada Kharashaadka
+                        Diiwaannada
+                        Kharashaadka
                       </p>
 
                       <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
@@ -662,6 +882,7 @@ export default function DashboardPage() {
             )}
 
             {/* SYSTEM STATUS */}
+
             <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -686,8 +907,10 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+                    {/* =================================================
+              QUICK ACTIONS
+          ================================================== */}
 
-          {/* QUICK ACTIONS */}
           <div className="mt-7 grid gap-5 xl:grid-cols-2">
             {canExpenses && (
               <QuickActionCard
@@ -740,15 +963,39 @@ export default function DashboardPage() {
               />
             )}
 
-            {canDocuments && (
+            {/* =============================================
+                OWNER / ADMIN DOCUMENTS
+            ============================================== */}
+
+            {isOwner && (
               <QuickActionCard
                 title="Documents"
-                description="Fur oo maamul dukumentiyada shirkadda iyo faylasha loo oggolaaday isticmaalaha."
+                description="Fur oo maamul dukumentiyada gaarka ah ee shirkadda Siraaje Poultry Feed."
                 href="/dashboard/documents"
                 buttonLabel="Fur Documents / Open Documents"
                 icon={<DocumentsIcon />}
               />
             )}
+
+            {/* =============================================
+                WORKER MY FILES
+            ============================================== */}
+
+            {!isOwner && (
+              <QuickActionCard
+                title="Faylashayda / My Files"
+                description="Ka eeg oo kala soo deg faylasha maamulka Siraaje Poultry Feed si gaar ah kuugu soo diray."
+                href="/dashboard/my-files"
+                buttonLabel="Fur Faylashayda / Open My Files"
+                icon={<MyFilesIcon />}
+                gold
+              />
+            )}
+
+            {/* =============================================
+                WORKERS & ACCESS
+                OWNER / ADMIN ONLY
+            ============================================== */}
 
             {isOwner && (
               <QuickActionCard
@@ -769,6 +1016,10 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+/* =========================================================
+   SIDEBAR LINK
+========================================================= */
 
 function SidebarLink({
   href,
@@ -798,6 +1049,10 @@ function SidebarLink({
     </Link>
   );
 }
+
+/* =========================================================
+   QUICK ACTION CARD
+========================================================= */
 
 function QuickActionCard({
   title,
@@ -854,6 +1109,10 @@ function QuickActionCard({
   );
 }
 
+/* =========================================================
+   DASHBOARD ICON
+========================================================= */
+
 function DashboardIcon() {
   return (
     <svg
@@ -868,11 +1127,13 @@ function DashboardIcon() {
         strokeLinejoin="round"
         d="M3 10.5 12 3l9 7.5"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M5 9.5V21h14V9.5"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -881,6 +1142,10 @@ function DashboardIcon() {
     </svg>
   );
 }
+
+/* =========================================================
+   EXPENSES ICON
+========================================================= */
 
 function ExpensesIcon() {
   return (
@@ -898,11 +1163,16 @@ function ExpensesIcon() {
         height="14"
         rx="2"
       />
+
       <path d="M3 9h18" />
       <path d="M7 15h3" />
     </svg>
   );
 }
+
+/* =========================================================
+   EGG ICON
+========================================================= */
 
 function EggIcon() {
   return (
@@ -922,6 +1192,10 @@ function EggIcon() {
   );
 }
 
+/* =========================================================
+   CHICKEN ICON
+========================================================= */
+
 function ChickenIcon() {
   return (
     <svg
@@ -936,37 +1210,50 @@ function ChickenIcon() {
         strokeLinejoin="round"
         d="M8 14c0-4 2.5-7 6-7 2.5 0 4.5 1.5 5 4-1.2 3.8-4.2 6-8 6H8v-3Z"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M14 7c0-2 1-3 2-4"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M16 7c1-2 2-2.5 3-2"
       />
-      <circle cx="16.5" cy="10" r=".7" fill="currentColor" />
+
+      <circle
+        cx="16.5"
+        cy="10"
+        r=".7"
+        fill="currentColor"
+      />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M8 14 5 12"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M11 17v3"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M15 16.5V20"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M9.5 20H12"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -975,6 +1262,10 @@ function ChickenIcon() {
     </svg>
   );
 }
+
+/* =========================================================
+   FEED ICON
+========================================================= */
 
 function FeedIcon() {
   return (
@@ -990,11 +1281,13 @@ function FeedIcon() {
         strokeLinejoin="round"
         d="M12 21V10"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M12 14c-4 0-7-2.5-7-6 4 0 7 2.5 7 6Z"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -1003,6 +1296,10 @@ function FeedIcon() {
     </svg>
   );
 }
+
+/* =========================================================
+   DOCUMENTS ICON
+========================================================= */
 
 function DocumentsIcon() {
   return (
@@ -1022,6 +1319,50 @@ function DocumentsIcon() {
   );
 }
 
+/* =========================================================
+   MY FILES ICON
+========================================================= */
+
+function MyFilesIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 2h8l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M14 2v5h5"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 13h8"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 17h5"
+      />
+    </svg>
+  );
+}
+
+/* =========================================================
+   HEALTH ICON
+========================================================= */
+
 function HealthIcon() {
   return (
     <svg
@@ -1036,6 +1377,7 @@ function HealthIcon() {
         strokeLinejoin="round"
         d="M12 3v18"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -1044,6 +1386,10 @@ function HealthIcon() {
     </svg>
   );
 }
+
+/* =========================================================
+   WORKERS ICON
+========================================================= */
 
 function WorkersIcon() {
   return (
@@ -1059,12 +1405,19 @@ function WorkersIcon() {
         strokeLinejoin="round"
         d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
       />
-      <circle cx="9" cy="7" r="4" />
+
+      <circle
+        cx="9"
+        cy="7"
+        r="4"
+      />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M19 8v6"
       />
+
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -1073,6 +1426,10 @@ function WorkersIcon() {
     </svg>
   );
 }
+
+/* =========================================================
+   LIST ICON
+========================================================= */
 
 function ListIcon() {
   return (
@@ -1086,12 +1443,17 @@ function ListIcon() {
       <path d="M9 5h11" />
       <path d="M9 12h11" />
       <path d="M9 19h11" />
+
       <path d="M4 5h.01" />
       <path d="M4 12h.01" />
       <path d="M4 19h.01" />
     </svg>
   );
 }
+
+/* =========================================================
+   CHECK ICON
+========================================================= */
 
 function CheckIcon() {
   return (

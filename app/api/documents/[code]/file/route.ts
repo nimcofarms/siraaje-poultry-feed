@@ -1,7 +1,11 @@
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
+
+import {
+  getCurrentUser,
+  isOwner,
+} from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser, hasPermission } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -11,107 +15,205 @@ type RouteContext = {
   }>;
 };
 
+/* =========================================================
+   GET COMPANY DOCUMENT FILE
+   OWNER / ADMIN ONLY
+========================================================= */
+
 export async function GET(
   request: Request,
   context: RouteContext
 ) {
   try {
-    // =====================================================
-    // AUTHENTICATION
-    // =====================================================
+    /* =====================================================
+       AUTHENTICATION
+    ====================================================== */
+
     const user = await getCurrentUser();
 
     if (!user) {
       return NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       );
     }
 
-    // =====================================================
-    // DOCUMENT VIEW PERMISSION
-    // =====================================================
-    if (!hasPermission(user, "documentsView")) {
+    /* =====================================================
+       OWNER / ADMIN ONLY
+    ====================================================== */
+
+    if (!isOwner(user)) {
       return NextResponse.json(
         {
           error:
-            "Ma lihid oggolaanshaha dukumentiyada. / You do not have permission to view documents.",
+            "Company documents are restricted to OWNER and ADMIN accounts.",
         },
         { status: 403 }
       );
     }
 
-    // =====================================================
-    // GET DOCUMENT CODE
-    // =====================================================
+    /* =====================================================
+       GET DOCUMENT CODE
+    ====================================================== */
+
     const { code } = await context.params;
-    const documentCode = decodeURIComponent(code);
 
-    // =====================================================
-    // FIND DOCUMENT
-    // =====================================================
-    const document = await prisma.companyDocument.findUnique({
-      where: {
-        code: documentCode,
-      },
-    });
+    const documentCode =
+      decodeURIComponent(code);
 
-    if (!document || !document.blobPathname) {
+    if (!documentCode.trim()) {
       return NextResponse.json(
         {
-          error: "Document was not found.",
+          error:
+            "Document code is required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /* =====================================================
+       FIND DOCUMENT
+    ====================================================== */
+
+    const document =
+      await prisma.companyDocument.findUnique({
+        where: {
+          code: documentCode,
+        },
+      });
+
+    if (
+      !document ||
+      !document.blobPathname
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Document was not found.",
         },
         { status: 404 }
       );
     }
 
-    // =====================================================
-    // GET PRIVATE PDF FROM VERCEL BLOB
-    // =====================================================
-    const result = await get(document.blobPathname, {
-      access: "private",
-    });
+    /* =====================================================
+       PRIVATE VERCEL BLOB
+    ====================================================== */
 
-    if (!result || result.statusCode !== 200 || !result.stream) {
+    const blobToken =
+      process.env.BLOB_READ_WRITE_TOKEN;
+
+    if (!blobToken) {
+      console.error(
+        "PRIVATE DOCUMENT FILE ERROR: BLOB_READ_WRITE_TOKEN is missing."
+      );
+
       return NextResponse.json(
         {
-          error: "PDF file could not be loaded.",
+          error:
+            "Document storage is not configured.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const result = await get(
+      document.blobPathname,
+      {
+        access: "private",
+        token: blobToken,
+      }
+    );
+
+    if (
+      !result ||
+      result.statusCode !== 200 ||
+      !result.stream
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "PDF file could not be loaded.",
         },
         { status: 404 }
       );
     }
 
-    // =====================================================
-    // INLINE VIEW OR DOWNLOAD
-    // =====================================================
-    const { searchParams } = new URL(request.url);
-    const download = searchParams.get("download") === "1";
+    /* =====================================================
+       INLINE VIEW OR DOWNLOAD
+    ====================================================== */
 
-    const safeFileName = document.fileName
-      .replace(/[\r\n"]/g, "")
-      .replace(/[^\x20-\x7E]/g, "_");
+    const { searchParams } =
+      new URL(request.url);
 
-    // =====================================================
-    // RETURN PRIVATE PDF
-    // =====================================================
-    return new Response(result.stream, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `${
-          download ? "attachment" : "inline"
-        }; filename="${safeFileName}"`,
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    const download =
+      searchParams.get("download") === "1";
+
+    const safeFileName =
+      document.fileName
+        .replace(/[\r\n"]/g, "")
+        .replace(
+          /[^\x20-\x7E]/g,
+          "_"
+        );
+
+    /* =====================================================
+       RETURN PRIVATE PDF
+    ====================================================== */
+
+    const headers = new Headers();
+
+    headers.set(
+      "Content-Type",
+      document.contentType ||
+        "application/pdf"
+    );
+
+    headers.set(
+      "Content-Disposition",
+      `${
+        download
+          ? "attachment"
+          : "inline"
+      }; filename="${safeFileName}"`
+    );
+
+    headers.set(
+      "Cache-Control",
+      "private, no-store, max-age=0"
+    );
+
+    headers.set(
+      "X-Content-Type-Options",
+      "nosniff"
+    );
+
+    if (document.size) {
+      headers.set(
+        "Content-Length",
+        String(document.size)
+      );
+    }
+
+    return new Response(
+      result.stream,
+      {
+        status: 200,
+        headers,
+      }
+    );
   } catch (error) {
-    console.error("PRIVATE DOCUMENT FILE ERROR:", error);
+    console.error(
+      "PRIVATE DOCUMENT FILE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "PDF file could not be loaded.",
+        error:
+          "PDF file could not be loaded.",
       },
       { status: 500 }
     );

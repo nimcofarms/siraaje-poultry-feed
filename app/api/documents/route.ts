@@ -1,53 +1,54 @@
 import { del, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+
 import {
   getCurrentUser,
-  hasPermission,
-  type PermissionKey,
+  isOwner,
 } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
+/* =========================================================
+   HELPERS
+========================================================= */
 
-  if (typeof error === "string") {
-    return error;
-  }
-
-  return "Unknown server error.";
+function unauthorizedResponse() {
+  return NextResponse.json(
+    {
+      error:
+        "Fadlan marka hore gal. / Please log in first.",
+    },
+    { status: 401 }
+  );
 }
 
-async function authorize(permission: PermissionKey) {
+function forbiddenResponse() {
+  return NextResponse.json(
+    {
+      error:
+        "Documents are restricted to OWNER and ADMIN accounts.",
+    },
+    { status: 403 }
+  );
+}
+
+async function requireManagement() {
   const user = await getCurrentUser();
 
   if (!user) {
     return {
       user: null,
-      response: NextResponse.json(
-        {
-          error: "Fadlan marka hore gal. / Please log in first.",
-        },
-        { status: 401 }
-      ),
+      response: unauthorizedResponse(),
     };
   }
 
-  if (!hasPermission(user, permission)) {
+  if (!isOwner(user)) {
     return {
       user,
-      response: NextResponse.json(
-        {
-          error:
-            "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
-        },
-        { status: 403 }
-      ),
+      response: forbiddenResponse(),
     };
   }
 
@@ -57,124 +58,168 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
-// =========================================================
-// GET ALL UPLOADED COMPANY DOCUMENTS
-// =========================================================
+function cleanText(
+  value: FormDataEntryValue | null
+) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+}
+
+function safeBlobCode(code: string) {
+  const cleaned = code
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return cleaned || "document";
+}
+
+function isPdfFile(file: File) {
+  const type = file.type
+    .trim()
+    .toLowerCase();
+
+  const name = file.name
+    .trim()
+    .toLowerCase();
+
+  return (
+    type === "application/pdf" ||
+    name.endsWith(".pdf")
+  );
+}
+
+/* =========================================================
+   GET
+   OWNER / ADMIN ONLY
+========================================================= */
+
 export async function GET() {
   try {
-    const auth = await authorize("documentsView");
+    const auth = await requireManagement();
 
     if (auth.response) {
       return auth.response;
     }
 
-    const documents = await prisma.companyDocument.findMany({
-      orderBy: {
-        uploadedAt: "desc",
-      },
-    });
+    const documents =
+      await prisma.companyDocument.findMany({
+        orderBy: [
+          {
+            category: "asc",
+          },
+          {
+            name: "asc",
+          },
+        ],
+      });
 
-    return NextResponse.json(documents);
+    return NextResponse.json({
+      documents,
+    });
   } catch (error) {
-    console.error("DOCUMENTS GET ERROR:", error);
+    console.error(
+      "DOCUMENT GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Documents could not be loaded.",
-        details: getErrorMessage(error),
+        error:
+          "Documents could not be loaded.",
       },
       { status: 500 }
     );
   }
 }
 
-// =========================================================
-// UPLOAD / REPLACE PDF
-// =========================================================
-export async function POST(request: Request) {
+/* =========================================================
+   POST
+   OWNER / ADMIN ONLY
+   Upload new PDF or replace existing PDF
+========================================================= */
+
+export async function POST(
+  request: Request
+) {
+  let newBlobUrl: string | null = null;
+
   try {
-    // -----------------------------------------------------
-    // USER MUST AT LEAST BE LOGGED IN
-    // -----------------------------------------------------
-    const user = await getCurrentUser();
+    const auth = await requireManagement();
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "Fadlan marka hore gal. / Please log in first.",
-        },
-        { status: 401 }
-      );
+    if (auth.response) {
+      return auth.response;
     }
 
-    const formData = await request.formData();
+    const formData =
+      await request.formData();
 
-    const file = formData.get("file");
-    const code = String(formData.get("code") || "").trim();
-    const name = String(formData.get("name") || "").trim();
-    const category = String(formData.get("category") || "").trim();
+    const code = cleanText(
+      formData.get("code")
+    );
 
-    // -----------------------------------------------------
-    // VALIDATE DOCUMENT INFORMATION
-    // -----------------------------------------------------
-    if (!code || !name || !category) {
-      return NextResponse.json(
-        {
-          error: "Document code, name and category are required.",
-        },
-        { status: 400 }
-      );
-    }
+    const name = cleanText(
+      formData.get("name")
+    );
 
-    // -----------------------------------------------------
-    // CHECK WHETHER DOCUMENT ALREADY EXISTS
-    // -----------------------------------------------------
-    const existingDocument =
-      await prisma.companyDocument.findUnique({
-        where: {
-          code,
-        },
-      });
+    const category = cleanText(
+      formData.get("category")
+    );
 
-    // -----------------------------------------------------
-    // CHECK ADD / EDIT PERMISSION
-    // -----------------------------------------------------
-    const requiredPermission: PermissionKey = existingDocument
-      ? "documentsEdit"
-      : "documentsAdd";
+    const fileValue =
+      formData.get("file");
 
-    if (!hasPermission(user, requiredPermission)) {
+    if (!code) {
       return NextResponse.json(
         {
           error:
-            "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
-        },
-        { status: 403 }
-      );
-    }
-
-    // -----------------------------------------------------
-    // VALIDATE FILE
-    // -----------------------------------------------------
-    if (!(file instanceof File)) {
-      return NextResponse.json(
-        {
-          error: "Please select a PDF file.",
+            "Document code is required.",
         },
         { status: 400 }
       );
     }
 
-    // iPhone/Safari may sometimes provide an empty or
-    // unusual MIME type, so also accept a .pdf filename.
-    const fileName = file.name || "";
-    const hasPdfExtension = fileName.toLowerCase().endsWith(".pdf");
-    const hasPdfMimeType = file.type === "application/pdf";
-
-    if (!hasPdfMimeType && !hasPdfExtension) {
+    if (!name) {
       return NextResponse.json(
         {
-          error: "Only PDF files are allowed.",
+          error:
+            "Document name is required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!category) {
+      return NextResponse.json(
+        {
+          error:
+            "Document category is required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!(fileValue instanceof File)) {
+      return NextResponse.json(
+        {
+          error:
+            "Please select a PDF file.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const file = fileValue;
+
+    if (file.size <= 0) {
+      return NextResponse.json(
+        {
+          error:
+            "The selected PDF file is empty.",
         },
         { status: 400 }
       );
@@ -183,33 +228,27 @@ export async function POST(request: Request) {
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         {
-          error: "The PDF must be 10 MB or smaller.",
+          error:
+            "PDF file must be 10 MB or smaller.",
         },
         { status: 400 }
       );
     }
 
-    if (file.size <= 0) {
+    if (!isPdfFile(file)) {
       return NextResponse.json(
         {
-          error: "The selected PDF is empty.",
+          error:
+            "Only PDF files are allowed.",
         },
         { status: 400 }
       );
     }
 
-    // -----------------------------------------------------
-    // CREATE SAFE BLOB FILE NAME
-    // -----------------------------------------------------
-    const safeCode = code.replace(/[^a-zA-Z0-9-_]/g, "-");
+    const blobToken =
+      process.env.BLOB_READ_WRITE_TOKEN;
 
-    const pathname =
-      `company-documents/${safeCode}-${Date.now()}.pdf`;
-
-    // -----------------------------------------------------
-    // CHECK BLOB CONFIGURATION
-    // -----------------------------------------------------
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    if (!blobToken) {
       console.error(
         "DOCUMENT UPLOAD ERROR: BLOB_READ_WRITE_TOKEN is missing."
       );
@@ -217,161 +256,178 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Document storage is not configured on the server.",
+            "Document storage is not configured.",
         },
         { status: 500 }
       );
     }
 
-    // -----------------------------------------------------
-    // UPLOAD PDF TO PRIVATE VERCEL BLOB
-    // -----------------------------------------------------
-    let blob;
-
-    try {
-      blob = await put(pathname, file, {
-        access: "private",
-        addRandomSuffix: true,
-        contentType: "application/pdf",
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
-    } catch (blobError) {
-      console.error("VERCEL BLOB UPLOAD ERROR:", blobError);
-
-      return NextResponse.json(
-        {
-          error: "Vercel Blob could not upload the PDF.",
-          details: getErrorMessage(blobError),
-        },
-        { status: 500 }
-      );
-    }
-
-    // -----------------------------------------------------
-    // SAVE DOCUMENT INFORMATION IN POSTGRESQL
-    // -----------------------------------------------------
-    let document;
-
-    try {
-      document = await prisma.companyDocument.upsert({
+    const existingDocument =
+      await prisma.companyDocument.findUnique({
         where: {
           code,
         },
-
-        update: {
-          name,
-          category,
-          fileName: file.name,
-          fileUrl: blob.url,
-          blobPathname: blob.pathname,
-          contentType: "application/pdf",
-          size: file.size,
-          uploadedAt: new Date(),
-        },
-
-        create: {
-          code,
-          name,
-          category,
-          fileName: file.name,
-          fileUrl: blob.url,
-          blobPathname: blob.pathname,
-          contentType: "application/pdf",
-          size: file.size,
-        },
       });
-    } catch (databaseError) {
-      console.error(
-        "DOCUMENT DATABASE SAVE ERROR:",
-        databaseError
-      );
 
+    const pathname =
+      `company-documents/` +
+      `${safeBlobCode(code)}-${Date.now()}.pdf`;
+
+    const blob = await put(
+      pathname,
+      file,
+      {
+        access: "private",
+        addRandomSuffix: true,
+        contentType: "application/pdf",
+        token: blobToken,
+      }
+    );
+
+    newBlobUrl = blob.url;
+
+    let document;
+
+    try {
+      document =
+        await prisma.companyDocument.upsert({
+          where: {
+            code,
+          },
+
+          create: {
+            code,
+            name,
+            category,
+            fileName:
+              file.name || `${code}.pdf`,
+            fileUrl: blob.url,
+            blobPathname: blob.pathname,
+            contentType:
+              "application/pdf",
+            size: file.size,
+          },
+
+          update: {
+            name,
+            category,
+            fileName:
+              file.name || `${code}.pdf`,
+            fileUrl: blob.url,
+            blobPathname: blob.pathname,
+            contentType:
+              "application/pdf",
+            size: file.size,
+          },
+        });
+    } catch (databaseError) {
       try {
         await del(blob.url, {
-          token: process.env.BLOB_READ_WRITE_TOKEN,
+          token: blobToken,
         });
       } catch (cleanupError) {
         console.error(
-          "NEW BLOB CLEANUP ERROR:",
+          "DOCUMENT NEW BLOB CLEANUP ERROR:",
           cleanupError
         );
       }
 
-      return NextResponse.json(
-        {
-          error:
-            "The PDF was uploaded, but its document record could not be saved.",
-          details: getErrorMessage(databaseError),
-        },
-        { status: 500 }
-      );
+      throw databaseError;
     }
 
-    // -----------------------------------------------------
-    // REMOVE OLD PDF AFTER SUCCESSFUL REPLACEMENT
-    // -----------------------------------------------------
     if (
       existingDocument?.fileUrl &&
       existingDocument.fileUrl !== blob.url
     ) {
       try {
-        await del(existingDocument.fileUrl, {
-          token: process.env.BLOB_READ_WRITE_TOKEN,
-        });
-      } catch (deleteError) {
+        await del(
+          existingDocument.fileUrl,
+          {
+            token: blobToken,
+          }
+        );
+      } catch (oldBlobError) {
         console.error(
-          "OLD DOCUMENT BLOB DELETE ERROR:",
-          deleteError
+          "DOCUMENT OLD BLOB DELETE ERROR:",
+          oldBlobError
         );
       }
     }
 
-    // -----------------------------------------------------
-    // RETURN SAVED DOCUMENT
-    // -----------------------------------------------------
     return NextResponse.json(
       {
-        success: true,
+        message: existingDocument
+          ? "Document replaced successfully."
+          : "Document uploaded successfully.",
+
         document,
       },
       {
-        status: existingDocument ? 200 : 201,
+        status: existingDocument
+          ? 200
+          : 201,
       }
     );
   } catch (error) {
-    console.error("DOCUMENT UPLOAD ERROR:", error);
+    console.error(
+      "DOCUMENT POST ERROR:",
+      error
+    );
+
+    if (newBlobUrl) {
+      const blobToken =
+        process.env.BLOB_READ_WRITE_TOKEN;
+
+      if (blobToken) {
+        try {
+          await del(newBlobUrl, {
+            token: blobToken,
+          });
+        } catch (cleanupError) {
+          console.error(
+            "DOCUMENT POST CLEANUP ERROR:",
+            cleanupError
+          );
+        }
+      }
+    }
 
     return NextResponse.json(
       {
-        error: "The PDF could not be uploaded.",
-        details: getErrorMessage(error),
+        error:
+          "Document could not be uploaded.",
       },
       { status: 500 }
     );
   }
 }
 
-// =========================================================
-// DELETE UPLOADED DOCUMENT
-// =========================================================
-export async function DELETE(request: Request) {
+/* =========================================================
+   DELETE
+   OWNER / ADMIN ONLY
+========================================================= */
+
+export async function DELETE(
+  request: Request
+) {
   try {
-    const auth = await authorize("documentsDelete");
+    const auth = await requireManagement();
 
     if (auth.response) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } =
+      new URL(request.url);
 
-    const code = String(
-      searchParams.get("code") || ""
-    ).trim();
+    const code =
+      searchParams.get("code")?.trim();
 
     if (!code) {
       return NextResponse.json(
         {
-          error: "Document code is required.",
+          error:
+            "Document code is required.",
         },
         { status: 400 }
       );
@@ -387,20 +443,44 @@ export async function DELETE(request: Request) {
     if (!document) {
       return NextResponse.json(
         {
-          error: "Document was not found.",
+          error:
+            "Document was not found.",
         },
         { status: 404 }
       );
     }
 
-    // -----------------------------------------------------
-    // DELETE PRIVATE BLOB FILE
-    // -----------------------------------------------------
-    if (document.fileUrl) {
+    const blobToken =
+      process.env.BLOB_READ_WRITE_TOKEN;
+
+    if (
+      document.fileUrl &&
+      !blobToken
+    ) {
+      console.error(
+        "DOCUMENT DELETE ERROR: BLOB_READ_WRITE_TOKEN is missing."
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Document storage is not configured.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (
+      document.fileUrl &&
+      blobToken
+    ) {
       try {
-        await del(document.fileUrl, {
-          token: process.env.BLOB_READ_WRITE_TOKEN,
-        });
+        await del(
+          document.fileUrl,
+          {
+            token: blobToken,
+          }
+        );
       } catch (blobError) {
         console.error(
           "DOCUMENT BLOB DELETE ERROR:",
@@ -410,17 +490,13 @@ export async function DELETE(request: Request) {
         return NextResponse.json(
           {
             error:
-              "The PDF could not be removed from file storage.",
-            details: getErrorMessage(blobError),
+              "The document file could not be deleted.",
           },
           { status: 500 }
         );
       }
     }
 
-    // -----------------------------------------------------
-    // DELETE DATABASE RECORD
-    // -----------------------------------------------------
     await prisma.companyDocument.delete({
       where: {
         code,
@@ -428,15 +504,19 @@ export async function DELETE(request: Request) {
     });
 
     return NextResponse.json({
-      success: true,
+      message:
+        "Document deleted successfully.",
     });
   } catch (error) {
-    console.error("DOCUMENT DELETE ERROR:", error);
+    console.error(
+      "DOCUMENT DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "The document could not be deleted.",
-        details: getErrorMessage(error),
+        error:
+          "Document could not be deleted.",
       },
       { status: 500 }
     );
