@@ -33,6 +33,8 @@ type Permissions = {
   chickenEdit: boolean;
   chickenDelete: boolean;
 
+  accountsView: boolean;
+
   documentsView: boolean;
   documentsAdd: boolean;
   documentsEdit: boolean;
@@ -75,6 +77,8 @@ const emptyPermissions: Permissions = {
   chickenAdd: false,
   chickenEdit: false,
   chickenDelete: false,
+
+  accountsView: false,
 
   documentsView: false,
   documentsAdd: false,
@@ -401,6 +405,18 @@ export default function WorkersPage() {
               <UserIcon />
               Workers & Access
             </Link>
+
+            {/* SEPARATE ACCOUNTING SECTION */}
+            <div className="my-4 border-t border-[#e7e1d4]" />
+
+            <p className="px-3 pb-1 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#9a7a32]">
+              Accounting
+            </p>
+
+            <SidebarLink
+              href="/dashboard/accounts"
+              text="Xisaab Xir / Monthly Accounts"
+            />
           </nav>
         </aside>
 
@@ -513,7 +529,8 @@ export default function WorkersPage() {
                 />
               </Field>
             </div>
-                        {/* DASHBOARD */}
+
+            {/* DASHBOARD */}
             <div className="mt-8 rounded-2xl border border-[#e7e1d4] bg-[#faf9f5] p-5">
               <label className="flex cursor-pointer items-center justify-between gap-4">
                 <div>
@@ -605,6 +622,53 @@ export default function WorkersPage() {
                 </tbody>
               </table>
             </div>
+                        {/* MONTHLY ACCOUNTS PERMISSION */}
+            <div className="mt-6 rounded-2xl border-2 border-[#d8c58f] bg-[#fffaf0] p-5">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#075b35] text-white">
+                      <AccountsIcon />
+                    </div>
+
+                    <div>
+                      <p className="font-extrabold text-[#064b2c]">
+                        Xisaab Xir / Monthly Accounts
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        Financial reports and monthly account
+                        summaries.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#e1d4ad] bg-white px-4 py-3">
+                  <span className="text-sm font-extrabold text-[#17452f]">
+                    View Access
+                  </span>
+
+                  <input
+                    type="checkbox"
+                    checked={permissions.accountsView}
+                    onChange={(event) =>
+                      changePermission(
+                        "accountsView",
+                        event.target.checked
+                      )
+                    }
+                    className="h-5 w-5 accent-[#075b35]"
+                  />
+                </label>
+              </div>
+
+              <p className="mt-4 rounded-xl bg-[#f8f1dc] px-4 py-3 text-xs font-semibold leading-5 text-[#725b25]">
+                This permission can expose company-wide financial
+                totals. Only give it to workers who are allowed to
+                review monthly accounts.
+              </p>
+            </div>
 
             <div className="mt-7 flex justify-end">
               <button
@@ -675,6 +739,13 @@ export default function WorkersPage() {
                             >
                               {worker.role}
                             </span>
+
+                            {!protectedAccount &&
+                              worker.permissions?.accountsView && (
+                                <span className="rounded-full bg-[#fff3d6] px-3 py-1 text-xs font-extrabold text-[#8a6109]">
+                                  Accounts Access
+                                </span>
+                              )}
                           </div>
 
                           <p className="mt-1 text-sm text-slate-500">
@@ -806,6 +877,48 @@ function UserIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M22 11h-6"
+      />
+    </svg>
+  );
+}
+
+function AccountsIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 19V9"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10 19V5"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16 19v-7"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M22 19V3"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2 19h22"
       />
     </svg>
   );

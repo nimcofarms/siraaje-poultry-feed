@@ -55,6 +55,9 @@ model UserPermission {
   chickenEdit   Boolean @default(false)
   chickenDelete Boolean @default(false)
 
+  // Monthly Accounts
+  accountsView Boolean @default(false)
+
   // Documents
   documentsView   Boolean @default(false)
   documentsAdd    Boolean @default(false)

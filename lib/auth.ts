@@ -35,6 +35,8 @@ export type CurrentUser = {
     chickenEdit: boolean;
     chickenDelete: boolean;
 
+    accountsView: boolean;
+
     documentsView: boolean;
     documentsAdd: boolean;
     documentsEdit: boolean;
@@ -64,6 +66,7 @@ export type PermissionKey =
   | "chickenAdd"
   | "chickenEdit"
   | "chickenDelete"
+  | "accountsView"
   | "documentsView"
   | "documentsAdd"
   | "documentsEdit"

@@ -114,23 +114,38 @@ export async function PATCH(
       : {};
 
     const permissionData = {
+      // =====================================================
+      // DASHBOARD
+      // =====================================================
       dashboardView: Boolean(permissions.dashboardView),
 
+      // =====================================================
+      // EXPENSES
+      // =====================================================
       expensesView: Boolean(permissions.expensesView),
       expensesAdd: Boolean(permissions.expensesAdd),
       expensesEdit: Boolean(permissions.expensesEdit),
       expensesDelete: Boolean(permissions.expensesDelete),
 
+      // =====================================================
+      // EGGS
+      // =====================================================
       eggsView: Boolean(permissions.eggsView),
       eggsAdd: Boolean(permissions.eggsAdd),
       eggsEdit: Boolean(permissions.eggsEdit),
       eggsDelete: Boolean(permissions.eggsDelete),
 
+      // =====================================================
+      // FEEDS
+      // =====================================================
       feedsView: Boolean(permissions.feedsView),
       feedsAdd: Boolean(permissions.feedsAdd),
       feedsEdit: Boolean(permissions.feedsEdit),
       feedsDelete: Boolean(permissions.feedsDelete),
 
+      // =====================================================
+      // POULTRY HEALTH
+      // =====================================================
       poultryHealthView: Boolean(
         permissions.poultryHealthView
       ),
@@ -144,12 +159,22 @@ export async function PATCH(
         permissions.poultryHealthDelete
       ),
 
+      // =====================================================
       // CHICKEN / DIGAAG
+      // =====================================================
       chickenView: Boolean(permissions.chickenView),
       chickenAdd: Boolean(permissions.chickenAdd),
       chickenEdit: Boolean(permissions.chickenEdit),
       chickenDelete: Boolean(permissions.chickenDelete),
 
+      // =====================================================
+      // MONTHLY ACCOUNTS / XISAAB XIR
+      // =====================================================
+      accountsView: Boolean(permissions.accountsView),
+
+      // =====================================================
+      // DOCUMENTS
+      // =====================================================
       documentsView: Boolean(permissions.documentsView),
       documentsAdd: Boolean(permissions.documentsAdd),
       documentsEdit: Boolean(permissions.documentsEdit),
