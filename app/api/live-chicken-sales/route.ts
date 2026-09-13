@@ -1,21 +1,34 @@
 import {
-    getCurrentUser,
-    hasPermission,
-    type PermissionKey,
+  getCurrentUser,
+  hasPermission,
+  type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
 
   if (!user) {
     return {
+      user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -24,6 +37,7 @@ async function authorize(permission: PermissionKey) {
 
   if (!hasPermission(user, permission)) {
     return {
+      user,
       response: NextResponse.json(
         {
           error:
@@ -35,14 +49,17 @@ async function authorize(permission: PermissionKey) {
   }
 
   return {
+    user,
     response: null,
   };
 }
 
-// ======================================================
-// GET - View live chicken sales
-// Permission: chickenView
-// ======================================================
+/* =========================================================
+   GET
+   VIEW LIVE CHICKEN SALES
+
+   Permission: chickenView
+========================================================= */
 
 export async function GET() {
   try {
@@ -52,29 +69,43 @@ export async function GET() {
       return auth.response;
     }
 
-    const sales = await prisma.liveChickenSale.findMany({
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const sales =
+      await prisma.liveChickenSale.findMany({
+        include: auditUserInclude,
+
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
 
     return NextResponse.json(sales);
   } catch (error) {
-    console.error("GET LIVE CHICKEN SALES ERROR:", error);
+    console.error(
+      "GET LIVE CHICKEN SALES ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Waxaa dhacay cilad. / Could not load live chicken sales.",
+        error:
+          "Waxaa dhacay cilad. / Could not load live chicken sales.",
       },
       { status: 500 }
     );
   }
 }
 
-// ======================================================
-// POST - Add live chicken sale
-// Permission: chickenAdd
-// ======================================================
+/* =========================================================
+   POST
+   ADD LIVE CHICKEN SALE
+
+   Permission: chickenAdd
+========================================================= */
 
 export async function POST(request: Request) {
   try {
@@ -84,16 +115,41 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const date = String(body.date || "").trim();
-    const chickenType = String(body.chickenType || "").trim();
-    const location = String(body.location || "").trim();
-    const ageUnit = String(body.ageUnit || "").trim();
+    const date = String(
+      body.date || ""
+    ).trim();
+
+    const chickenType = String(
+      body.chickenType || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const ageUnit = String(
+      body.ageUnit || ""
+    ).trim();
 
     const ageNumber = Number(body.ageNumber);
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       BASIC VALIDATION
+    ===================================================== */
 
     if (
       !date ||
@@ -116,10 +172,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const allowedAgeUnits = ["DAY", "WEEK", "MONTH"];
-    const normalizedAgeUnit = ageUnit.toUpperCase();
+    /* =====================================================
+       AGE UNIT VALIDATION
+    ===================================================== */
 
-    if (!allowedAgeUnits.includes(normalizedAgeUnit)) {
+    const allowedAgeUnits = [
+      "DAY",
+      "WEEK",
+      "MONTH",
+    ];
+
+    const normalizedAgeUnit =
+      ageUnit.toUpperCase();
+
+    if (
+      !allowedAgeUnits.includes(
+        normalizedAgeUnit
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -129,12 +199,17 @@ export async function POST(request: Request) {
       );
     }
 
+    /* =====================================================
+       DATE VALIDATION
+    ===================================================== */
+
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error: "Taariikhda sax ma aha. / Invalid date.",
+          error:
+            "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
@@ -142,37 +217,75 @@ export async function POST(request: Request) {
 
     const total = quantity * price;
 
-    const sale = await prisma.liveChickenSale.create({
-      data: {
-        date: parsedDate,
-        chickenType,
-        location,
-        ageNumber,
-        ageUnit: normalizedAgeUnit,
-        quantity,
-        price,
-        total,
-        currency: "ETB",
-      },
-    });
+    /* =====================================================
+       CREATE LIVE CHICKEN SALE
+    ===================================================== */
 
-    return NextResponse.json(sale, { status: 201 });
+    const sale =
+      await prisma.liveChickenSale.create({
+        data: {
+          date: parsedDate,
+
+          chickenType,
+
+          location,
+
+          ageNumber,
+
+          ageUnit: normalizedAgeUnit,
+
+          quantity,
+
+          price,
+
+          total,
+
+          currency: "ETB",
+
+          /*
+           * AUDIT TRAIL
+           *
+           * createdById = account-ka iibka geliyay
+           * updatedById = isla account-ka marka
+           * record-ka markii ugu horreysay la sameeyo.
+           *
+           * User ID-ga waxaa laga qaadayaa session-ka,
+           * lagamana aqbalayo browser-ka.
+           */
+          ...createAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
+
+    return NextResponse.json(
+      sale,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("POST LIVE CHICKEN SALE ERROR:", error);
+    console.error(
+      "POST LIVE CHICKEN SALE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Waxaa dhacay cilad. / Could not create live chicken sale.",
+        error:
+          "Waxaa dhacay cilad. / Could not create live chicken sale.",
       },
       { status: 500 }
     );
   }
 }
 
-// ======================================================
-// PUT - Edit live chicken sale
-// Permission: chickenEdit
-// ======================================================
+/* =========================================================
+   PUT
+   EDIT LIVE CHICKEN SALE
+
+   Permission: chickenEdit
+========================================================= */
 
 export async function PUT(request: Request) {
   try {
@@ -182,17 +295,45 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const date = String(body.date || "").trim();
-    const chickenType = String(body.chickenType || "").trim();
-    const location = String(body.location || "").trim();
-    const ageUnit = String(body.ageUnit || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const date = String(
+      body.date || ""
+    ).trim();
+
+    const chickenType = String(
+      body.chickenType || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const ageUnit = String(
+      body.ageUnit || ""
+    ).trim();
 
     const ageNumber = Number(body.ageNumber);
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       BASIC VALIDATION
+    ===================================================== */
 
     if (
       !id ||
@@ -216,10 +357,24 @@ export async function PUT(request: Request) {
       );
     }
 
-    const allowedAgeUnits = ["DAY", "WEEK", "MONTH"];
-    const normalizedAgeUnit = ageUnit.toUpperCase();
+    /* =====================================================
+       AGE UNIT VALIDATION
+    ===================================================== */
 
-    if (!allowedAgeUnits.includes(normalizedAgeUnit)) {
+    const allowedAgeUnits = [
+      "DAY",
+      "WEEK",
+      "MONTH",
+    ];
+
+    const normalizedAgeUnit =
+      ageUnit.toUpperCase();
+
+    if (
+      !allowedAgeUnits.includes(
+        normalizedAgeUnit
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -229,27 +384,38 @@ export async function PUT(request: Request) {
       );
     }
 
+    /* =====================================================
+       DATE VALIDATION
+    ===================================================== */
+
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error: "Taariikhda sax ma aha. / Invalid date.",
+          error:
+            "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
     }
 
-    const existingSale = await prisma.liveChickenSale.findUnique({
-      where: {
-        id,
-      },
-    });
+    /* =====================================================
+       CHECK RECORD EXISTS
+    ===================================================== */
+
+    const existingSale =
+      await prisma.liveChickenSale.findUnique({
+        where: {
+          id,
+        },
+      });
 
     if (!existingSale) {
       return NextResponse.json(
         {
-          error: "Xogta lama helin. / Live chicken sale was not found.",
+          error:
+            "Xogta lama helin. / Live chicken sale was not found.",
         },
         { status: 404 }
       );
@@ -257,74 +423,119 @@ export async function PUT(request: Request) {
 
     const total = quantity * price;
 
-    const updatedSale = await prisma.liveChickenSale.update({
-      where: {
-        id,
-      },
-      data: {
-        date: parsedDate,
-        chickenType,
-        location,
-        ageNumber,
-        ageUnit: normalizedAgeUnit,
-        quantity,
-        price,
-        total,
-      },
-    });
+    /* =====================================================
+       UPDATE LIVE CHICKEN SALE
+    ===================================================== */
+
+    const updatedSale =
+      await prisma.liveChickenSale.update({
+        where: {
+          id,
+        },
+
+        data: {
+          date: parsedDate,
+
+          chickenType,
+
+          location,
+
+          ageNumber,
+
+          ageUnit: normalizedAgeUnit,
+
+          quantity,
+
+          price,
+
+          total,
+
+          /*
+           * createdById lama beddelayo.
+           *
+           * updatedById wuxuu noqonayaa account-ka
+           * hadda wax ka beddelay record-kan.
+           */
+          ...updateAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
 
     return NextResponse.json(updatedSale);
   } catch (error) {
-    console.error("PUT LIVE CHICKEN SALE ERROR:", error);
+    console.error(
+      "PUT LIVE CHICKEN SALE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Waxaa dhacay cilad. / Could not update live chicken sale.",
+        error:
+          "Waxaa dhacay cilad. / Could not update live chicken sale.",
       },
       { status: 500 }
     );
   }
 }
 
-// ======================================================
-// DELETE - Delete live chicken sale
-// Permission: chickenDelete
-// ======================================================
+/* =========================================================
+   DELETE
+   DELETE LIVE CHICKEN SALE
+
+   Permission: chickenDelete
+========================================================= */
 
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize("chickenDelete");
+    const auth = await authorize(
+      "chickenDelete"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
     const body = await request.json();
-    const id = String(body.id || "").trim();
+
+    const id = String(
+      body.id || ""
+    ).trim();
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga waa loo baahan yahay. / ID is required.",
+          error:
+            "ID-ga waa loo baahan yahay. / ID is required.",
         },
         { status: 400 }
       );
     }
 
-    const existingSale = await prisma.liveChickenSale.findUnique({
-      where: {
-        id,
-      },
-    });
+    /* =====================================================
+       CHECK RECORD EXISTS
+    ===================================================== */
+
+    const existingSale =
+      await prisma.liveChickenSale.findUnique({
+        where: {
+          id,
+        },
+      });
 
     if (!existingSale) {
       return NextResponse.json(
         {
-          error: "Xogta lama helin. / Live chicken sale was not found.",
+          error:
+            "Xogta lama helin. / Live chicken sale was not found.",
         },
         { status: 404 }
       );
     }
+
+    /* =====================================================
+       DELETE
+    ===================================================== */
 
     await prisma.liveChickenSale.delete({
       where: {
@@ -334,15 +545,20 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({
       success: true,
+
       message:
         "Xogta waa la tirtiray. / Live chicken sale deleted successfully.",
     });
   } catch (error) {
-    console.error("DELETE LIVE CHICKEN SALE ERROR:", error);
+    console.error(
+      "DELETE LIVE CHICKEN SALE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Waxaa dhacay cilad. / Could not delete live chicken sale.",
+        error:
+          "Waxaa dhacay cilad. / Could not delete live chicken sale.",
       },
       { status: 500 }
     );

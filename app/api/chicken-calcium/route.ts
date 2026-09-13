@@ -1,10 +1,23 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
@@ -14,7 +27,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -40,23 +54,43 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
+/* =========================================================
+   GET
+   SOO QAADO DHAMMAAN CALCIUM RECORDS
+
+   Permission: poultryHealthView
+========================================================= */
+
 export async function GET() {
   try {
-    const auth = await authorize("poultryHealthView");
+    const auth = await authorize(
+      "poultryHealthView"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const calciumRecords = await prisma.chickenCalcium.findMany({
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const calciumRecords =
+      await prisma.chickenCalcium.findMany({
+        include: auditUserInclude,
+
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
 
     return NextResponse.json(calciumRecords);
   } catch (error) {
-    console.error("CHICKEN CALCIUM GET ERROR:", error);
+    console.error(
+      "CHICKEN CALCIUM GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -68,22 +102,60 @@ export async function GET() {
   }
 }
 
+/* =========================================================
+   POST
+   KAYDI CALCIUM CUSUB
+
+   Permission: poultryHealthAdd
+========================================================= */
+
 export async function POST(request: Request) {
   try {
-    const auth = await authorize("poultryHealthAdd");
+    const auth = await authorize(
+      "poultryHealthAdd"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const calciumName = String(body.calciumName || "").trim();
-    const givenBy = String(body.givenBy || "").trim();
-    const notes = String(body.notes || "").trim();
-    const numberOfChickens = Number(body.numberOfChickens);
+    const calciumName = String(
+      body.calciumName || ""
+    ).trim();
 
-    if (!body.date || !calciumName || !givenBy) {
+    const givenBy = String(
+      body.givenBy || ""
+    ).trim();
+
+    const notes = String(
+      body.notes || ""
+    ).trim();
+
+    const numberOfChickens = Number(
+      body.numberOfChickens
+    );
+
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !calciumName ||
+      !givenBy
+    ) {
       return NextResponse.json(
         {
           error:
@@ -92,6 +164,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER OF CHICKENS VALIDATION
+    ===================================================== */
 
     if (
       !Number.isInteger(numberOfChickens) ||
@@ -106,19 +182,58 @@ export async function POST(request: Request) {
       );
     }
 
-    const calcium = await prisma.chickenCalcium.create({
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        calciumName,
-        givenBy,
-        numberOfChickens,
-        notes: notes || null,
-      },
-    });
+    /* =====================================================
+       CREATE CALCIUM RECORD
+    ===================================================== */
 
-    return NextResponse.json(calcium, { status: 201 });
+    const calcium =
+      await prisma.chickenCalcium.create({
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          calciumName,
+
+          givenBy,
+
+          numberOfChickens,
+
+          notes: notes || null,
+
+          /*
+           * AUDIT TRAIL
+           *
+           * createdById:
+           * account-ka website-ka ku login ahaa
+           * markii record-kan la geliyay.
+           *
+           * updatedById:
+           * marka record-ka la abuurayo wuxuu
+           * noqonayaa isla account-kaas.
+           *
+           * givenBy iyo createdBy waa kala duwan yihiin:
+           *
+           * givenBy = qofka calcium-ka bixiyay.
+           * createdBy = qofka website-ka xogta geliyay.
+           */
+          ...createAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
+
+    return NextResponse.json(
+      calcium,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("CHICKEN CALCIUM CREATE ERROR:", error);
+    console.error(
+      "CHICKEN CALCIUM CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -130,32 +245,78 @@ export async function POST(request: Request) {
   }
 }
 
+/* =========================================================
+   PUT
+   BEDEL XOGTA CALCIUM-KA
+
+   Permission: poultryHealthEdit
+========================================================= */
+
 export async function PUT(request: Request) {
   try {
-    const auth = await authorize("poultryHealthEdit");
+    const auth = await authorize(
+      "poultryHealthEdit"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const calciumName = String(body.calciumName || "").trim();
-    const givenBy = String(body.givenBy || "").trim();
-    const notes = String(body.notes || "").trim();
-    const numberOfChickens = Number(body.numberOfChickens);
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const calciumName = String(
+      body.calciumName || ""
+    ).trim();
+
+    const givenBy = String(
+      body.givenBy || ""
+    ).trim();
+
+    const notes = String(
+      body.notes || ""
+    ).trim();
+
+    const numberOfChickens = Number(
+      body.numberOfChickens
+    );
+
+    /* =====================================================
+       ID VALIDATION
+    ===================================================== */
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
     }
 
-    if (!body.date || !calciumName || !givenBy) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !calciumName ||
+      !givenBy
+    ) {
       return NextResponse.json(
         {
           error:
@@ -164,6 +325,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER OF CHICKENS VALIDATION
+    ===================================================== */
 
     if (
       !Number.isInteger(numberOfChickens) ||
@@ -178,22 +343,47 @@ export async function PUT(request: Request) {
       );
     }
 
-    const calcium = await prisma.chickenCalcium.update({
-      where: {
-        id,
-      },
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        calciumName,
-        givenBy,
-        numberOfChickens,
-        notes: notes || null,
-      },
-    });
+    /* =====================================================
+       UPDATE CALCIUM RECORD
+    ===================================================== */
+
+    const calcium =
+      await prisma.chickenCalcium.update({
+        where: {
+          id,
+        },
+
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          calciumName,
+
+          givenBy,
+
+          numberOfChickens,
+
+          notes: notes || null,
+
+          /*
+           * createdById lama beddelayo.
+           *
+           * updatedById = account-ka website-ka
+           * hadda record-kan wax ka beddelay.
+           */
+          ...updateAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
 
     return NextResponse.json(calcium);
   } catch (error) {
-    console.error("CHICKEN CALCIUM UPDATE ERROR:", error);
+    console.error(
+      "CHICKEN CALCIUM UPDATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -205,21 +395,34 @@ export async function PUT(request: Request) {
   }
 }
 
+/* =========================================================
+   DELETE
+   TIRTIR CALCIUM RECORD
+
+   Permission: poultryHealthDelete
+========================================================= */
+
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize("poultryHealthDelete");
+    const auth = await authorize(
+      "poultryHealthDelete"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(
+      request.url
+    );
+
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
@@ -235,7 +438,10 @@ export async function DELETE(request: Request) {
       success: true,
     });
   } catch (error) {
-    console.error("CHICKEN CALCIUM DELETE ERROR:", error);
+    console.error(
+      "CHICKEN CALCIUM DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

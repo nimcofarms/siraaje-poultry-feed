@@ -1,3 +1,4 @@
+import { auditUserInclude } from "@/lib/audit";
 import {
   getCurrentUser,
   hasPermission,
@@ -22,6 +23,12 @@ type EntryType =
   | "SALE"
   | "EXPENSE";
 
+type AuditUserInfo = {
+  id: string;
+  name: string;
+  role: string;
+};
+
 type AccountEntry = {
   id: string;
   date: string;
@@ -36,6 +43,8 @@ type AccountEntry = {
   unitPrice: number | null;
   total: number;
   currency: string;
+  createdAt: string;
+  createdBy: AuditUserInfo | null;
 };
 
 type CurrencySummary = {
@@ -352,6 +361,7 @@ export async function GET(request: Request) {
         productExpenses,
       ] = await Promise.all([
         prisma.expense.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -361,6 +371,7 @@ export async function GET(request: Request) {
         }),
 
         prisma.constructionExpense.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -370,6 +381,7 @@ export async function GET(request: Request) {
         }),
 
         prisma.productExpense.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -398,6 +410,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.unitPrice),
           total: safeNumber(item.amount),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
 
@@ -417,6 +437,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
 
@@ -436,6 +464,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
     }
@@ -450,6 +486,7 @@ export async function GET(request: Request) {
         eggSales,
       ] = await Promise.all([
         prisma.purchasedEgg.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -459,6 +496,7 @@ export async function GET(request: Request) {
         }),
 
         prisma.eggSale.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -483,6 +521,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
 
@@ -504,6 +550,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
     }
@@ -514,6 +568,7 @@ export async function GET(request: Request) {
 
     if (categories.includes("feeds")) {
       const feeds = await prisma.feed.findMany({
+          include: auditUserInclude,
         where: {
           date: dateFilter,
         },
@@ -540,6 +595,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
     }
@@ -556,6 +619,7 @@ export async function GET(request: Request) {
         meatSales,
       ] = await Promise.all([
         prisma.liveChickenPurchase.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -565,6 +629,7 @@ export async function GET(request: Request) {
         }),
 
         prisma.liveChickenSale.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -574,6 +639,7 @@ export async function GET(request: Request) {
         }),
 
         prisma.chickenMeatPurchase.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -583,6 +649,7 @@ export async function GET(request: Request) {
         }),
 
         prisma.chickenMeatSale.findMany({
+          include: auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -610,6 +677,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
 
@@ -631,6 +706,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
 
@@ -650,6 +733,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
 
@@ -670,6 +761,14 @@ export async function GET(request: Request) {
           unitPrice: nullableNumber(item.price),
           total: safeNumber(item.total),
           currency: normalizeCurrency(item.currency),
+          createdAt: item.createdAt.toISOString(),
+          createdBy: item.createdBy
+            ? {
+                id: item.createdBy.id,
+                name: item.createdBy.name,
+                role: item.createdBy.role,
+              }
+            : null,
         });
       }
     }

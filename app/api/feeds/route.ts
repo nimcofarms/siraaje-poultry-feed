@@ -1,12 +1,33 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
 
-const ALLOWED_FEED_TYPES = ["Starter", "Grower", "Layer"];
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   FEED TYPES LA OGGOLO YAHAY
+========================================================= */
+
+const ALLOWED_FEED_TYPES = [
+  "Starter",
+  "Grower",
+  "Layer",
+];
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
@@ -16,7 +37,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -42,6 +64,11 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
+/* =========================================================
+   GET
+   SOO QAADO DHAMMAAN XOGTA QUUDINTA
+========================================================= */
+
 export async function GET() {
   try {
     const auth = await authorize("feedsView");
@@ -51,14 +78,24 @@ export async function GET() {
     }
 
     const feeds = await prisma.feed.findMany({
-      orderBy: {
-        date: "desc",
-      },
+      include: auditUserInclude,
+
+      orderBy: [
+        {
+          date: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
     });
 
     return NextResponse.json(feeds);
   } catch (error) {
-    console.error("FEEDS GET ERROR:", error);
+    console.error(
+      "FEEDS GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -70,6 +107,11 @@ export async function GET() {
   }
 }
 
+/* =========================================================
+   POST
+   KAYDI XOG QUUDIN CUSUB
+========================================================= */
+
 export async function POST(request: Request) {
   try {
     const auth = await authorize("feedsAdd");
@@ -78,15 +120,43 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const feedType = String(body.feedType || "").trim();
-    const companyName = String(body.companyName || "").trim();
-    const suppliedBy = String(body.suppliedBy || "").trim();
+    const feedType = String(
+      body.feedType || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
+    const suppliedBy = String(
+      body.suppliedBy || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
-    if (!body.date || !feedType || !companyName || !suppliedBy) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !feedType ||
+      !companyName ||
+      !suppliedBy
+    ) {
       return NextResponse.json(
         {
           error:
@@ -95,6 +165,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       FEED TYPE VALIDATION
+    ===================================================== */
 
     if (!ALLOWED_FEED_TYPES.includes(feedType)) {
       return NextResponse.json(
@@ -105,6 +179,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -123,22 +201,56 @@ export async function POST(request: Request) {
 
     const total = quantity * price;
 
+    /* =====================================================
+       CREATE FEED RECORD
+    ===================================================== */
+
     const feed = await prisma.feed.create({
       data: {
-        date: new Date(`${body.date}T12:00:00`),
+        date: new Date(
+          `${body.date}T12:00:00`
+        ),
+
         feedType,
+
         companyName,
+
         suppliedBy,
+
         quantity,
+
         price,
+
         total,
+
         currency: "ETB",
+
+        /*
+         * AUDIT TRAIL
+         *
+         * createdById = account-ka xogta geliyay
+         * updatedById = account-ka ugu dambeeyay taabtay
+         *
+         * Labadaba waxaa laga qaadayaa
+         * user-ka login-ka ku jira.
+         */
+        ...createAuditData(auth.user),
       },
+
+      include: auditUserInclude,
     });
 
-    return NextResponse.json(feed, { status: 201 });
+    return NextResponse.json(
+      feed,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("FEEDS CREATE ERROR:", error);
+    console.error(
+      "FEEDS CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -150,6 +262,11 @@ export async function POST(request: Request) {
   }
 }
 
+/* =========================================================
+   PUT
+   BEDEL XOGTA QUUDINTA
+========================================================= */
+
 export async function PUT(request: Request) {
   try {
     const auth = await authorize("feedsEdit");
@@ -158,25 +275,61 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const feedType = String(body.feedType || "").trim();
-    const companyName = String(body.companyName || "").trim();
-    const suppliedBy = String(body.suppliedBy || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const feedType = String(
+      body.feedType || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
+    const suppliedBy = String(
+      body.suppliedBy || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       ID VALIDATION
+    ===================================================== */
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
     }
 
-    if (!body.date || !feedType || !companyName || !suppliedBy) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !feedType ||
+      !companyName ||
+      !suppliedBy
+    ) {
       return NextResponse.json(
         {
           error:
@@ -185,6 +338,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       FEED TYPE VALIDATION
+    ===================================================== */
 
     if (!ALLOWED_FEED_TYPES.includes(feedType)) {
       return NextResponse.json(
@@ -195,6 +352,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -213,24 +374,50 @@ export async function PUT(request: Request) {
 
     const total = quantity * price;
 
+    /* =====================================================
+       UPDATE FEED RECORD
+    ===================================================== */
+
     const feed = await prisma.feed.update({
       where: {
         id,
       },
+
       data: {
-        date: new Date(`${body.date}T12:00:00`),
+        date: new Date(
+          `${body.date}T12:00:00`
+        ),
+
         feedType,
+
         companyName,
+
         suppliedBy,
+
         quantity,
+
         price,
+
         total,
+
+        /*
+         * createdById lama beddelayo.
+         *
+         * updatedById wuxuu noqonayaa
+         * account-ka hadda wax ka beddelay.
+         */
+        ...updateAuditData(auth.user),
       },
+
+      include: auditUserInclude,
     });
 
     return NextResponse.json(feed);
   } catch (error) {
-    console.error("FEEDS UPDATE ERROR:", error);
+    console.error(
+      "FEEDS UPDATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -242,6 +429,11 @@ export async function PUT(request: Request) {
   }
 }
 
+/* =========================================================
+   DELETE
+   TIRTIR XOGTA QUUDINTA
+========================================================= */
+
 export async function DELETE(request: Request) {
   try {
     const auth = await authorize("feedsDelete");
@@ -250,13 +442,17 @@ export async function DELETE(request: Request) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(
+      request.url
+    );
+
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
@@ -272,7 +468,10 @@ export async function DELETE(request: Request) {
       success: true,
     });
   } catch (error) {
-    console.error("FEEDS DELETE ERROR:", error);
+    console.error(
+      "FEEDS DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

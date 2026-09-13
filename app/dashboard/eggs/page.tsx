@@ -4,8 +4,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useRef, useState } from "react";
+
+type AuditUser = {
+  id: string;
+  name: string;
+  role: string;
+};
 
 type PurchasedEgg = {
   id: string;
@@ -16,6 +22,10 @@ type PurchasedEgg = {
   price: number;
   total: number;
   currency: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AuditUser | null;
+  updatedBy: AuditUser | null;
 };
 
 type EggSale = {
@@ -27,6 +37,10 @@ type EggSale = {
   price: number;
   total: number;
   currency: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AuditUser | null;
+  updatedBy: AuditUser | null;
 };
 
 type PurchaseForm = {
@@ -59,6 +73,16 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  }).format(new Date(date));
+}
+
+function formatDateTime(date: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(date));
 }
 
@@ -809,7 +833,7 @@ export default function EggsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left">
+              <table className="w-full min-w-[1250px] text-left">
                 <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-5 py-4">Taariikhda / Date</th>
@@ -818,6 +842,8 @@ export default function EggsPage() {
                     <th className="px-5 py-4">Tirada / Amount</th>
                     <th className="px-5 py-4">Qiimaha / Price</th>
                     <th className="px-5 py-4">Wadarta / Total</th>
+                    <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
+                    <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
                     {(canEdit || canDelete) && (
                       <th className="px-5 py-4 text-right">Maamul / Actions</th>
                     )}
@@ -828,7 +854,7 @@ export default function EggsPage() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={canEdit || canDelete ? 7 : 6}
+                        colSpan={canEdit || canDelete ? 9 : 8}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Xogta waa la soo qaadayaa... / Loading...
@@ -837,7 +863,7 @@ export default function EggsPage() {
                   ) : purchases.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={canEdit || canDelete ? 7 : 6}
+                        colSpan={canEdit || canDelete ? 9 : 8}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Weli wax ukun ah lama diiwaangelin. / No purchased eggs
@@ -869,6 +895,27 @@ export default function EggsPage() {
 
                         <td className="whitespace-nowrap px-5 py-4 text-sm font-extrabold text-[#075b35]">
                           {formatMoney(purchase.total)} ETB
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-sm">
+                          {purchase.createdBy ? (
+                            <div>
+                              <p className="font-bold text-slate-800">
+                                {purchase.createdBy.name}
+                              </p>
+                              <p className="mt-0.5 text-xs text-slate-400">
+                                {purchase.createdBy.role}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="font-semibold text-slate-400">
+                              Xog hore
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                          {formatDateTime(purchase.createdAt)}
                         </td>
 
                         {(canEdit || canDelete) && (
@@ -934,7 +981,7 @@ export default function EggsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px] text-left">
+              <table className="w-full min-w-[1350px] text-left">
                 <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-5 py-4">Taariikhda / Date</th>
@@ -947,6 +994,8 @@ export default function EggsPage() {
                     <th className="px-5 py-4">Tirada / Amount</th>
                     <th className="px-5 py-4">Qiimaha / Price</th>
                     <th className="px-5 py-4">Wadarta / Total</th>
+                    <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
+                    <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
                     {(canEdit || canDelete) && (
                       <th className="px-5 py-4 text-right">Maamul / Actions</th>
                     )}
@@ -957,7 +1006,7 @@ export default function EggsPage() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={canEdit || canDelete ? 7 : 6}
+                        colSpan={canEdit || canDelete ? 9 : 8}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Xogta waa la soo qaadayaa... / Loading...
@@ -966,7 +1015,7 @@ export default function EggsPage() {
                   ) : sales.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={canEdit || canDelete ? 7 : 6}
+                        colSpan={canEdit || canDelete ? 9 : 8}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Weli wax iib ukun ah lama diiwaangelin. / No egg sales
@@ -998,6 +1047,27 @@ export default function EggsPage() {
 
                         <td className="whitespace-nowrap px-5 py-4 text-sm font-extrabold text-[#075b35]">
                           {formatMoney(sale.total)} ETB
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-sm">
+                          {sale.createdBy ? (
+                            <div>
+                              <p className="font-bold text-slate-800">
+                                {sale.createdBy.name}
+                              </p>
+                              <p className="mt-0.5 text-xs text-slate-400">
+                                {sale.createdBy.role}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="font-semibold text-slate-400">
+                              Xog hore
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                          {formatDateTime(sale.createdAt)}
                         </td>
 
                         {(canEdit || canDelete) && (

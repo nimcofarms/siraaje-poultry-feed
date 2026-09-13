@@ -69,6 +69,12 @@ type CurrentUser = {
   permissions: Permissions | null;
 };
 
+type AuditUser = {
+  id: string;
+  name: string;
+  role: string;
+};
+
 type AccountEntry = {
   id: string;
   date: string;
@@ -83,6 +89,8 @@ type AccountEntry = {
   unitPrice: number | null;
   total: number;
   currency: string;
+  createdAt: string;
+  createdBy: AuditUser | null;
 };
 
 type CurrencySummary = {
@@ -217,6 +225,22 @@ function formatDate(value: string) {
     day: "2-digit",
     month: "short",
     year: "numeric",
+  }).format(date);
+}
+
+function formatDateTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
 }
 
@@ -1095,7 +1119,7 @@ export default function MonthlyAccountsPage() {
                   </div>
 
                   <div className="mt-6 overflow-x-auto">
-                    <table className="w-full min-w-[1150px] text-left">
+                    <table className="w-full min-w-[1450px] text-left">
                       <thead>
                         <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
                           <th className="px-3 py-3">
@@ -1136,6 +1160,14 @@ export default function MonthlyAccountsPage() {
 
                           <th className="px-3 py-3 text-right">
                             Wadarta
+                          </th>
+
+                          <th className="px-3 py-3">
+                            Waxaa Geliyay
+                          </th>
+
+                          <th className="px-3 py-3">
+                            Waqtiga la Geliyay
                           </th>
                         </tr>
                       </thead>
@@ -1211,6 +1243,28 @@ export default function MonthlyAccountsPage() {
                                 entry.total,
                                 entry.currency
                               )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-3 py-4 text-sm">
+                              {entry.createdBy ? (
+                                <div>
+                                  <p className="font-extrabold text-[#17452f]">
+                                    {entry.createdBy.name}
+                                  </p>
+
+                                  <p className="mt-0.5 text-xs text-slate-400">
+                                    {entry.createdBy.role}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-slate-400">
+                                  Xog hore
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
+                              {formatDateTime(entry.createdAt)}
                             </td>
                           </tr>
                         ))}

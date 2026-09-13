@@ -1,10 +1,23 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   CHICKEN STAGES LA OGGOLO YAHAY
+========================================================= */
 
 const ALLOWED_STAGES = [
   "Day 1",
@@ -16,6 +29,10 @@ const ALLOWED_STAGES = [
   "Week 16-18",
 ];
 
+/* =========================================================
+   AUTHORIZE
+========================================================= */
+
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
 
@@ -24,7 +41,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -50,23 +68,43 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
+/* =========================================================
+   GET
+   SOO QAADO DHAMMAAN TALLAALLADA
+
+   Permission: poultryHealthView
+========================================================= */
+
 export async function GET() {
   try {
-    const auth = await authorize("poultryHealthView");
+    const auth = await authorize(
+      "poultryHealthView"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const vaccinations = await prisma.chickenVaccination.findMany({
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const vaccinations =
+      await prisma.chickenVaccination.findMany({
+        include: auditUserInclude,
+
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
 
     return NextResponse.json(vaccinations);
   } catch (error) {
-    console.error("CHICKEN VACCINATION GET ERROR:", error);
+    console.error(
+      "CHICKEN VACCINATION GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -78,23 +116,66 @@ export async function GET() {
   }
 }
 
+/* =========================================================
+   POST
+   KAYDI TALLAAL CUSUB
+
+   Permission: poultryHealthAdd
+========================================================= */
+
 export async function POST(request: Request) {
   try {
-    const auth = await authorize("poultryHealthAdd");
+    const auth = await authorize(
+      "poultryHealthAdd"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const stage = String(body.stage || "").trim();
-    const vaccineName = String(body.vaccineName || "").trim();
-    const disease = String(body.disease || "").trim();
-    const application = String(body.application || "").trim();
-    const givenBy = String(body.givenBy || "").trim();
-    const notes = String(body.notes || "").trim();
-    const numberOfChickens = Number(body.numberOfChickens);
+    const stage = String(
+      body.stage || ""
+    ).trim();
+
+    const vaccineName = String(
+      body.vaccineName || ""
+    ).trim();
+
+    const disease = String(
+      body.disease || ""
+    ).trim();
+
+    const application = String(
+      body.application || ""
+    ).trim();
+
+    const givenBy = String(
+      body.givenBy || ""
+    ).trim();
+
+    const notes = String(
+      body.notes || ""
+    ).trim();
+
+    const numberOfChickens = Number(
+      body.numberOfChickens
+    );
+
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
 
     if (
       !body.date ||
@@ -113,6 +194,10 @@ export async function POST(request: Request) {
       );
     }
 
+    /* =====================================================
+       STAGE VALIDATION
+    ===================================================== */
+
     if (!ALLOWED_STAGES.includes(stage)) {
       return NextResponse.json(
         {
@@ -122,6 +207,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER OF CHICKENS VALIDATION
+    ===================================================== */
 
     if (
       !Number.isInteger(numberOfChickens) ||
@@ -136,22 +225,64 @@ export async function POST(request: Request) {
       );
     }
 
-    const vaccination = await prisma.chickenVaccination.create({
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        stage,
-        vaccineName,
-        disease,
-        application,
-        givenBy,
-        numberOfChickens,
-        notes: notes || null,
-      },
-    });
+    /* =====================================================
+       CREATE VACCINATION
+    ===================================================== */
 
-    return NextResponse.json(vaccination, { status: 201 });
+    const vaccination =
+      await prisma.chickenVaccination.create({
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          stage,
+
+          vaccineName,
+
+          disease,
+
+          application,
+
+          givenBy,
+
+          numberOfChickens,
+
+          notes: notes || null,
+
+          /*
+           * AUDIT TRAIL
+           *
+           * createdById:
+           * account-ka website-ka ku login ahaa
+           * markii xogtan la geliyay.
+           *
+           * updatedById:
+           * marka la abuurayo wuxuu noqonayaa
+           * isla account-kaas.
+           *
+           * Tani way ka duwan tahay "givenBy".
+           *
+           * givenBy = qofka tallaalka bixiyay.
+           * createdBy = qofka website-ka xogta geliyay.
+           */
+          ...createAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
+
+    return NextResponse.json(
+      vaccination,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("CHICKEN VACCINATION CREATE ERROR:", error);
+    console.error(
+      "CHICKEN VACCINATION CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -163,33 +294,84 @@ export async function POST(request: Request) {
   }
 }
 
+/* =========================================================
+   PUT
+   BEDEL XOGTA TALLAALKA
+
+   Permission: poultryHealthEdit
+========================================================= */
+
 export async function PUT(request: Request) {
   try {
-    const auth = await authorize("poultryHealthEdit");
+    const auth = await authorize(
+      "poultryHealthEdit"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const stage = String(body.stage || "").trim();
-    const vaccineName = String(body.vaccineName || "").trim();
-    const disease = String(body.disease || "").trim();
-    const application = String(body.application || "").trim();
-    const givenBy = String(body.givenBy || "").trim();
-    const notes = String(body.notes || "").trim();
-    const numberOfChickens = Number(body.numberOfChickens);
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const stage = String(
+      body.stage || ""
+    ).trim();
+
+    const vaccineName = String(
+      body.vaccineName || ""
+    ).trim();
+
+    const disease = String(
+      body.disease || ""
+    ).trim();
+
+    const application = String(
+      body.application || ""
+    ).trim();
+
+    const givenBy = String(
+      body.givenBy || ""
+    ).trim();
+
+    const notes = String(
+      body.notes || ""
+    ).trim();
+
+    const numberOfChickens = Number(
+      body.numberOfChickens
+    );
+
+    /* =====================================================
+       ID VALIDATION
+    ===================================================== */
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
 
     if (
       !body.date ||
@@ -208,6 +390,10 @@ export async function PUT(request: Request) {
       );
     }
 
+    /* =====================================================
+       STAGE VALIDATION
+    ===================================================== */
+
     if (!ALLOWED_STAGES.includes(stage)) {
       return NextResponse.json(
         {
@@ -217,6 +403,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER OF CHICKENS VALIDATION
+    ===================================================== */
 
     if (
       !Number.isInteger(numberOfChickens) ||
@@ -231,25 +421,53 @@ export async function PUT(request: Request) {
       );
     }
 
-    const vaccination = await prisma.chickenVaccination.update({
-      where: {
-        id,
-      },
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        stage,
-        vaccineName,
-        disease,
-        application,
-        givenBy,
-        numberOfChickens,
-        notes: notes || null,
-      },
-    });
+    /* =====================================================
+       UPDATE VACCINATION
+    ===================================================== */
+
+    const vaccination =
+      await prisma.chickenVaccination.update({
+        where: {
+          id,
+        },
+
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          stage,
+
+          vaccineName,
+
+          disease,
+
+          application,
+
+          givenBy,
+
+          numberOfChickens,
+
+          notes: notes || null,
+
+          /*
+           * createdById lama beddelayo.
+           *
+           * updatedById = account-ka website-ka
+           * hadda xogtan wax ka beddelay.
+           */
+          ...updateAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
 
     return NextResponse.json(vaccination);
   } catch (error) {
-    console.error("CHICKEN VACCINATION UPDATE ERROR:", error);
+    console.error(
+      "CHICKEN VACCINATION UPDATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -261,21 +479,34 @@ export async function PUT(request: Request) {
   }
 }
 
+/* =========================================================
+   DELETE
+   TIRTIR TALLAALKA
+
+   Permission: poultryHealthDelete
+========================================================= */
+
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize("poultryHealthDelete");
+    const auth = await authorize(
+      "poultryHealthDelete"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(
+      request.url
+    );
+
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
@@ -291,7 +522,10 @@ export async function DELETE(request: Request) {
       success: true,
     });
   } catch (error) {
-    console.error("CHICKEN VACCINATION DELETE ERROR:", error);
+    console.error(
+      "CHICKEN VACCINATION DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

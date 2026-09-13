@@ -1,21 +1,34 @@
 import {
-    getCurrentUser,
-    hasPermission,
-    type PermissionKey,
+  getCurrentUser,
+  hasPermission,
+  type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
 
   if (!user) {
     return {
+      user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -24,6 +37,7 @@ async function authorize(permission: PermissionKey) {
 
   if (!hasPermission(user, permission)) {
     return {
+      user,
       response: NextResponse.json(
         {
           error:
@@ -35,14 +49,17 @@ async function authorize(permission: PermissionKey) {
   }
 
   return {
+    user,
     response: null,
   };
 }
 
-// ======================================================
-// GET - View live chicken purchases
-// Permission: chickenView
-// ======================================================
+/* =========================================================
+   GET
+   VIEW LIVE CHICKEN PURCHASES
+
+   Permission: chickenView
+========================================================= */
 
 export async function GET() {
   try {
@@ -52,15 +69,35 @@ export async function GET() {
       return auth.response;
     }
 
-    const purchases = await prisma.liveChickenPurchase.findMany({
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const purchases =
+      await prisma.liveChickenPurchase.findMany({
+        /*
+         * Waxaa response-ka lagu darayaa:
+         *
+         * createdBy
+         * updatedBy
+         *
+         * createdAt iyo updatedAt-na model-ka
+         * ayay hore ugu jiraan.
+         */
+        include: auditUserInclude,
+
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
 
     return NextResponse.json(purchases);
   } catch (error) {
-    console.error("GET LIVE CHICKEN PURCHASES ERROR:", error);
+    console.error(
+      "GET LIVE CHICKEN PURCHASES ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -72,10 +109,12 @@ export async function GET() {
   }
 }
 
-// ======================================================
-// POST - Add live chicken purchase
-// Permission: chickenAdd
-// ======================================================
+/* =========================================================
+   POST
+   ADD LIVE CHICKEN PURCHASE
+
+   Permission: chickenAdd
+========================================================= */
 
 export async function POST(request: Request) {
   try {
@@ -85,16 +124,41 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const date = String(body.date || "").trim();
-    const chickenType = String(body.chickenType || "").trim();
-    const location = String(body.location || "").trim();
-    const ageUnit = String(body.ageUnit || "").trim();
+    const date = String(
+      body.date || ""
+    ).trim();
+
+    const chickenType = String(
+      body.chickenType || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const ageUnit = String(
+      body.ageUnit || ""
+    ).trim();
 
     const ageNumber = Number(body.ageNumber);
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       BASIC VALIDATION
+    ===================================================== */
 
     if (
       !date ||
@@ -117,11 +181,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const allowedAgeUnits = ["DAY", "WEEK", "MONTH"];
+    /* =====================================================
+       AGE UNIT VALIDATION
+    ===================================================== */
 
-    const normalizedAgeUnit = ageUnit.toUpperCase();
+    const allowedAgeUnits = [
+      "DAY",
+      "WEEK",
+      "MONTH",
+    ];
 
-    if (!allowedAgeUnits.includes(normalizedAgeUnit)) {
+    const normalizedAgeUnit =
+      ageUnit.toUpperCase();
+
+    if (
+      !allowedAgeUnits.includes(
+        normalizedAgeUnit
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -131,12 +208,17 @@ export async function POST(request: Request) {
       );
     }
 
+    /* =====================================================
+       DATE VALIDATION
+    ===================================================== */
+
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error: "Taariikhda sax ma aha. / Invalid date.",
+          error:
+            "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
@@ -144,23 +226,62 @@ export async function POST(request: Request) {
 
     const total = quantity * price;
 
-    const purchase = await prisma.liveChickenPurchase.create({
-      data: {
-        date: parsedDate,
-        chickenType,
-        location,
-        ageNumber,
-        ageUnit: normalizedAgeUnit,
-        quantity,
-        price,
-        total,
-        currency: "ETB",
-      },
-    });
+    /* =====================================================
+       CREATE LIVE CHICKEN PURCHASE
+    ===================================================== */
 
-    return NextResponse.json(purchase, { status: 201 });
+    const purchase =
+      await prisma.liveChickenPurchase.create({
+        data: {
+          date: parsedDate,
+
+          chickenType,
+
+          location,
+
+          ageNumber,
+
+          ageUnit: normalizedAgeUnit,
+
+          quantity,
+
+          price,
+
+          total,
+
+          currency: "ETB",
+
+          /*
+           * AUDIT TRAIL
+           *
+           * createdById:
+           * account-ka digaagga soo iibsaday
+           * xogtiisa geliyay.
+           *
+           * updatedById:
+           * marka record-ka la sameeyo wuxuu
+           * noqonayaa isla user-kaas.
+           *
+           * ID-yadan browser-ka lagama qaadanayo.
+           * Session-ka server-ka ayaa laga qaadayaa.
+           */
+          ...createAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
+
+    return NextResponse.json(
+      purchase,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("POST LIVE CHICKEN PURCHASE ERROR:", error);
+    console.error(
+      "POST LIVE CHICKEN PURCHASE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -172,10 +293,12 @@ export async function POST(request: Request) {
   }
 }
 
-// ======================================================
-// PUT - Edit live chicken purchase
-// Permission: chickenEdit
-// ======================================================
+/* =========================================================
+   PUT
+   EDIT LIVE CHICKEN PURCHASE
+
+   Permission: chickenEdit
+========================================================= */
 
 export async function PUT(request: Request) {
   try {
@@ -185,17 +308,45 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const date = String(body.date || "").trim();
-    const chickenType = String(body.chickenType || "").trim();
-    const location = String(body.location || "").trim();
-    const ageUnit = String(body.ageUnit || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const date = String(
+      body.date || ""
+    ).trim();
+
+    const chickenType = String(
+      body.chickenType || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const ageUnit = String(
+      body.ageUnit || ""
+    ).trim();
 
     const ageNumber = Number(body.ageNumber);
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       BASIC VALIDATION
+    ===================================================== */
 
     if (
       !id ||
@@ -219,11 +370,24 @@ export async function PUT(request: Request) {
       );
     }
 
-    const allowedAgeUnits = ["DAY", "WEEK", "MONTH"];
+    /* =====================================================
+       AGE UNIT VALIDATION
+    ===================================================== */
 
-    const normalizedAgeUnit = ageUnit.toUpperCase();
+    const allowedAgeUnits = [
+      "DAY",
+      "WEEK",
+      "MONTH",
+    ];
 
-    if (!allowedAgeUnits.includes(normalizedAgeUnit)) {
+    const normalizedAgeUnit =
+      ageUnit.toUpperCase();
+
+    if (
+      !allowedAgeUnits.includes(
+        normalizedAgeUnit
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -233,16 +397,25 @@ export async function PUT(request: Request) {
       );
     }
 
+    /* =====================================================
+       DATE VALIDATION
+    ===================================================== */
+
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error: "Taariikhda sax ma aha. / Invalid date.",
+          error:
+            "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       CHECK RECORD EXISTS
+    ===================================================== */
 
     const existingPurchase =
       await prisma.liveChickenPurchase.findUnique({
@@ -263,26 +436,54 @@ export async function PUT(request: Request) {
 
     const total = quantity * price;
 
+    /* =====================================================
+       UPDATE LIVE CHICKEN PURCHASE
+    ===================================================== */
+
     const updatedPurchase =
       await prisma.liveChickenPurchase.update({
         where: {
           id,
         },
+
         data: {
           date: parsedDate,
+
           chickenType,
+
           location,
+
           ageNumber,
+
           ageUnit: normalizedAgeUnit,
+
           quantity,
+
           price,
+
           total,
+
+          /*
+           * createdById lama taabanayo.
+           *
+           * updatedById waxaa loo beddelayaa
+           * account-ka hadda record-ka wax ka
+           * beddelay.
+           */
+          ...updateAuditData(auth.user),
         },
+
+        include: auditUserInclude,
       });
 
-    return NextResponse.json(updatedPurchase);
+    return NextResponse.json(
+      updatedPurchase
+    );
   } catch (error) {
-    console.error("PUT LIVE CHICKEN PURCHASE ERROR:", error);
+    console.error(
+      "PUT LIVE CHICKEN PURCHASE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -294,14 +495,18 @@ export async function PUT(request: Request) {
   }
 }
 
-// ======================================================
-// DELETE - Delete live chicken purchase
-// Permission: chickenDelete
-// ======================================================
+/* =========================================================
+   DELETE
+   DELETE LIVE CHICKEN PURCHASE
+
+   Permission: chickenDelete
+========================================================= */
 
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize("chickenDelete");
+    const auth = await authorize(
+      "chickenDelete"
+    );
 
     if (auth.response) {
       return auth.response;
@@ -309,16 +514,23 @@ export async function DELETE(request: Request) {
 
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga waa loo baahan yahay. / ID is required.",
+          error:
+            "ID-ga waa loo baahan yahay. / ID is required.",
         },
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       CHECK RECORD EXISTS
+    ===================================================== */
 
     const existingPurchase =
       await prisma.liveChickenPurchase.findUnique({
@@ -337,6 +549,10 @@ export async function DELETE(request: Request) {
       );
     }
 
+    /* =====================================================
+       DELETE RECORD
+    ===================================================== */
+
     await prisma.liveChickenPurchase.delete({
       where: {
         id,
@@ -345,11 +561,15 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({
       success: true,
+
       message:
         "Xogta waa la tirtiray. / Live chicken purchase deleted successfully.",
     });
   } catch (error) {
-    console.error("DELETE LIVE CHICKEN PURCHASE ERROR:", error);
+    console.error(
+      "DELETE LIVE CHICKEN PURCHASE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

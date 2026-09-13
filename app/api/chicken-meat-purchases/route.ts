@@ -1,21 +1,34 @@
 import {
-    getCurrentUser,
-    hasPermission,
-    type PermissionKey,
+  getCurrentUser,
+  hasPermission,
+  type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
 
   if (!user) {
     return {
+      user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -24,6 +37,7 @@ async function authorize(permission: PermissionKey) {
 
   if (!hasPermission(user, permission)) {
     return {
+      user,
       response: NextResponse.json(
         {
           error:
@@ -35,14 +49,17 @@ async function authorize(permission: PermissionKey) {
   }
 
   return {
+    user,
     response: null,
   };
 }
 
-// ======================================================
-// GET - View chicken meat purchases
-// Permission: chickenView
-// ======================================================
+/* =========================================================
+   GET
+   VIEW CHICKEN MEAT PURCHASES
+
+   Permission: chickenView
+========================================================= */
 
 export async function GET() {
   try {
@@ -52,15 +69,26 @@ export async function GET() {
       return auth.response;
     }
 
-    const purchases = await prisma.chickenMeatPurchase.findMany({
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const purchases =
+      await prisma.chickenMeatPurchase.findMany({
+        include: auditUserInclude,
+
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
 
     return NextResponse.json(purchases);
   } catch (error) {
-    console.error("GET CHICKEN MEAT PURCHASES ERROR:", error);
+    console.error(
+      "GET CHICKEN MEAT PURCHASES ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -72,10 +100,12 @@ export async function GET() {
   }
 }
 
-// ======================================================
-// POST - Add chicken meat purchase
-// Permission: chickenAdd
-// ======================================================
+/* =========================================================
+   POST
+   ADD CHICKEN MEAT PURCHASE
+
+   Permission: chickenAdd
+========================================================= */
 
 export async function POST(request: Request) {
   try {
@@ -85,14 +115,36 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const date = String(body.date || "").trim();
-    const location = String(body.location || "").trim();
-    const companyName = String(body.companyName || "").trim();
+    const date = String(
+      body.date || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       BASIC VALIDATION
+    ===================================================== */
 
     if (
       !date ||
@@ -112,35 +164,76 @@ export async function POST(request: Request) {
       );
     }
 
+    /* =====================================================
+       DATE VALIDATION
+    ===================================================== */
+
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error: "Taariikhda sax ma aha. / Invalid date.",
+          error:
+            "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
     }
 
-    // Total is calculated by the server.
+    /*
+     * Total-ka server-ka ayaa xisaabinaya.
+     */
     const total = quantity * price;
 
-    const purchase = await prisma.chickenMeatPurchase.create({
-      data: {
-        date: parsedDate,
-        location,
-        companyName,
-        quantity,
-        price,
-        total,
-        currency: "ETB",
-      },
-    });
+    /* =====================================================
+       CREATE CHICKEN MEAT PURCHASE
+    ===================================================== */
 
-    return NextResponse.json(purchase, { status: 201 });
+    const purchase =
+      await prisma.chickenMeatPurchase.create({
+        data: {
+          date: parsedDate,
+
+          location,
+
+          companyName,
+
+          quantity,
+
+          price,
+
+          total,
+
+          currency: "ETB",
+
+          /*
+           * AUDIT TRAIL
+           *
+           * createdById = account-ka xogta geliyay.
+           *
+           * updatedById = isla account-kaas marka
+           * record-ka markii ugu horreysay la sameeyo.
+           *
+           * User ID-ga waxaa laga qaadayaa session-ka.
+           * Browser-ka kama imaanayo.
+           */
+          ...createAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
+
+    return NextResponse.json(
+      purchase,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("POST CHICKEN MEAT PURCHASE ERROR:", error);
+    console.error(
+      "POST CHICKEN MEAT PURCHASE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -152,10 +245,12 @@ export async function POST(request: Request) {
   }
 }
 
-// ======================================================
-// PUT - Edit chicken meat purchase
-// Permission: chickenEdit
-// ======================================================
+/* =========================================================
+   PUT
+   EDIT CHICKEN MEAT PURCHASE
+
+   Permission: chickenEdit
+========================================================= */
 
 export async function PUT(request: Request) {
   try {
@@ -165,15 +260,40 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const date = String(body.date || "").trim();
-    const location = String(body.location || "").trim();
-    const companyName = String(body.companyName || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const date = String(
+      body.date || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       BASIC VALIDATION
+    ===================================================== */
 
     if (
       !id ||
@@ -194,16 +314,25 @@ export async function PUT(request: Request) {
       );
     }
 
+    /* =====================================================
+       DATE VALIDATION
+    ===================================================== */
+
     const parsedDate = new Date(date);
 
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error: "Taariikhda sax ma aha. / Invalid date.",
+          error:
+            "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       CHECK RECORD EXISTS
+    ===================================================== */
 
     const existingPurchase =
       await prisma.chickenMeatPurchase.findUnique({
@@ -222,27 +351,55 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Recalculate total when the record is edited.
+    /*
+     * Total-ka dib ayaa loo xisaabinayaa
+     * marka record-ka wax laga beddelo.
+     */
     const total = quantity * price;
+
+    /* =====================================================
+       UPDATE CHICKEN MEAT PURCHASE
+    ===================================================== */
 
     const updatedPurchase =
       await prisma.chickenMeatPurchase.update({
         where: {
           id,
         },
+
         data: {
           date: parsedDate,
+
           location,
+
           companyName,
+
           quantity,
+
           price,
+
           total,
+
+          /*
+           * createdById lama beddelayo.
+           *
+           * updatedById wuxuu noqonayaa
+           * account-ka hadda wax ka beddelay.
+           */
+          ...updateAuditData(auth.user),
         },
+
+        include: auditUserInclude,
       });
 
-    return NextResponse.json(updatedPurchase);
+    return NextResponse.json(
+      updatedPurchase
+    );
   } catch (error) {
-    console.error("PUT CHICKEN MEAT PURCHASE ERROR:", error);
+    console.error(
+      "PUT CHICKEN MEAT PURCHASE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -254,30 +411,42 @@ export async function PUT(request: Request) {
   }
 }
 
-// ======================================================
-// DELETE - Delete chicken meat purchase
-// Permission: chickenDelete
-// ======================================================
+/* =========================================================
+   DELETE
+   DELETE CHICKEN MEAT PURCHASE
+
+   Permission: chickenDelete
+========================================================= */
 
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize("chickenDelete");
+    const auth = await authorize(
+      "chickenDelete"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
     const body = await request.json();
-    const id = String(body.id || "").trim();
+
+    const id = String(
+      body.id || ""
+    ).trim();
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga waa loo baahan yahay. / ID is required.",
+          error:
+            "ID-ga waa loo baahan yahay. / ID is required.",
         },
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       CHECK RECORD EXISTS
+    ===================================================== */
 
     const existingPurchase =
       await prisma.chickenMeatPurchase.findUnique({
@@ -296,6 +465,10 @@ export async function DELETE(request: Request) {
       );
     }
 
+    /* =====================================================
+       DELETE
+    ===================================================== */
+
     await prisma.chickenMeatPurchase.delete({
       where: {
         id,
@@ -304,11 +477,15 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({
       success: true,
+
       message:
         "Xogta waa la tirtiray. / Chicken meat purchase deleted successfully.",
     });
   } catch (error) {
-    console.error("DELETE CHICKEN MEAT PURCHASE ERROR:", error);
+    console.error(
+      "DELETE CHICKEN MEAT PURCHASE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

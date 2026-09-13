@@ -2,9 +2,15 @@
 
 
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+
+type AuditUser = {
+  id: string;
+  name: string;
+  role: string;
+};
 
 type ConstructionExpense = {
   id: string;
@@ -16,6 +22,10 @@ type ConstructionExpense = {
   price: number;
   total: number;
   currency: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AuditUser | null;
+  updatedBy: AuditUser | null;
 };
 
 type ProductExpense = {
@@ -29,6 +39,10 @@ type ProductExpense = {
   transport: number;
   total: number;
   currency: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AuditUser | null;
+  updatedBy: AuditUser | null;
 };
 
 type Permissions = {
@@ -484,6 +498,16 @@ export default function ExpensesPage() {
     return new Date(date).toLocaleDateString("en-GB");
   }
 
+  function formatDateTime(date: string) {
+    return new Date(date).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   if (permissionLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f6f7f2]">
@@ -683,7 +707,7 @@ export default function ExpensesPage() {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1350px] text-left">
+                <table className="w-full min-w-[1700px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
                       <th className="px-6 py-4">Taariikhda / Date</th>
@@ -698,6 +722,12 @@ export default function ExpensesPage() {
                       </th>
                       <th className="px-6 py-4 text-right">
                         Wadarta / Total
+                      </th>
+                      <th className="px-6 py-4">
+                        Waxaa Geliyay / Entered By
+                      </th>
+                      <th className="px-6 py-4">
+                        Waqtiga la Geliyay / Entered At
                       </th>
                       {(canEdit || canDelete) && (
                         <th className="px-6 py-4 text-center">
@@ -739,6 +769,21 @@ export default function ExpensesPage() {
 
                         <td className="px-6 py-4 text-right font-extrabold text-[#075b35]">
                           {formatMoney(expense.total)}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-slate-800">
+                            {expense.createdBy?.name || "Xog hore"}
+                          </div>
+                          {expense.createdBy?.role && (
+                            <div className="mt-1 text-xs text-slate-500">
+                              {expense.createdBy.role}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                          {formatDateTime(expense.createdAt)}
                         </td>
 
                         {(canEdit || canDelete) && (
@@ -809,7 +854,7 @@ export default function ExpensesPage() {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1500px] text-left">
+                <table className="w-full min-w-[1850px] text-left">
                   <thead className="bg-[#f7f9f5] text-sm text-slate-600">
                     <tr>
                       <th className="px-6 py-4">Taariikhda / Date</th>
@@ -827,6 +872,12 @@ export default function ExpensesPage() {
                       </th>
                       <th className="px-6 py-4 text-right">
                         Wadarta / Total
+                      </th>
+                      <th className="px-6 py-4">
+                        Waxaa Geliyay / Entered By
+                      </th>
+                      <th className="px-6 py-4">
+                        Waqtiga la Geliyay / Entered At
                       </th>
                       {(canEdit || canDelete) && (
                         <th className="px-6 py-4 text-center">
@@ -872,6 +923,21 @@ export default function ExpensesPage() {
 
                         <td className="px-6 py-4 text-right font-extrabold text-[#075b35]">
                           {formatMoney(expense.total)}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-slate-800">
+                            {expense.createdBy?.name || "Xog hore"}
+                          </div>
+                          {expense.createdBy?.role && (
+                            <div className="mt-1 text-xs text-slate-500">
+                              {expense.createdBy.role}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
+                          {formatDateTime(expense.createdAt)}
                         </td>
 
                         {(canEdit || canDelete) && (

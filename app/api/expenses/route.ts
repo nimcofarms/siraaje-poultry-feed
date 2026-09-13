@@ -1,10 +1,22 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
@@ -14,7 +26,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -40,7 +53,11 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
-// SOO QAADO DHAMMAAN KHARASHAADKA
+/* =========================================================
+   GET
+   SOO QAADO DHAMMAAN KHARASHAADKA
+========================================================= */
+
 export async function GET() {
   try {
     const auth = await authorize("expensesView");
@@ -50,9 +67,16 @@ export async function GET() {
     }
 
     const expenses = await prisma.expense.findMany({
-      orderBy: {
-        date: "desc",
-      },
+      include: auditUserInclude,
+
+      orderBy: [
+        {
+          date: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
     });
 
     return NextResponse.json(expenses);
@@ -69,7 +93,11 @@ export async function GET() {
   }
 }
 
-// KAYDI KHARASH CUSUB
+/* =========================================================
+   POST
+   KAYDI KHARASH CUSUB
+========================================================= */
+
 export async function POST(request: Request) {
   try {
     const auth = await authorize("expensesAdd");
@@ -78,9 +106,30 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    if (!body.name || !body.category || !body.date || !body.amount) {
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
+
+    if (
+      !body.name ||
+      !body.category ||
+      !body.date ||
+      body.amount === "" ||
+      body.amount === null ||
+      body.amount === undefined
+    ) {
       return NextResponse.json(
         {
           error:
@@ -102,73 +151,192 @@ export async function POST(request: Request) {
       );
     }
 
+    const quantity =
+      body.quantity !== "" &&
+      body.quantity !== null &&
+      body.quantity !== undefined
+        ? Number(body.quantity)
+        : null;
+
+    const unitPrice =
+      body.unitPrice !== "" &&
+      body.unitPrice !== null &&
+      body.unitPrice !== undefined
+        ? Number(body.unitPrice)
+        : null;
+
+    const workers =
+      body.workers !== "" &&
+      body.workers !== null &&
+      body.workers !== undefined
+        ? Number(body.workers)
+        : null;
+
+    const workDays =
+      body.workDays !== "" &&
+      body.workDays !== null &&
+      body.workDays !== undefined
+        ? Number(body.workDays)
+        : null;
+
+    const laborCost =
+      body.laborCost !== "" &&
+      body.laborCost !== null &&
+      body.laborCost !== undefined
+        ? Number(body.laborCost)
+        : null;
+
+    /* =====================================================
+       OPTIONAL NUMBER VALIDATION
+    ===================================================== */
+
+    if (
+      quantity !== null &&
+      !Number.isFinite(quantity)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Tirada sax ma aha. / Quantity is invalid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      unitPrice !== null &&
+      !Number.isFinite(unitPrice)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Qiimaha halkii sax ma aha. / Unit price is invalid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      workers !== null &&
+      (!Number.isInteger(workers) || workers < 0)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Tirada shaqaalaha sax ma aha. / Number of workers is invalid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      workDays !== null &&
+      !Number.isFinite(workDays)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Maalmaha shaqada sax ma aha. / Work days are invalid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      laborCost !== null &&
+      !Number.isFinite(laborCost)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Kharashka shaqaalaha sax ma aha. / Labor cost is invalid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /* =====================================================
+       CREATE EXPENSE
+    ===================================================== */
+
     const expense = await prisma.expense.create({
       data: {
-        category: body.category,
-        name: body.name.trim(),
+        category: String(body.category).trim(),
 
-        description: body.description?.trim() || null,
+        name: String(body.name).trim(),
 
-        date: new Date(`${body.date}T12:00:00`),
+        description:
+          body.description?.trim() || null,
 
-        purchasePlace: body.purchasePlace?.trim() || null,
+        date: new Date(
+          `${body.date}T12:00:00`
+        ),
 
-        quantity:
-          body.quantity !== "" &&
-          body.quantity !== null &&
-          body.quantity !== undefined
-            ? Number(body.quantity)
-            : null,
+        purchasePlace:
+          body.purchasePlace?.trim() || null,
 
-        unit: body.unit?.trim() || null,
+        quantity,
 
-        unitPrice:
-          body.unitPrice !== "" &&
-          body.unitPrice !== null &&
-          body.unitPrice !== undefined
-            ? Number(body.unitPrice)
-            : null,
+        unit:
+          body.unit?.trim() || null,
 
-        workers:
-          body.workers !== "" &&
-          body.workers !== null &&
-          body.workers !== undefined
-            ? Number(body.workers)
-            : null,
+        unitPrice,
 
-        workDays:
-          body.workDays !== "" &&
-          body.workDays !== null &&
-          body.workDays !== undefined
-            ? Number(body.workDays)
-            : null,
+        workers,
 
-        laborCost:
-          body.laborCost !== "" &&
-          body.laborCost !== null &&
-          body.laborCost !== undefined
-            ? Number(body.laborCost)
-            : null,
+        workDays,
+
+        laborCost,
 
         amount,
 
-        currency: body.currency || "ETB",
+        currency:
+          String(body.currency || "ETB")
+            .trim()
+            .toUpperCase() || "ETB",
 
-        paymentMethod: body.paymentMethod?.trim() || null,
+        paymentMethod:
+          body.paymentMethod?.trim() || null,
 
-        supplier: body.supplier?.trim() || null,
+        supplier:
+          body.supplier?.trim() || null,
 
-        receiptNumber: body.receiptNumber?.trim() || null,
+        receiptNumber:
+          body.receiptNumber?.trim() || null,
 
-        notes: body.notes?.trim() || null,
+        notes:
+          body.notes?.trim() || null,
+
+        /*
+         * AUDIT TRAIL
+         *
+         * createdById iyo updatedById waxaa
+         * laga qaadayaa user-ka login-ka ku jira.
+         *
+         * Browser-ku ma dooran karo qofka
+         * xogta geliyay.
+         */
+        ...createAuditData(auth.user),
       },
+
+      /*
+       * Response-ka isla markiiba waxaa
+       * ku jira createdBy iyo updatedBy.
+       */
+      include: auditUserInclude,
     });
 
-    return NextResponse.json(expense, {
-      status: 201,
-    });
+    return NextResponse.json(
+      expense,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("EXPENSE CREATE ERROR:", error);
+    console.error(
+      "EXPENSE CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

@@ -1,10 +1,23 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   CUSTOMER TYPES LA OGGOLO YAHAY
+========================================================= */
 
 const ALLOWED_CUSTOMER_TYPES = [
   "Dukaan",
@@ -12,6 +25,10 @@ const ALLOWED_CUSTOMER_TYPES = [
   "Hotel",
   "Cafeteria",
 ];
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
@@ -21,7 +38,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -47,6 +65,11 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
+/* =========================================================
+   GET
+   SOO QAADO DHAMMAAN IIBKA UKUNTA
+========================================================= */
+
 export async function GET() {
   try {
     const auth = await authorize("eggsView");
@@ -56,14 +79,24 @@ export async function GET() {
     }
 
     const sales = await prisma.eggSale.findMany({
-      orderBy: {
-        date: "desc",
-      },
+      include: auditUserInclude,
+
+      orderBy: [
+        {
+          date: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
     });
 
     return NextResponse.json(sales);
   } catch (error) {
-    console.error("EGG SALES GET ERROR:", error);
+    console.error(
+      "EGG SALES GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -75,6 +108,11 @@ export async function GET() {
   }
 }
 
+/* =========================================================
+   POST
+   KAYDI IIBKA UKUNTA
+========================================================= */
+
 export async function POST(request: Request) {
   try {
     const auth = await authorize("eggsAdd");
@@ -83,14 +121,38 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const customerType = String(body.customerType || "").trim();
-    const companyName = String(body.companyName || "").trim();
+    const customerType = String(
+      body.customerType || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
-    if (!body.date || !customerType || !companyName) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !customerType ||
+      !companyName
+    ) {
       return NextResponse.json(
         {
           error:
@@ -100,7 +162,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+    /* =====================================================
+       CUSTOMER TYPE VALIDATION
+    ===================================================== */
+
+    if (
+      !ALLOWED_CUSTOMER_TYPES.includes(
+        customerType
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -109,6 +179,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -127,21 +201,53 @@ export async function POST(request: Request) {
 
     const total = quantity * price;
 
+    /* =====================================================
+       CREATE EGG SALE
+    ===================================================== */
+
     const sale = await prisma.eggSale.create({
       data: {
-        date: new Date(`${body.date}T12:00:00`),
+        date: new Date(
+          `${body.date}T12:00:00`
+        ),
+
         customerType,
+
         companyName,
+
         quantity,
+
         price,
+
         total,
+
         currency: "ETB",
+
+        /*
+         * AUDIT TRAIL
+         *
+         * createdById = account-ka iibka geliyay
+         * updatedById = account-ka ugu dambeeyay taabtay
+         *
+         * User-ka waxaa laga qaadayaa session-ka.
+         */
+        ...createAuditData(auth.user),
       },
+
+      include: auditUserInclude,
     });
 
-    return NextResponse.json(sale, { status: 201 });
+    return NextResponse.json(
+      sale,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("EGG SALES CREATE ERROR:", error);
+    console.error(
+      "EGG SALES CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -153,6 +259,11 @@ export async function POST(request: Request) {
   }
 }
 
+/* =========================================================
+   PUT
+   BEDEL IIBKA UKUNTA
+========================================================= */
+
 export async function PUT(request: Request) {
   try {
     const auth = await authorize("eggsEdit");
@@ -161,24 +272,56 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const customerType = String(body.customerType || "").trim();
-    const companyName = String(body.companyName || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const customerType = String(
+      body.customerType || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       ID VALIDATION
+    ===================================================== */
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
     }
 
-    if (!body.date || !customerType || !companyName) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !customerType ||
+      !companyName
+    ) {
       return NextResponse.json(
         {
           error:
@@ -188,7 +331,15 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+    /* =====================================================
+       CUSTOMER TYPE VALIDATION
+    ===================================================== */
+
+    if (
+      !ALLOWED_CUSTOMER_TYPES.includes(
+        customerType
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -197,6 +348,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -215,23 +370,48 @@ export async function PUT(request: Request) {
 
     const total = quantity * price;
 
+    /* =====================================================
+       UPDATE EGG SALE
+    ===================================================== */
+
     const sale = await prisma.eggSale.update({
       where: {
         id,
       },
+
       data: {
-        date: new Date(`${body.date}T12:00:00`),
+        date: new Date(
+          `${body.date}T12:00:00`
+        ),
+
         customerType,
+
         companyName,
+
         quantity,
+
         price,
+
         total,
+
+        /*
+         * createdById lama beddelayo.
+         *
+         * updatedById wuxuu noqonayaa
+         * account-ka hadda wax ka beddelay.
+         */
+        ...updateAuditData(auth.user),
       },
+
+      include: auditUserInclude,
     });
 
     return NextResponse.json(sale);
   } catch (error) {
-    console.error("EGG SALES UPDATE ERROR:", error);
+    console.error(
+      "EGG SALES UPDATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -243,6 +423,11 @@ export async function PUT(request: Request) {
   }
 }
 
+/* =========================================================
+   DELETE
+   TIRTIR IIBKA UKUNTA
+========================================================= */
+
 export async function DELETE(request: Request) {
   try {
     const auth = await authorize("eggsDelete");
@@ -251,13 +436,17 @@ export async function DELETE(request: Request) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(
+      request.url
+    );
+
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
@@ -273,7 +462,10 @@ export async function DELETE(request: Request) {
       success: true,
     });
   } catch (error) {
-    console.error("EGG SALES DELETE ERROR:", error);
+    console.error(
+      "EGG SALES DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

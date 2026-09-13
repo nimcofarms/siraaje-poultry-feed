@@ -16,6 +16,36 @@ model User {
   updatedAt DateTime @updatedAt
 
   permissions UserPermission?
+
+  // Audit trail - records created by this user
+  createdExpenses             Expense[]             @relation("ExpenseCreatedBy")
+  createdConstructionExpenses ConstructionExpense[] @relation("ConstructionExpenseCreatedBy")
+  createdProductExpenses      ProductExpense[]      @relation("ProductExpenseCreatedBy")
+  createdPurchasedEggs        PurchasedEgg[]        @relation("PurchasedEggCreatedBy")
+  createdEggSales             EggSale[]             @relation("EggSaleCreatedBy")
+  createdFeeds                Feed[]                @relation("FeedCreatedBy")
+  createdChickenVaccinations  ChickenVaccination[]  @relation("ChickenVaccinationCreatedBy")
+  createdChickenVitamins      ChickenVitamin[]      @relation("ChickenVitaminCreatedBy")
+  createdChickenCalciums      ChickenCalcium[]      @relation("ChickenCalciumCreatedBy")
+  createdLiveChickenPurchases LiveChickenPurchase[] @relation("LiveChickenPurchaseCreatedBy")
+  createdLiveChickenSales     LiveChickenSale[]     @relation("LiveChickenSaleCreatedBy")
+  createdChickenMeatPurchases ChickenMeatPurchase[] @relation("ChickenMeatPurchaseCreatedBy")
+  createdChickenMeatSales     ChickenMeatSale[]     @relation("ChickenMeatSaleCreatedBy")
+
+  // Audit trail - records last updated by this user
+  updatedExpenses             Expense[]             @relation("ExpenseUpdatedBy")
+  updatedConstructionExpenses ConstructionExpense[] @relation("ConstructionExpenseUpdatedBy")
+  updatedProductExpenses      ProductExpense[]      @relation("ProductExpenseUpdatedBy")
+  updatedPurchasedEggs        PurchasedEgg[]        @relation("PurchasedEggUpdatedBy")
+  updatedEggSales             EggSale[]             @relation("EggSaleUpdatedBy")
+  updatedFeeds                Feed[]                @relation("FeedUpdatedBy")
+  updatedChickenVaccinations  ChickenVaccination[]  @relation("ChickenVaccinationUpdatedBy")
+  updatedChickenVitamins      ChickenVitamin[]      @relation("ChickenVitaminUpdatedBy")
+  updatedChickenCalciums      ChickenCalcium[]      @relation("ChickenCalciumUpdatedBy")
+  updatedLiveChickenPurchases LiveChickenPurchase[] @relation("LiveChickenPurchaseUpdatedBy")
+  updatedLiveChickenSales     LiveChickenSale[]     @relation("LiveChickenSaleUpdatedBy")
+  updatedChickenMeatPurchases ChickenMeatPurchase[] @relation("ChickenMeatPurchaseUpdatedBy")
+  updatedChickenMeatSales     ChickenMeatSale[]     @relation("ChickenMeatSaleUpdatedBy")
 }
 
 model UserPermission {
@@ -89,22 +119,42 @@ model Expense {
   supplier      String?
   receiptNumber String?
   notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ExpenseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model ConstructionExpense {
-  id        String   @id @default(cuid())
-  date      DateTime
-  location  String?
-  name      String
-  type      String
-  quantity  Float
-  price     Float
-  total     Float
-  currency  String   @default("ETB")
+  id       String   @id @default(cuid())
+  date     DateTime
+  location String?
+  name     String
+  type     String
+  quantity Float
+  price    Float
+  total    Float
+  currency String   @default("ETB")
+
+  createdById String?
+  updatedById String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ConstructionExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ConstructionExpenseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model ProductExpense {
@@ -118,8 +168,18 @@ model ProductExpense {
   transport Float    @default(0)
   total     Float
   currency  String   @default("ETB")
+
+  createdById String?
+  updatedById String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ProductExpenseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ProductExpenseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model PurchasedEgg {
@@ -131,8 +191,18 @@ model PurchasedEgg {
   price       Float
   total       Float
   currency    String   @default("ETB")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("PurchasedEggCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("PurchasedEggUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model EggSale {
@@ -144,9 +214,18 @@ model EggSale {
   price        Float
   total        Float
   currency     String   @default("ETB")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("EggSaleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("EggSaleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
   @@map("InternalEgg")
 }
 
@@ -160,8 +239,18 @@ model Feed {
   price       Float
   total       Float
   currency    String   @default("ETB")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("FeedCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("FeedUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model ChickenVaccination {
@@ -174,8 +263,18 @@ model ChickenVaccination {
   givenBy          String
   numberOfChickens Int
   notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ChickenVaccinationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ChickenVaccinationUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model ChickenVitamin {
@@ -185,8 +284,18 @@ model ChickenVitamin {
   givenBy          String
   numberOfChickens Int
   notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ChickenVitaminCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ChickenVitaminUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model ChickenCalcium {
@@ -196,15 +305,24 @@ model ChickenCalcium {
   givenBy          String
   numberOfChickens Int
   notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ChickenCalciumCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ChickenCalciumUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 //
 // CHICKEN / DIGAAG
 //
 
-// Live Chicken - Purchases
 model LiveChickenPurchase {
   id          String   @id @default(cuid())
   date        DateTime
@@ -216,11 +334,20 @@ model LiveChickenPurchase {
   price       Float
   total       Float
   currency    String   @default("ETB")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("LiveChickenPurchaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("LiveChickenPurchaseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
-// Live Chicken - Sales
 model LiveChickenSale {
   id          String   @id @default(cuid())
   date        DateTime
@@ -232,11 +359,20 @@ model LiveChickenSale {
   price       Float
   total       Float
   currency    String   @default("ETB")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("LiveChickenSaleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("LiveChickenSaleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
-// Chicken Meat - Purchases
 model ChickenMeatPurchase {
   id          String   @id @default(cuid())
   date        DateTime
@@ -246,11 +382,20 @@ model ChickenMeatPurchase {
   price       Float
   total       Float
   currency    String   @default("ETB")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ChickenMeatPurchaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ChickenMeatPurchaseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
-// Chicken Meat - Sales
 model ChickenMeatSale {
   id           String   @id @default(cuid())
   date         DateTime
@@ -261,8 +406,18 @@ model ChickenMeatSale {
   price        Float
   total        Float
   currency     String   @default("ETB")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User? @relation("ChickenMeatSaleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ChickenMeatSaleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model CompanyDocument {

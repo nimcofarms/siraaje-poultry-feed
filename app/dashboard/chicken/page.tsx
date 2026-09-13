@@ -7,7 +7,20 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 type AgeUnit = "DAY" | "WEEK" | "MONTH";
 
-type LiveChickenRecord = {
+type AuditUser = {
+  id: string;
+  name: string;
+  role: string;
+};
+
+type AuditFields = {
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AuditUser | null;
+  updatedBy: AuditUser | null;
+};
+
+type LiveChickenRecord = AuditFields & {
   id: string;
   date: string;
   chickenType: string;
@@ -20,7 +33,7 @@ type LiveChickenRecord = {
   currency: string;
 };
 
-type MeatPurchase = {
+type MeatPurchase = AuditFields & {
   id: string;
   date: string;
   location: string;
@@ -31,7 +44,7 @@ type MeatPurchase = {
   currency: string;
 };
 
-type MeatSale = {
+type MeatSale = AuditFields & {
   id: string;
   date: string;
   location: string;
@@ -130,6 +143,18 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  }).format(new Date(date));
+}
+
+function formatDateTime(date: string) {
+  if (!date) return "—";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(date));
 }
 
@@ -1747,6 +1772,32 @@ function ModalButtons({
   );
 }
 
+
+function AuditCells({ record }: { record: AuditFields }) {
+  return (
+    <>
+      <td className="whitespace-nowrap px-5 py-4 text-sm">
+        {record.createdBy ? (
+          <div>
+            <p className="font-bold text-slate-800">
+              {record.createdBy.name}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {record.createdBy.role}
+            </p>
+          </div>
+        ) : (
+          <span className="font-semibold text-slate-400">Xog hore</span>
+        )}
+      </td>
+
+      <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+        {formatDateTime(record.createdAt)}
+      </td>
+    </>
+  );
+}
+
 function LiveTable({
   records,
   loading,
@@ -1762,11 +1813,11 @@ function LiveTable({
   onEdit: (record: LiveChickenRecord) => void;
   onDelete: (id: string) => void;
 }) {
-  const columns = canEdit || canDelete ? 8 : 7;
+  const columns = canEdit || canDelete ? 10 : 9;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1100px] text-left">
+      <table className="w-full min-w-[1420px] text-left">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
@@ -1776,6 +1827,9 @@ function LiveTable({
             <th className="px-5 py-4">Tirada / Quantity</th>
             <th className="px-5 py-4">Qiimaha / Price</th>
             <th className="px-5 py-4">Wadarta / Total</th>
+            <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
+            <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
+
 
             {(canEdit || canDelete) && (
               <th className="px-5 py-4 text-right">
@@ -1835,6 +1889,8 @@ function LiveTable({
                   {formatMoney(record.total)} ETB
                 </td>
 
+                  <AuditCells record={record} />
+
                 {(canEdit || canDelete) && (
                   <ActionCell
                     canEdit={canEdit}
@@ -1867,11 +1923,11 @@ function MeatPurchaseTable({
   onEdit: (record: MeatPurchase) => void;
   onDelete: (id: string) => void;
 }) {
-  const columns = canEdit || canDelete ? 7 : 6;
+  const columns = canEdit || canDelete ? 9 : 8;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[950px] text-left">
+      <table className="w-full min-w-[1270px] text-left">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
@@ -1880,6 +1936,9 @@ function MeatPurchaseTable({
             <th className="px-5 py-4">Tirada / Quantity</th>
             <th className="px-5 py-4">Qiimaha / Price</th>
             <th className="px-5 py-4">Wadarta / Total</th>
+            <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
+            <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
+
 
             {(canEdit || canDelete) && (
               <th className="px-5 py-4 text-right">
@@ -1935,6 +1994,8 @@ function MeatPurchaseTable({
                   {formatMoney(record.total)} ETB
                 </td>
 
+                  <AuditCells record={record} />
+
                 {(canEdit || canDelete) && (
                   <ActionCell
                     canEdit={canEdit}
@@ -1967,11 +2028,11 @@ function MeatSaleTable({
   onEdit: (record: MeatSale) => void;
   onDelete: (id: string) => void;
 }) {
-  const columns = canEdit || canDelete ? 8 : 7;
+  const columns = canEdit || canDelete ? 10 : 9;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1100px] text-left">
+      <table className="w-full min-w-[1420px] text-left">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
@@ -1981,6 +2042,9 @@ function MeatSaleTable({
             <th className="px-5 py-4">Tirada / Quantity</th>
             <th className="px-5 py-4">Qiimaha / Price</th>
             <th className="px-5 py-4">Wadarta / Total</th>
+            <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
+            <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
+
 
             {(canEdit || canDelete) && (
               <th className="px-5 py-4 text-right">
@@ -2039,6 +2103,8 @@ function MeatSaleTable({
                 <td className="whitespace-nowrap px-5 py-4 text-sm font-extrabold text-[#075b35]">
                   {formatMoney(record.total)} ETB
                 </td>
+
+                  <AuditCells record={record} />
 
                 {(canEdit || canDelete) && (
                   <ActionCell

@@ -1,10 +1,23 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
-type Vaccination = {
+type AuditUser = {
+  id: string;
+  name: string;
+  role: string;
+};
+
+type AuditFields = {
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AuditUser | null;
+  updatedBy: AuditUser | null;
+};
+
+type Vaccination = AuditFields & {
   id: string;
   date: string;
   stage: string;
@@ -16,7 +29,7 @@ type Vaccination = {
   notes: string | null;
 };
 
-type Vitamin = {
+type Vitamin = AuditFields & {
   id: string;
   date: string;
   vitaminName: string;
@@ -25,7 +38,7 @@ type Vitamin = {
   notes: string | null;
 };
 
-type Calcium = {
+type Calcium = AuditFields & {
   id: string;
   date: string;
   calciumName: string;
@@ -80,6 +93,24 @@ function formatDate(date: string) {
     month: "2-digit",
     year: "numeric",
   }).format(new Date(date));
+}
+
+function formatDateTime(date: string) {
+  if (!date) return "—";
+
+  const value = new Date(date);
+
+  if (Number.isNaN(value.getTime())) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(value);
 }
 
 function emptyVaccinationForm(): VaccinationForm {
@@ -886,7 +917,7 @@ export default function PoultryHealthPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="min-w-[1450px] w-full">
+                  <table className="min-w-[1770px] w-full">
                     <thead className="bg-slate-50">
                       <tr className="border-b border-slate-200">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
@@ -921,6 +952,14 @@ export default function PoultryHealthPage() {
                           Faahfaahin / Notes
                         </th>
 
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
+                          Waxaa Geliyay / Entered By
+                        </th>
+
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
+                          Waqtiga la Geliyay / Entered At
+                        </th>
+
                         <th className="px-4 py-3 text-center text-xs font-bold uppercase text-slate-600">
                           Maamul / Actions
                         </th>
@@ -931,7 +970,7 @@ export default function PoultryHealthPage() {
                       {loading ? (
                         <tr>
                           <td
-                            colSpan={9}
+                            colSpan={11}
                             className="px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Xogta waa la soo qaadayaa... / Loading...
@@ -940,7 +979,7 @@ export default function PoultryHealthPage() {
                       ) : vaccinations.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={9}
+                            colSpan={11}
                             className="px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Weli tallaal lama diiwaangelin. / No vaccination
@@ -983,6 +1022,27 @@ export default function PoultryHealthPage() {
 
                             <td className="max-w-[260px] px-4 py-4 text-sm text-slate-500">
                               {record.notes || "—"}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm">
+                              {record.createdBy ? (
+                                <div>
+                                  <p className="font-bold text-slate-800">
+                                    {record.createdBy.name}
+                                  </p>
+                                  <p className="mt-0.5 text-xs text-slate-400">
+                                    {record.createdBy.role}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-slate-400">
+                                  Xog hore
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
+                              {formatDateTime(record.createdAt)}
                             </td>
 
                             <td className="px-4 py-4">
@@ -1041,7 +1101,7 @@ export default function PoultryHealthPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="min-w-[950px] w-full">
+                  <table className="min-w-[1270px] w-full">
                     <thead className="bg-slate-50">
                       <tr className="border-b border-slate-200">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
@@ -1064,6 +1124,14 @@ export default function PoultryHealthPage() {
                           Faahfaahin / Notes
                         </th>
 
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
+                          Waxaa Geliyay / Entered By
+                        </th>
+
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
+                          Waqtiga la Geliyay / Entered At
+                        </th>
+
                         <th className="px-4 py-3 text-center text-xs font-bold uppercase text-slate-600">
                           Maamul / Actions
                         </th>
@@ -1074,7 +1142,7 @@ export default function PoultryHealthPage() {
                       {loading ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={8}
                             className="px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Xogta waa la soo qaadayaa... / Loading...
@@ -1083,7 +1151,7 @@ export default function PoultryHealthPage() {
                       ) : vitamins.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={8}
                             className="px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Weli vitamin lama diiwaangelin. / No vitamin
@@ -1114,6 +1182,27 @@ export default function PoultryHealthPage() {
 
                             <td className="max-w-[300px] px-4 py-4 text-sm text-slate-500">
                               {record.notes || "—"}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm">
+                              {record.createdBy ? (
+                                <div>
+                                  <p className="font-bold text-slate-800">
+                                    {record.createdBy.name}
+                                  </p>
+                                  <p className="mt-0.5 text-xs text-slate-400">
+                                    {record.createdBy.role}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-slate-400">
+                                  Xog hore
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
+                              {formatDateTime(record.createdAt)}
                             </td>
 
                             <td className="px-4 py-4">
@@ -1169,7 +1258,7 @@ export default function PoultryHealthPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="min-w-[950px] w-full">
+                  <table className="min-w-[1270px] w-full">
                     <thead className="bg-slate-50">
                       <tr className="border-b border-slate-200">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
@@ -1192,6 +1281,14 @@ export default function PoultryHealthPage() {
                           Faahfaahin / Notes
                         </th>
 
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
+                          Waxaa Geliyay / Entered By
+                        </th>
+
+                        <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
+                          Waqtiga la Geliyay / Entered At
+                        </th>
+
                         <th className="px-4 py-3 text-center text-xs font-bold uppercase text-slate-600">
                           Maamul / Actions
                         </th>
@@ -1202,7 +1299,7 @@ export default function PoultryHealthPage() {
                       {loading ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={8}
                             className="px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Xogta waa la soo qaadayaa... / Loading...
@@ -1211,7 +1308,7 @@ export default function PoultryHealthPage() {
                       ) : calciumRecords.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={8}
                             className="px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Weli calcium lama diiwaangelin. / No calcium
@@ -1242,6 +1339,27 @@ export default function PoultryHealthPage() {
 
                             <td className="max-w-[300px] px-4 py-4 text-sm text-slate-500">
                               {record.notes || "—"}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm">
+                              {record.createdBy ? (
+                                <div>
+                                  <p className="font-bold text-slate-800">
+                                    {record.createdBy.name}
+                                  </p>
+                                  <p className="mt-0.5 text-xs text-slate-400">
+                                    {record.createdBy.role}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-slate-400">
+                                  Xog hore
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
+                              {formatDateTime(record.createdAt)}
                             </td>
 
                             <td className="px-4 py-4">

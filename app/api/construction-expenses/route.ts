@@ -1,10 +1,23 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
@@ -14,7 +27,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -40,6 +54,11 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
+/* =========================================================
+   GET
+   SOO QAADO KHARASHAADKA DHISMAHA
+========================================================= */
+
 export async function GET() {
   try {
     const auth = await authorize("expensesView");
@@ -48,15 +67,26 @@ export async function GET() {
       return auth.response;
     }
 
-    const expenses = await prisma.constructionExpense.findMany({
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const expenses =
+      await prisma.constructionExpense.findMany({
+        include: auditUserInclude,
+
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
 
     return NextResponse.json(expenses);
   } catch (error) {
-    console.error("CONSTRUCTION EXPENSE GET ERROR:", error);
+    console.error(
+      "CONSTRUCTION EXPENSE GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -68,6 +98,11 @@ export async function GET() {
   }
 }
 
+/* =========================================================
+   POST
+   KAYDI KHARASH DHISME CUSUB
+========================================================= */
+
 export async function POST(request: Request) {
   try {
     const auth = await authorize("expensesAdd");
@@ -76,15 +111,43 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const location = String(body.location || "").trim();
-    const name = String(body.name || "").trim();
-    const type = String(body.type || "").trim();
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const name = String(
+      body.name || ""
+    ).trim();
+
+    const type = String(
+      body.type || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
-    if (!body.date || !location || !name || !type) {
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !location ||
+      !name ||
+      !type
+    ) {
       return NextResponse.json(
         {
           error:
@@ -111,22 +174,52 @@ export async function POST(request: Request) {
 
     const total = quantity * price;
 
-    const expense = await prisma.constructionExpense.create({
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        location,
-        name,
-        type,
-        quantity,
-        price,
-        total,
-        currency: "ETB",
-      },
-    });
+    /* =====================================================
+       CREATE
+    ===================================================== */
 
-    return NextResponse.json(expense, { status: 201 });
+    const expense =
+      await prisma.constructionExpense.create({
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          location,
+
+          name,
+
+          type,
+
+          quantity,
+
+          price,
+
+          total,
+
+          currency: "ETB",
+
+          /*
+           * AUDIT TRAIL
+           *
+           * createdById = qofka sameeyay
+           * updatedById = qofka ugu dambeeyay taabtay
+           */
+          ...createAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
+
+    return NextResponse.json(
+      expense,
+      { status: 201 }
+    );
   } catch (error) {
-    console.error("CONSTRUCTION CREATE ERROR:", error);
+    console.error(
+      "CONSTRUCTION CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -138,6 +231,11 @@ export async function POST(request: Request) {
   }
 }
 
+/* =========================================================
+   PUT
+   BEDEL KHARASHKA DHISMAHA
+========================================================= */
+
 export async function PUT(request: Request) {
   try {
     const auth = await authorize("expensesEdit");
@@ -146,14 +244,40 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const location = String(body.location || "").trim();
-    const name = String(body.name || "").trim();
-    const type = String(body.type || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const name = String(
+      body.name || ""
+    ).trim();
+
+    const type = String(
+      body.type || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
 
     if (!id) {
       return NextResponse.json(
@@ -165,7 +289,12 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!body.date || !location || !name || !type) {
+    if (
+      !body.date ||
+      !location ||
+      !name ||
+      !type
+    ) {
       return NextResponse.json(
         {
           error:
@@ -192,24 +321,51 @@ export async function PUT(request: Request) {
 
     const total = quantity * price;
 
-    const expense = await prisma.constructionExpense.update({
-      where: {
-        id,
-      },
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        location,
-        name,
-        type,
-        quantity,
-        price,
-        total,
-      },
-    });
+    /* =====================================================
+       UPDATE
+    ===================================================== */
+
+    const expense =
+      await prisma.constructionExpense.update({
+        where: {
+          id,
+        },
+
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          location,
+
+          name,
+
+          type,
+
+          quantity,
+
+          price,
+
+          total,
+
+          /*
+           * createdById lama beddelayo.
+           *
+           * updatedById wuxuu noqonayaa account-ka
+           * hadda wax ka beddelay record-kan.
+           */
+          ...updateAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
 
     return NextResponse.json(expense);
   } catch (error) {
-    console.error("CONSTRUCTION UPDATE ERROR:", error);
+    console.error(
+      "CONSTRUCTION UPDATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -221,15 +377,25 @@ export async function PUT(request: Request) {
   }
 }
 
+/* =========================================================
+   DELETE
+   TIRTIR KHARASHKA DHISMAHA
+========================================================= */
+
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize("expensesDelete");
+    const auth = await authorize(
+      "expensesDelete"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(
+      request.url
+    );
+
     const id = searchParams.get("id");
 
     if (!id) {
@@ -252,7 +418,10 @@ export async function DELETE(request: Request) {
       success: true,
     });
   } catch (error) {
-    console.error("CONSTRUCTION DELETE ERROR:", error);
+    console.error(
+      "CONSTRUCTION DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

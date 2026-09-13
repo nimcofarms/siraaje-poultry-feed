@@ -1,10 +1,16 @@
 ﻿"use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type FeedType = "Starter" | "Grower" | "Layer";
+
+type AuditUser = {
+  id: string;
+  name: string;
+  role: string;
+};
 
 type Feed = {
   id: string;
@@ -16,6 +22,10 @@ type Feed = {
   price: number;
   total: number;
   currency: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: AuditUser | null;
+  updatedBy: AuditUser | null;
 };
 
 type FeedForm = {
@@ -54,6 +64,18 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  }).format(new Date(date));
+}
+
+function formatDateTime(date: string) {
+  if (!date) return "—";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(date));
 }
 
@@ -421,7 +443,7 @@ export default function FeedsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[1050px] w-full">
+          <table className="min-w-[1350px] w-full">
             <thead className="bg-slate-50">
               <tr className="border-b border-slate-200">
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -448,6 +470,14 @@ export default function FeedsPage() {
                   Wadarta / Total
                 </th>
 
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                  Waxaa Geliyay / Entered By
+                </th>
+
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                  Waqtiga la Geliyay / Entered At
+                </th>
+
                 <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-600">
                   Maamul / Actions
                 </th>
@@ -458,7 +488,7 @@ export default function FeedsPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={9}
                     className="px-4 py-10 text-center text-sm text-slate-500"
                   >
                     Xogta waa la soo qaadayaa... / Loading...
@@ -467,7 +497,7 @@ export default function FeedsPage() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={9}
                     className="px-4 py-10 text-center text-sm text-slate-500"
                   >
                     Weli wax xog ah lama diiwaangelin. / No records yet.
@@ -501,6 +531,27 @@ export default function FeedsPage() {
 
                     <td className="px-4 py-4 text-right text-sm font-bold text-slate-900">
                       {formatMoney(feed.total, feed.currency)}
+                    </td>
+
+                    <td className="whitespace-nowrap px-4 py-4 text-sm">
+                      {feed.createdBy ? (
+                        <div>
+                          <p className="font-bold text-slate-900">
+                            {feed.createdBy.name}
+                          </p>
+                          <p className="mt-0.5 text-xs text-slate-400">
+                            {feed.createdBy.role}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="font-semibold text-slate-400">
+                          Xog hore
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
+                      {formatDateTime(feed.createdAt)}
                     </td>
 
                     <td className="px-4 py-4">

@@ -1,10 +1,23 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
 
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
@@ -14,7 +27,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -40,6 +54,11 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
+/* =========================================================
+   GET
+   SOO QAADO UKUMAHA LA SOO GATAY
+========================================================= */
+
 export async function GET() {
   try {
     const auth = await authorize("eggsView");
@@ -49,14 +68,24 @@ export async function GET() {
     }
 
     const eggs = await prisma.purchasedEgg.findMany({
-      orderBy: {
-        date: "desc",
-      },
+      include: auditUserInclude,
+
+      orderBy: [
+        {
+          date: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
     });
 
     return NextResponse.json(eggs);
   } catch (error) {
-    console.error("PURCHASED EGGS GET ERROR:", error);
+    console.error(
+      "PURCHASED EGGS GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -68,6 +97,11 @@ export async function GET() {
   }
 }
 
+/* =========================================================
+   POST
+   KAYDI UKUN CUSUB OO LA SOO GATAY
+========================================================= */
+
 export async function POST(request: Request) {
   try {
     const auth = await authorize("eggsAdd");
@@ -76,14 +110,38 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const location = String(body.location || "").trim();
-    const companyName = String(body.companyName || "").trim();
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
-    if (!body.date || !location || !companyName) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !location ||
+      !companyName
+    ) {
       return NextResponse.json(
         {
           error:
@@ -92,6 +150,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -110,21 +172,54 @@ export async function POST(request: Request) {
 
     const total = quantity * price;
 
+    /* =====================================================
+       CREATE
+    ===================================================== */
+
     const egg = await prisma.purchasedEgg.create({
       data: {
-        date: new Date(`${body.date}T12:00:00`),
+        date: new Date(
+          `${body.date}T12:00:00`
+        ),
+
         location,
+
         companyName,
+
         quantity,
+
         price,
+
         total,
+
         currency: "ETB",
+
+        /*
+         * AUDIT TRAIL
+         *
+         * createdById = account-ka xogta geliyay
+         * updatedById = account-ka ugu dambeeyay taabtay
+         *
+         * Labadaba waxaa laga qaadayaa session-ka.
+         * Frontend-ku ma soo diri karo qofka xogta geliyay.
+         */
+        ...createAuditData(auth.user),
       },
+
+      include: auditUserInclude,
     });
 
-    return NextResponse.json(egg, { status: 201 });
+    return NextResponse.json(
+      egg,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("PURCHASED EGGS CREATE ERROR:", error);
+    console.error(
+      "PURCHASED EGGS CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -136,6 +231,11 @@ export async function POST(request: Request) {
   }
 }
 
+/* =========================================================
+   PUT
+   BEDEL XOGTA UKUNTA LA SOO GATAY
+========================================================= */
+
 export async function PUT(request: Request) {
   try {
     const auth = await authorize("eggsEdit");
@@ -144,24 +244,56 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
-    const location = String(body.location || "").trim();
-    const companyName = String(body.companyName || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
+
+    const location = String(
+      body.location || ""
+    ).trim();
+
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+
+    /* =====================================================
+       ID VALIDATION
+    ===================================================== */
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
     }
 
-    if (!body.date || !location || !companyName) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !location ||
+      !companyName
+    ) {
       return NextResponse.json(
         {
           error:
@@ -170,6 +302,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -188,23 +324,48 @@ export async function PUT(request: Request) {
 
     const total = quantity * price;
 
+    /* =====================================================
+       UPDATE
+    ===================================================== */
+
     const egg = await prisma.purchasedEgg.update({
       where: {
         id,
       },
+
       data: {
-        date: new Date(`${body.date}T12:00:00`),
+        date: new Date(
+          `${body.date}T12:00:00`
+        ),
+
         location,
+
         companyName,
+
         quantity,
+
         price,
+
         total,
+
+        /*
+         * createdById lama beddelayo.
+         *
+         * updatedById wuxuu noqonayaa account-ka
+         * hadda wax ka beddelay record-kan.
+         */
+        ...updateAuditData(auth.user),
       },
+
+      include: auditUserInclude,
     });
 
     return NextResponse.json(egg);
   } catch (error) {
-    console.error("PURCHASED EGGS UPDATE ERROR:", error);
+    console.error(
+      "PURCHASED EGGS UPDATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -216,6 +377,11 @@ export async function PUT(request: Request) {
   }
 }
 
+/* =========================================================
+   DELETE
+   TIRTIR XOGTA UKUNTA
+========================================================= */
+
 export async function DELETE(request: Request) {
   try {
     const auth = await authorize("eggsDelete");
@@ -224,13 +390,17 @@ export async function DELETE(request: Request) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(
+      request.url
+    );
+
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
         {
-          error: "ID-ga lama helin. / Record ID is missing.",
+          error:
+            "ID-ga lama helin. / Record ID is missing.",
         },
         { status: 400 }
       );
@@ -246,7 +416,10 @@ export async function DELETE(request: Request) {
       success: true,
     });
   } catch (error) {
-    console.error("PURCHASED EGGS DELETE ERROR:", error);
+    console.error(
+      "PURCHASED EGGS DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {

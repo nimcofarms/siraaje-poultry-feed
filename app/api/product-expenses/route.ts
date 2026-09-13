@@ -1,10 +1,23 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
 import {
   getCurrentUser,
   hasPermission,
   type PermissionKey,
 } from "@/lib/auth";
+
+import {
+  auditUserInclude,
+  createAuditData,
+  updateAuditData,
+} from "@/lib/audit";
+
+export const runtime = "nodejs";
+
+/* =========================================================
+   PRODUCTS LA OGGOLO YAHAY
+========================================================= */
 
 const allowedProducts = [
   "Gallay",
@@ -17,6 +30,10 @@ const allowedProducts = [
   "Dhagaxaanta Nuurada",
 ];
 
+/* =========================================================
+   AUTHORIZE
+========================================================= */
+
 async function authorize(permission: PermissionKey) {
   const user = await getCurrentUser();
 
@@ -25,7 +42,8 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error: "Fadlan marka hore gal. / Please log in first.",
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -51,11 +69,25 @@ async function authorize(permission: PermissionKey) {
   };
 }
 
+/* =========================================================
+   VALIDATE PRODUCT
+========================================================= */
+
 function validateProduct(body: any) {
-  const location = String(body.location || "").trim();
-  const name = String(body.name || "").trim();
-  const type = String(body.type || "").trim();
+  const location = String(
+    body.location || ""
+  ).trim();
+
+  const name = String(
+    body.name || ""
+  ).trim();
+
+  const type = String(
+    body.type || ""
+  ).trim();
+
   const quantity = Number(body.quantity);
+
   const price = Number(body.price);
 
   const transport =
@@ -75,6 +107,11 @@ function validateProduct(body: any) {
   };
 }
 
+/* =========================================================
+   GET
+   SOO QAADO DHAMMAAN PRODUCT EXPENSES
+========================================================= */
+
 export async function GET() {
   try {
     const auth = await authorize("expensesView");
@@ -83,15 +120,26 @@ export async function GET() {
       return auth.response;
     }
 
-    const expenses = await prisma.productExpense.findMany({
-      orderBy: {
-        date: "desc",
-      },
-    });
+    const expenses =
+      await prisma.productExpense.findMany({
+        include: auditUserInclude,
+
+        orderBy: [
+          {
+            date: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
 
     return NextResponse.json(expenses);
   } catch (error) {
-    console.error("PRODUCT EXPENSE GET ERROR:", error);
+    console.error(
+      "PRODUCT EXPENSE GET ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -103,6 +151,11 @@ export async function GET() {
   }
 }
 
+/* =========================================================
+   POST
+   KAYDI PRODUCT EXPENSE CUSUB
+========================================================= */
+
 export async function POST(request: Request) {
   try {
     const auth = await authorize("expensesAdd");
@@ -111,12 +164,37 @@ export async function POST(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const { location, name, type, quantity, price, transport } =
-      validateProduct(body);
+    const {
+      location,
+      name,
+      type,
+      quantity,
+      price,
+      transport,
+    } = validateProduct(body);
 
-    if (!body.date || !location || !name || !type) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !location ||
+      !name ||
+      !type
+    ) {
       return NextResponse.json(
         {
           error:
@@ -125,6 +203,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       PRODUCT VALIDATION
+    ===================================================== */
 
     if (!allowedProducts.includes(name)) {
       return NextResponse.json(
@@ -135,6 +217,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -153,25 +239,60 @@ export async function POST(request: Request) {
       );
     }
 
-    const total = quantity * price + transport;
+    const total =
+      quantity * price + transport;
 
-    const expense = await prisma.productExpense.create({
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        location,
-        name,
-        type,
-        quantity,
-        price,
-        transport,
-        total,
-        currency: "ETB",
-      },
-    });
+    /* =====================================================
+       CREATE PRODUCT EXPENSE
+    ===================================================== */
 
-    return NextResponse.json(expense, { status: 201 });
+    const expense =
+      await prisma.productExpense.create({
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          location,
+
+          name,
+
+          type,
+
+          quantity,
+
+          price,
+
+          transport,
+
+          total,
+
+          currency: "ETB",
+
+          /*
+           * AUDIT TRAIL
+           *
+           * createdById iyo updatedById
+           * waxaa si otomaatig ah looga qaadayaa
+           * account-ka hadda login-ka ku jira.
+           */
+          ...createAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
+
+    return NextResponse.json(
+      expense,
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
-    console.error("PRODUCT CREATE ERROR:", error);
+    console.error(
+      "PRODUCT CREATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -183,6 +304,11 @@ export async function POST(request: Request) {
   }
 }
 
+/* =========================================================
+   PUT
+   BEDEL PRODUCT EXPENSE
+========================================================= */
+
 export async function PUT(request: Request) {
   try {
     const auth = await authorize("expensesEdit");
@@ -191,12 +317,34 @@ export async function PUT(request: Request) {
       return auth.response;
     }
 
+    if (!auth.user) {
+      return NextResponse.json(
+        {
+          error:
+            "Fadlan marka hore gal. / Please log in first.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    const id = String(body.id || "").trim();
+    const id = String(
+      body.id || ""
+    ).trim();
 
-    const { location, name, type, quantity, price, transport } =
-      validateProduct(body);
+    const {
+      location,
+      name,
+      type,
+      quantity,
+      price,
+      transport,
+    } = validateProduct(body);
+
+    /* =====================================================
+       ID VALIDATION
+    ===================================================== */
 
     if (!id) {
       return NextResponse.json(
@@ -208,7 +356,16 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!body.date || !location || !name || !type) {
+    /* =====================================================
+       REQUIRED FIELDS
+    ===================================================== */
+
+    if (
+      !body.date ||
+      !location ||
+      !name ||
+      !type
+    ) {
       return NextResponse.json(
         {
           error:
@@ -217,6 +374,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       PRODUCT VALIDATION
+    ===================================================== */
 
     if (!allowedProducts.includes(name)) {
       return NextResponse.json(
@@ -227,6 +388,10 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    /* =====================================================
+       NUMBER VALIDATION
+    ===================================================== */
 
     if (
       !Number.isFinite(quantity) ||
@@ -245,27 +410,56 @@ export async function PUT(request: Request) {
       );
     }
 
-    const total = quantity * price + transport;
+    const total =
+      quantity * price + transport;
 
-    const expense = await prisma.productExpense.update({
-      where: {
-        id,
-      },
-      data: {
-        date: new Date(`${body.date}T12:00:00`),
-        location,
-        name,
-        type,
-        quantity,
-        price,
-        transport,
-        total,
-      },
-    });
+    /* =====================================================
+       UPDATE PRODUCT EXPENSE
+    ===================================================== */
+
+    const expense =
+      await prisma.productExpense.update({
+        where: {
+          id,
+        },
+
+        data: {
+          date: new Date(
+            `${body.date}T12:00:00`
+          ),
+
+          location,
+
+          name,
+
+          type,
+
+          quantity,
+
+          price,
+
+          transport,
+
+          total,
+
+          /*
+           * createdById lama beddelayo.
+           *
+           * updatedById wuxuu noqonayaa
+           * account-ka hadda wax beddelay.
+           */
+          ...updateAuditData(auth.user),
+        },
+
+        include: auditUserInclude,
+      });
 
     return NextResponse.json(expense);
   } catch (error) {
-    console.error("PRODUCT UPDATE ERROR:", error);
+    console.error(
+      "PRODUCT UPDATE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -277,15 +471,25 @@ export async function PUT(request: Request) {
   }
 }
 
+/* =========================================================
+   DELETE
+   TIRTIR PRODUCT EXPENSE
+========================================================= */
+
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize("expensesDelete");
+    const auth = await authorize(
+      "expensesDelete"
+    );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(
+      request.url
+    );
+
     const id = searchParams.get("id");
 
     if (!id) {
@@ -308,7 +512,10 @@ export async function DELETE(request: Request) {
       success: true,
     });
   } catch (error) {
-    console.error("PRODUCT DELETE ERROR:", error);
+    console.error(
+      "PRODUCT DELETE ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
