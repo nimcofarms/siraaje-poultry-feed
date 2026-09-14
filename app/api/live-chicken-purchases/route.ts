@@ -71,15 +71,6 @@ export async function GET() {
 
     const purchases =
       await prisma.liveChickenPurchase.findMany({
-        /*
-         * Waxaa response-ka lagu darayaa:
-         *
-         * createdBy
-         * updatedBy
-         *
-         * createdAt iyo updatedAt-na model-ka
-         * ayay hore ugu jiraan.
-         */
         include: auditUserInclude,
 
         orderBy: [
@@ -144,6 +135,27 @@ export async function POST(request: Request) {
       body.chickenType || ""
     ).trim();
 
+    /*
+     * NEW:
+     * Company where the live chickens
+     * were purchased from.
+     */
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
+    /*
+     * NEW:
+     * Person who made the purchase.
+     *
+     * This is different from createdBy.
+     * createdBy is the logged-in account
+     * that entered the record.
+     */
+    const purchasedBy = String(
+      body.purchasedBy || ""
+    ).trim();
+
     const location = String(
       body.location || ""
     ).trim();
@@ -163,6 +175,8 @@ export async function POST(request: Request) {
     if (
       !date ||
       !chickenType ||
+      !companyName ||
+      !purchasedBy ||
       !location ||
       !ageUnit ||
       !Number.isInteger(ageNumber) ||
@@ -237,6 +251,10 @@ export async function POST(request: Request) {
 
           chickenType,
 
+          companyName,
+
+          purchasedBy,
+
           location,
 
           ageNumber,
@@ -254,16 +272,13 @@ export async function POST(request: Request) {
           /*
            * AUDIT TRAIL
            *
-           * createdById:
-           * account-ka digaagga soo iibsaday
-           * xogtiisa geliyay.
+           * createdById identifies the
+           * logged-in Siraaje account that
+           * entered this information.
            *
-           * updatedById:
-           * marka record-ka la sameeyo wuxuu
-           * noqonayaa isla user-kaas.
-           *
-           * ID-yadan browser-ka lagama qaadanayo.
-           * Session-ka server-ka ayaa laga qaadayaa.
+           * purchasedBy above identifies
+           * the person who physically/
+           * operationally made the purchase.
            */
           ...createAuditData(auth.user),
         },
@@ -332,6 +347,14 @@ export async function PUT(request: Request) {
       body.chickenType || ""
     ).trim();
 
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
+    const purchasedBy = String(
+      body.purchasedBy || ""
+    ).trim();
+
     const location = String(
       body.location || ""
     ).trim();
@@ -352,6 +375,8 @@ export async function PUT(request: Request) {
       !id ||
       !date ||
       !chickenType ||
+      !companyName ||
+      !purchasedBy ||
       !location ||
       !ageUnit ||
       !Number.isInteger(ageNumber) ||
@@ -370,7 +395,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    /* =====================================================
+
+
+        /* =====================================================
        AGE UNIT VALIDATION
     ===================================================== */
 
@@ -451,6 +478,17 @@ export async function PUT(request: Request) {
 
           chickenType,
 
+          /*
+           * Company the live chickens
+           * were purchased from.
+           */
+          companyName,
+
+          /*
+           * Person who made the purchase.
+           */
+          purchasedBy,
+
           location,
 
           ageNumber,
@@ -464,11 +502,12 @@ export async function PUT(request: Request) {
           total,
 
           /*
-           * createdById lama taabanayo.
+           * createdById is intentionally
+           * left unchanged.
            *
-           * updatedById waxaa loo beddelayaa
-           * account-ka hadda record-ka wax ka
-           * beddelay.
+           * updatedById becomes the
+           * logged-in account currently
+           * editing this record.
            */
           ...updateAuditData(auth.user),
         },
