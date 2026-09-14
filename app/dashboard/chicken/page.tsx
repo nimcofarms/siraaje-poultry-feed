@@ -24,6 +24,8 @@ type LiveChickenRecord = AuditFields & {
   id: string;
   date: string;
   chickenType: string;
+  companyName?: string | null;
+  purchasedBy?: string | null;
   location: string;
   ageNumber: number;
   ageUnit: AgeUnit;
@@ -59,6 +61,8 @@ type MeatSale = AuditFields & {
 type LiveForm = {
   date: string;
   chickenType: string;
+  companyName: string;
+  purchasedBy: string;
   location: string;
   ageNumber: string;
   ageUnit: AgeUnit;
@@ -222,6 +226,8 @@ export default function ChickenPage() {
   const [liveForm, setLiveForm] = useState<LiveForm>({
     date: today(),
     chickenType: "",
+    companyName: "",
+    purchasedBy: "",
     location: "",
     ageNumber: "",
     ageUnit: "DAY",
@@ -380,6 +386,8 @@ export default function ChickenPage() {
     setLiveForm({
       date: today(),
       chickenType: "",
+      companyName: "",
+      purchasedBy: "",
       location: "",
       ageNumber: "",
       ageUnit: "DAY",
@@ -447,6 +455,8 @@ export default function ChickenPage() {
     setLiveForm({
       date: record.date.slice(0, 10),
       chickenType: record.chickenType,
+      companyName: record.companyName ?? "",
+      purchasedBy: record.purchasedBy ?? "",
       location: record.location,
       ageNumber: String(record.ageNumber),
       ageUnit: record.ageUnit,
@@ -527,6 +537,8 @@ export default function ChickenPage() {
       if (
         !liveForm.date ||
         !liveForm.chickenType.trim() ||
+        (subTab === "PURCHASES" &&
+          (!liveForm.companyName.trim() || !liveForm.purchasedBy.trim())) ||
         !liveForm.location.trim() ||
         !Number.isInteger(ageNumber) ||
         ageNumber <= 0 ||
@@ -555,6 +567,12 @@ export default function ChickenPage() {
           ...(editingLiveId ? { id: editingLiveId } : {}),
           date: liveForm.date,
           chickenType: liveForm.chickenType.trim(),
+          ...(subTab === "PURCHASES"
+            ? {
+                companyName: liveForm.companyName.trim(),
+                purchasedBy: liveForm.purchasedBy.trim(),
+              }
+            : {}),
           location: liveForm.location.trim(),
           ageNumber,
           ageUnit: liveForm.ageUnit,
@@ -1194,6 +1212,7 @@ export default function ChickenPage() {
             {mainTab === "LIVE" ? (
               <LiveTable
                 records={currentLiveRecords}
+                isPurchase={subTab === "PURCHASES"}
                 loading={loading}
                 canEdit={canEdit}
                 canDelete={canDelete}
@@ -1272,6 +1291,42 @@ export default function ChickenPage() {
                   className={inputClass}
                 />
               </Field>
+
+              {subTab === "PURCHASES" && (
+                <>
+                  <Field label="Shirkadda / Company">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Tusaale: Supplier Company"
+                      value={liveForm.companyName}
+                      onChange={(event) =>
+                        setLiveForm((current) => ({
+                          ...current,
+                          companyName: event.target.value,
+                        }))
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Qofka Iibsaday / Purchased By">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Tusaale: Ahmed"
+                      value={liveForm.purchasedBy}
+                      onChange={(event) =>
+                        setLiveForm((current) => ({
+                          ...current,
+                          purchasedBy: event.target.value,
+                        }))
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+                </>
+              )}
 
               <Field label="Goobta / Location">
                 <input
@@ -1800,6 +1855,7 @@ function AuditCells({ record }: { record: AuditFields }) {
 
 function LiveTable({
   records,
+  isPurchase,
   loading,
   canEdit,
   canDelete,
@@ -1807,21 +1863,33 @@ function LiveTable({
   onDelete,
 }: {
   records: LiveChickenRecord[];
+  isPurchase: boolean;
   loading: boolean;
   canEdit: boolean;
   canDelete: boolean;
   onEdit: (record: LiveChickenRecord) => void;
   onDelete: (id: string) => void;
 }) {
-  const columns = canEdit || canDelete ? 10 : 9;
+  const baseColumns = isPurchase ? 11 : 9;
+  const columns = canEdit || canDelete ? baseColumns + 1 : baseColumns;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1420px] text-left">
+      <table
+        className={`w-full text-left ${
+          isPurchase ? "min-w-[1720px]" : "min-w-[1420px]"
+        }`}
+      >
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
             <th className="px-5 py-4">Nooca / Type</th>
+            {isPurchase && (
+              <>
+                <th className="px-5 py-4">Shirkadda / Company</th>
+                <th className="px-5 py-4">Qofka Iibsaday / Purchased By</th>
+              </>
+            )}
             <th className="px-5 py-4">Goobta / Location</th>
             <th className="px-5 py-4">Da&apos;da / Age</th>
             <th className="px-5 py-4">Tirada / Quantity</th>
@@ -1868,6 +1936,19 @@ function LiveTable({
                 <td className="px-5 py-4 text-sm font-bold">
                   {record.chickenType}
                 </td>
+
+                {isPurchase && (
+                  <>
+                    <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                      {record.companyName || "—"}
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                      {record.purchasedBy || "—"}
+                    </td>
+                  </>
+                )}
+
+
 
                 <td className="px-5 py-4 text-sm">
                   {record.location}
