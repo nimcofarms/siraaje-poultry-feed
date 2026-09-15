@@ -60,13 +60,13 @@ type UploadedDocument = {
 
 const documentSections: DocumentSection[] = [
   {
-    title: "Employee Documents",
+    title: "Dukumentiyada Shaqaalaha / Employee Documents",
     description:
-      "Employment contracts, employee forms, signatures and staff records.",
+      "Heshiisyada shaqada, foomamka shaqaalaha, saxiixyada iyo diiwaannada shaqaalaha. / Employment contracts, employee forms, signatures and staff records.",
     icon: Users,
     documents: [
       {
-        name: "Employee Rules & Acknowledgement Form",
+        name: "Xeerarka Shaqaalaha & Foomka Oggolaanshaha / Employee Rules & Acknowledgement Form",
         code: "SPF-HR-001",
         version: "1.0",
         staticFile:
@@ -74,7 +74,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Employment Contract",
+        name: "Heshiiska Shaqada / Employment Contract",
         code: "SPF-HR-002",
         version: "1.0",
         staticFile:
@@ -82,7 +82,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Employee Registration Form",
+        name: "Foomka Diiwaangelinta Shaqaalaha / Employee Registration Form",
         code: "SPF-HR-003",
         version: "1.0",
         staticFile:
@@ -90,7 +90,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Leave Request Form",
+        name: "Foomka Codsiga Fasaxa / Leave Request Form",
         code: "SPF-HR-004",
         version: "1.0",
         staticFile:
@@ -98,7 +98,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Employee Warning & Corrective Action Form",
+        name: "Digniinta & Tallaabada Sixitaanka Shaqaalaha / Employee Warning & Corrective Action Form",
         code: "SPF-HR-005",
         version: "1.0",
         staticFile:
@@ -106,7 +106,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Equipment Handover & Return Form",
+        name: "Foomka Wareejinta & Soo Celinta Qalabka / Equipment Handover & Return Form",
         code: "SPF-HR-006",
         version: "1.0",
         staticFile:
@@ -117,28 +117,28 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Company Policies",
+    title: "Siyaasadaha Shirkadda / Company Policies",
     description:
-      "Official policies and workplace rules for Siraaje Poultry Feed.",
+      "Siyaasadaha rasmiga ah iyo xeerarka goobta shaqada ee Siraaje Poultry Feed. / Official policies and workplace rules for Siraaje Poultry Feed.",
     icon: ShieldCheck,
     documents: [
       {
-        name: "Workplace Rules",
+        name: "Xeerarka Goobta Shaqada / Workplace Rules",
         code: "SPF-POL-001",
         version: "1.0",
       },
       {
-        name: "Health & Safety Policy",
+        name: "Siyaasadda Caafimaadka & Badbaadada / Health & Safety Policy",
         code: "SPF-POL-002",
         version: "1.0",
       },
       {
-        name: "Hygiene Policy",
+        name: "Siyaasadda Nadaafadda / Hygiene Policy",
         code: "SPF-POL-003",
         version: "1.0",
       },
       {
-        name: "Confidentiality Policy",
+        name: "Siyaasadda Sirta / Confidentiality Policy",
         code: "SPF-POL-004",
         version: "1.0",
       },
@@ -146,23 +146,23 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Production Records",
+    title: "Diiwaannada Wax-soo-saarka / Production Records",
     description:
-      "Production forms, feed records, quality records and operational documents.",
+      "Foomamka wax-soo-saarka, diiwaannada quudinta, tayada iyo hawlgalka. / Production forms, feed records, quality records and operational documents.",
     icon: Building2,
     documents: [
       {
-        name: "Daily Production Record",
+        name: "Diiwaanka Wax-soo-saarka Maalinlaha / Daily Production Record",
         code: "SPF-PROD-001",
         version: "1.0",
       },
       {
-        name: "Feed Production Record",
+        name: "Diiwaanka Soo-saarka Quudinta / Feed Production Record",
         code: "SPF-PROD-002",
         version: "1.0",
       },
       {
-        name: "Quality Control Form",
+        name: "Foomka Xakamaynta Tayada / Quality Control Form",
         code: "SPF-PROD-003",
         version: "1.0",
       },
@@ -170,23 +170,23 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Purchasing & Suppliers",
+    title: "Iibsiga & Alaab-qeybiyeyaasha / Purchasing & Suppliers",
     description:
-      "Supplier information, purchase forms and supplier agreements.",
+      "Xogta alaab-qeybiyeyaasha, foomamka iibsiga iyo heshiisyada alaab-qeybiyeyaasha. / Supplier information, purchase forms and supplier agreements.",
     icon: Truck,
     documents: [
       {
-        name: "Supplier Registration Form",
+        name: "Foomka Diiwaangelinta Alaab-qeybiyaha / Supplier Registration Form",
         code: "SPF-SUP-001",
         version: "1.0",
       },
       {
-        name: "Purchase Order Form",
+        name: "Foomka Dalabka Iibsiga / Purchase Order Form",
         code: "SPF-SUP-002",
         version: "1.0",
       },
       {
-        name: "Supplier Agreement",
+        name: "Heshiiska Alaab-qeybiyaha / Supplier Agreement",
         code: "SPF-SUP-003",
         version: "1.0",
       },
@@ -194,28 +194,28 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Certificates & Legal",
+    title: "Shahaadooyinka & Sharciga / Certificates & Legal",
     description:
-      "Company certificates, licences and important legal documents.",
+      "Shahaadooyinka shirkadda, ruqsadaha iyo dukumentiyada sharciyeed ee muhiimka ah. / Company certificates, licences and important legal documents.",
     icon: Scale,
     documents: [
       {
-        name: "Business Certificate",
+        name: "Shahaadada Ganacsiga / Business Certificate",
         code: "SPF-LEGAL-001",
         version: "1.0",
       },
       {
-        name: "Business Licence",
+        name: "Ruqsadda Ganacsiga / Business Licence",
         code: "SPF-LEGAL-002",
         version: "1.0",
       },
       {
-        name: "Tax / Registration Document",
+        name: "Dukumentiga Canshuurta & Diiwaangelinta / Tax & Registration Document",
         code: "SPF-LEGAL-003",
         version: "1.0",
       },
       {
-        name: "Other Legal Document",
+        name: "Dukumenti Sharciyeed Kale / Other Legal Document",
         code: "SPF-LEGAL-004",
         version: "1.0",
       },
@@ -499,8 +499,7 @@ export default function DocumentsPage() {
           </h2>
 
           <p className="mt-3 max-w-3xl leading-7 text-slate-500">
-            Upload, organize, open, print and download
-            important Siraaje Poultry Feed documents.
+            Soo geli, habeey, fur, daabac oo soo dejiso dukumentiyada muhiimka ah ee Siraaje Poultry Feed. / Upload, organize, open, print and download important Siraaje Poultry Feed documents.
           </p>
         </div>
 
@@ -771,8 +770,8 @@ export default function DocumentsPage() {
                                 )}
 
                                 {uploading
-                                  ? "Replacing..."
-                                  : "Replace PDF"}
+                                  ? "Waa la beddelayaa... / Replacing..."
+                                  : "Beddel PDF / Replace PDF"}
                               </button>
 
                               <button
@@ -794,8 +793,8 @@ export default function DocumentsPage() {
                                 )}
 
                                 {deleting
-                                  ? "Deleting..."
-                                  : "Delete"}
+                                  ? "Waa la tirtirayaa... / Deleting..."
+                                  : "Tirtir / Delete"}
                               </button>
                             </div>
                           ) : (
@@ -821,8 +820,8 @@ export default function DocumentsPage() {
                                 )}
 
                                 {uploading
-                                  ? "Uploading..."
-                                  : "Upload PDF"}
+                                  ? "Waa la soo gelinayaa... / Uploading..."
+                                  : "Soo Geli PDF / Upload PDF"}
                               </button>
 
                               <p className="mt-2 text-xs text-slate-400">
@@ -853,10 +852,7 @@ export default function DocumentsPage() {
               </h3>
 
               <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-                Company documents can be uploaded securely
-                as PDF files. Uploaded documents are stored
-                privately and can be opened, printed,
-                downloaded, replaced or removed when needed.
+                Dukumentiyada shirkadda si ammaan ah ayaa loogu soo gelin karaa PDF. Dukumentiyada la soo geliyo si gaar ah ayaa loo kaydiyaa, waxaana la furi karaa, la daabici karaa, la soo dejisan karaa, la beddeli karaa ama la tirtiri karaa marka loo baahdo. / Company documents can be uploaded securely as PDF files. Uploaded documents are stored privately and can be opened, printed, downloaded, replaced or removed when needed.
               </p>
             </div>
           </div>
