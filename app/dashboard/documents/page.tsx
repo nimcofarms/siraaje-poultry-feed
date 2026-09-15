@@ -60,13 +60,13 @@ type UploadedDocument = {
 
 const documentSections: DocumentSection[] = [
   {
-    title: "Dukumentiyada Shaqaalaha / Employee Documents",
+    title: "Employee Documents / Dukumentiyada Shaqaalaha",
     description:
-      "Heshiisyada shaqada, foomamka shaqaalaha, saxiixyada iyo diiwaannada shaqaalaha. / Employment contracts, employee forms, signatures and staff records.",
+      "Employment contracts, employee forms, signatures and staff records. / Heshiisyada shaqada, foomamka shaqaalaha, saxiixyada iyo diiwaannada shaqaalaha.",
     icon: Users,
     documents: [
       {
-        name: "Xeerarka Shaqaalaha & Foomka Oggolaanshaha / Employee Rules & Acknowledgement Form",
+        name: "Employee Rules & Acknowledgement Form / Xeerarka Shaqaalaha & Foomka Oggolaanshaha",
         code: "SPF-HR-001",
         version: "1.0",
         staticFile:
@@ -74,7 +74,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Heshiiska Shaqada / Employment Contract",
+        name: "Employment Contract / Heshiiska Shaqada",
         code: "SPF-HR-002",
         version: "1.0",
         staticFile:
@@ -82,7 +82,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Foomka Diiwaangelinta Shaqaalaha / Employee Registration Form",
+        name: "Employee Registration Form / Foomka Diiwaangelinta Shaqaalaha",
         code: "SPF-HR-003",
         version: "1.0",
         staticFile:
@@ -90,7 +90,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Foomka Codsiga Fasaxa / Leave Request Form",
+        name: "Leave Request Form / Foomka Codsiga Fasaxa",
         code: "SPF-HR-004",
         version: "1.0",
         staticFile:
@@ -98,7 +98,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Digniinta & Tallaabada Sixitaanka Shaqaalaha / Employee Warning & Corrective Action Form",
+        name: "Employee Warning & Corrective Action Form / Digniinta & Tallaabada Sixitaanka Shaqaalaha",
         code: "SPF-HR-005",
         version: "1.0",
         staticFile:
@@ -106,7 +106,7 @@ const documentSections: DocumentSection[] = [
         staticUploaded: true,
       },
       {
-        name: "Foomka Wareejinta & Soo Celinta Qalabka / Equipment Handover & Return Form",
+        name: "Equipment Handover & Return Form / Foomka Wareejinta & Soo Celinta Qalabka",
         code: "SPF-HR-006",
         version: "1.0",
         staticFile:
