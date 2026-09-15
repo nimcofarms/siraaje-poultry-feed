@@ -721,7 +721,7 @@ export default function ChickenPage() {
         !meatSaleForm.location.trim() ||
         !meatSaleForm.customerType ||
         !meatSaleForm.branch.trim() ||
-        !Number.isInteger(quantity) ||
+        !Number.isFinite(quantity) ||
         quantity <= 0 ||
         !Number.isFinite(price) ||
         price < 0
@@ -1763,11 +1763,11 @@ export default function ChickenPage() {
                 />
               </Field>
 
-              <Field label="Tirada / Quantity">
+              <Field label="Tirada / Quantity (kg)">
                 <input
                   type="number"
-                  min="1"
-                  step="1"
+                  min="0.01"
+                  step="any"
                   required
                   value={meatSaleForm.quantity}
                   onChange={(event) =>
@@ -1780,7 +1780,7 @@ export default function ChickenPage() {
                 />
               </Field>
 
-              <Field label="Qiimaha / Price">
+              <Field label="Qiimaha Halkii kg / Price per kg (ETB)">
                 <input
                   type="number"
                   min="0"
@@ -2288,8 +2288,8 @@ function MeatSaleTable({
             <th className="px-5 py-4">Goobta / Location</th>
             <th className="px-5 py-4">Macmiilka / Customer</th>
             <th className="px-5 py-4">Laanta / Branch</th>
-            <th className="px-5 py-4">Tirada / Quantity</th>
-            <th className="px-5 py-4">Qiimaha / Price</th>
+            <th className="px-5 py-4">Tirada / Quantity (kg)</th>
+            <th className="px-5 py-4">Qiimaha / Price per kg</th>
             <th className="px-5 py-4">Wadarta / Total</th>
             <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
             <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
@@ -2342,11 +2342,11 @@ function MeatSaleTable({
                 </td>
 
                 <td className="px-5 py-4 text-sm">
-                  {formatMoney(record.quantity)}
+                  {formatMoney(record.quantity)} kg
                 </td>
 
                 <td className="whitespace-nowrap px-5 py-4 text-sm">
-                  {formatMoney(record.price)} ETB
+                  {formatMoney(record.price)} ETB/kg
                 </td>
 
                 <td className="whitespace-nowrap px-5 py-4 text-sm font-extrabold text-[#075b35]">
