@@ -1276,58 +1276,6 @@ export default function ChickenPage() {
                 />
               </Field>
 
-              <Field label="Nooca Digaagga / Chicken Type">
-                <input
-                  type="text"
-                  required
-                  placeholder="Tusaale: Broiler"
-                  value={liveForm.chickenType}
-                  onChange={(event) =>
-                    setLiveForm((current) => ({
-                      ...current,
-                      chickenType: event.target.value,
-                    }))
-                  }
-                  className={inputClass}
-                />
-              </Field>
-
-              {subTab === "PURCHASES" && (
-                <>
-                  <Field label="Shirkadda / Company">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Tusaale: Supplier Company"
-                      value={liveForm.companyName}
-                      onChange={(event) =>
-                        setLiveForm((current) => ({
-                          ...current,
-                          companyName: event.target.value,
-                        }))
-                      }
-                      className={inputClass}
-                    />
-                  </Field>
-
-                  <Field label="Qofka Iibsaday / Purchased By">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Tusaale: Ahmed"
-                      value={liveForm.purchasedBy}
-                      onChange={(event) =>
-                        setLiveForm((current) => ({
-                          ...current,
-                          purchasedBy: event.target.value,
-                        }))
-                      }
-                      className={inputClass}
-                    />
-                  </Field>
-                </>
-              )}
-
               <Field label="Goobta / Location">
                 <input
                   type="text"
@@ -1338,6 +1286,22 @@ export default function ChickenPage() {
                     setLiveForm((current) => ({
                       ...current,
                       location: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Nooca Digaagga / Chicken Type">
+                <input
+                  type="text"
+                  required
+                  placeholder="Tusaale: Broiler"
+                  value={liveForm.chickenType}
+                  onChange={(event) =>
+                    setLiveForm((current) => ({
+                      ...current,
+                      chickenType: event.target.value,
                     }))
                   }
                   className={inputClass}
@@ -1378,6 +1342,42 @@ export default function ChickenPage() {
                   </select>
                 </div>
               </Field>
+
+              {subTab === "PURCHASES" && (
+                <>
+                  <Field label="Shirkadda Laga Iibsaday / Purchased From">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Tusaale: Supplier Company"
+                      value={liveForm.companyName}
+                      onChange={(event) =>
+                        setLiveForm((current) => ({
+                          ...current,
+                          companyName: event.target.value,
+                        }))
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Qofka Iibsaday / Purchased By">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Tusaale: Ahmed"
+                      value={liveForm.purchasedBy}
+                      onChange={(event) =>
+                        setLiveForm((current) => ({
+                          ...current,
+                          purchasedBy: event.target.value,
+                        }))
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+                </>
+              )}
 
               <Field label="Tirada / Quantity">
                 <input
