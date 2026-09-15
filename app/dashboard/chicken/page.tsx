@@ -44,6 +44,8 @@ type MeatPurchase = AuditFields & {
   purchasedBy?: string | null;
   quantity: number;
   price: number;
+  meatWeightKg?: number | null;
+  pricePerKg?: number | null;
   total: number;
   currency: string;
 };
@@ -80,6 +82,8 @@ type MeatPurchaseForm = {
   purchasedBy: string;
   quantity: string;
   price: string;
+  meatWeightKg: string;
+  pricePerKg: string;
 };
 
 type MeatSaleForm = {
@@ -248,6 +252,8 @@ export default function ChickenPage() {
       purchasedBy: "",
       quantity: "",
       price: "",
+      meatWeightKg: "",
+      pricePerKg: "",
     });
 
   const [meatSaleForm, setMeatSaleForm] = useState<MeatSaleForm>({
@@ -414,6 +420,8 @@ export default function ChickenPage() {
       purchasedBy: "",
       quantity: "",
       price: "",
+      meatWeightKg: "",
+      pricePerKg: "",
     });
 
     setEditingMeatPurchaseId(null);
@@ -489,6 +497,10 @@ export default function ChickenPage() {
       purchasedBy: record.purchasedBy ?? "",
       quantity: String(record.quantity),
       price: String(record.price),
+      meatWeightKg:
+        record.meatWeightKg == null ? "" : String(record.meatWeightKg),
+      pricePerKg:
+        record.pricePerKg == null ? "" : String(record.pricePerKg),
     });
 
     setFormError("");
@@ -624,6 +636,8 @@ export default function ChickenPage() {
 
       const quantity = Number(meatPurchaseForm.quantity);
       const price = Number(meatPurchaseForm.price);
+      const meatWeightKg = Number(meatPurchaseForm.meatWeightKg);
+      const pricePerKg = Number(meatPurchaseForm.pricePerKg);
 
       if (
         !meatPurchaseForm.date ||
@@ -633,7 +647,11 @@ export default function ChickenPage() {
         !Number.isFinite(quantity) ||
         quantity <= 0 ||
         !Number.isFinite(price) ||
-        price < 0
+        price < 0 ||
+        !Number.isFinite(meatWeightKg) ||
+        meatWeightKg <= 0 ||
+        !Number.isFinite(pricePerKg) ||
+        pricePerKg < 0
       ) {
         setFormError(
           "Fadlan xogta oo dhan si sax ah u geli. / Please enter all required information correctly."
@@ -656,6 +674,8 @@ export default function ChickenPage() {
           purchasedBy: meatPurchaseForm.purchasedBy.trim(),
           quantity,
           price,
+          meatWeightKg,
+          pricePerKg,
         }),
       });
 
@@ -836,8 +856,8 @@ export default function ChickenPage() {
     Number(liveForm.quantity || 0) * Number(liveForm.price || 0);
 
   const meatPurchaseFormTotal =
-    Number(meatPurchaseForm.quantity || 0) *
-    Number(meatPurchaseForm.price || 0);
+    Number(meatPurchaseForm.meatWeightKg || 0) *
+    Number(meatPurchaseForm.pricePerKg || 0);
 
   const meatSaleFormTotal =
     Number(meatSaleForm.quantity || 0) *
@@ -1552,6 +1572,42 @@ export default function ChickenPage() {
                   />
                 </Field>
 
+                <Field label="Tirada / Quantity">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    required
+                    placeholder="Tusaale: 10"
+                    value={meatPurchaseForm.quantity}
+                    onChange={(event) =>
+                      setMeatPurchaseForm((current) => ({
+                        ...current,
+                        quantity: event.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                  />
+                </Field>
+
+                <Field label="Qiimaha / Price (ETB)">
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    required
+                    placeholder="Tusaale: 500"
+                    value={meatPurchaseForm.price}
+                    onChange={(event) =>
+                      setMeatPurchaseForm((current) => ({
+                        ...current,
+                        price: event.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                  />
+                </Field>
+
                 <Field label="Miisaanka Hilibka / Quantity (kg)">
                   <input
                     type="number"
@@ -1559,11 +1615,11 @@ export default function ChickenPage() {
                     step="any"
                     required
                     placeholder="Tusaale: 25.5"
-                    value={meatPurchaseForm.quantity}
+                    value={meatPurchaseForm.meatWeightKg}
                     onChange={(event) =>
                       setMeatPurchaseForm((current) => ({
                         ...current,
-                        quantity: event.target.value,
+                        meatWeightKg: event.target.value,
                       }))
                     }
                     className={inputClass}
@@ -1576,11 +1632,12 @@ export default function ChickenPage() {
                     min="0"
                     step="any"
                     required
-                    value={meatPurchaseForm.price}
+                    placeholder="Tusaale: 300"
+                    value={meatPurchaseForm.pricePerKg}
                     onChange={(event) =>
                       setMeatPurchaseForm((current) => ({
                         ...current,
-                        price: event.target.value,
+                        pricePerKg: event.target.value,
                       }))
                     }
                     className={inputClass}
@@ -2074,19 +2131,21 @@ function MeatPurchaseTable({
   onEdit: (record: MeatPurchase) => void;
   onDelete: (id: string) => void;
 }) {
-  const columns = canEdit || canDelete ? 10 : 9;
+  const columns = canEdit || canDelete ? 12 : 11;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1500px] text-left">
+      <table className="w-full min-w-[1850px] text-left">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
             <th className="px-5 py-4">Goobta / Location</th>
             <th className="px-5 py-4">Laga Iibsaday / Purchased From</th>
             <th className="px-5 py-4">Qofka Iibsaday / Purchased By</th>
-            <th className="px-5 py-4">Miisaanka / Quantity (kg)</th>
-            <th className="px-5 py-4">Qiimaha / Price per kg</th>
+            <th className="px-5 py-4">Tirada / Quantity</th>
+            <th className="px-5 py-4">Qiimaha / Price</th>
+            <th className="px-5 py-4">Miisaanka Hilibka / Quantity (kg)</th>
+            <th className="px-5 py-4">Qiimaha Halkii kg / Price per kg</th>
             <th className="px-5 py-4">Wadarta / Total</th>
             <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
             <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
@@ -2139,11 +2198,23 @@ function MeatPurchaseTable({
                 </td>
 
                 <td className="whitespace-nowrap px-5 py-4 text-sm">
-                  {formatMoney(record.quantity)} kg
+                  {formatMoney(record.quantity)}
                 </td>
 
                 <td className="whitespace-nowrap px-5 py-4 text-sm">
-                  {formatMoney(record.price)} ETB/kg
+                  {formatMoney(record.price)} ETB
+                </td>
+
+                <td className="whitespace-nowrap px-5 py-4 text-sm">
+                  {record.meatWeightKg == null
+                    ? "—"
+                    : `${formatMoney(record.meatWeightKg)} kg`}
+                </td>
+
+                <td className="whitespace-nowrap px-5 py-4 text-sm">
+                  {record.pricePerKg == null
+                    ? "—"
+                    : `${formatMoney(record.pricePerKg)} ETB/kg`}
                 </td>
 
                 <td className="whitespace-nowrap px-5 py-4 text-sm font-extrabold text-[#075b35]">

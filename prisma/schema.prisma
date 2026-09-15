@@ -396,11 +396,19 @@ model ChickenMeatPurchase {
   companyName String
   purchasedBy String?
 
+  // General quantity and price
   quantity Float
   price    Float
+
+  // Meat weight and price per kilogram
+  meatWeightKg Float?
+  pricePerKg   Float?
+
+  // Final total
   total    Float
   currency String @default("ETB")
 
+  // Audit trail
   createdById String?
   updatedById String?
 

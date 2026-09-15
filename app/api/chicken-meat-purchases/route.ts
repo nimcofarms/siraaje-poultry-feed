@@ -120,12 +120,16 @@ export async function POST(request: Request) {
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+    const meatWeightKg = Number(body.meatWeightKg);
+    const pricePerKg = Number(body.pricePerKg);
 
     /* =====================================================
        BASIC VALIDATION
 
-       quantity = kilograms, so decimals are allowed.
-       Example: 25.5 kg
+       quantity = general purchase quantity.
+       price = general purchase price.
+       meatWeightKg = meat weight in kilograms.
+       pricePerKg = ETB per kilogram.
     ===================================================== */
 
     if (
@@ -136,7 +140,11 @@ export async function POST(request: Request) {
       !Number.isFinite(quantity) ||
       quantity <= 0 ||
       !Number.isFinite(price) ||
-      price < 0
+      price < 0 ||
+      !Number.isFinite(meatWeightKg) ||
+      meatWeightKg <= 0 ||
+      !Number.isFinite(pricePerKg) ||
+      pricePerKg < 0
     ) {
       return NextResponse.json(
         {
@@ -162,8 +170,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // quantity is kg and price is ETB per kg.
-    const total = quantity * price;
+    // Final total is based on meat weight × price per kg.
+    const total = meatWeightKg * pricePerKg;
 
     /* =====================================================
        CREATE CHICKEN MEAT PURCHASE
@@ -177,6 +185,8 @@ export async function POST(request: Request) {
         purchasedBy,
         quantity,
         price,
+        meatWeightKg,
+        pricePerKg,
         total,
         currency: "ETB",
 
@@ -245,11 +255,16 @@ export async function PUT(request: Request) {
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
+    const meatWeightKg = Number(body.meatWeightKg);
+    const pricePerKg = Number(body.pricePerKg);
 
     /* =====================================================
        BASIC VALIDATION
 
-       quantity = kilograms, so decimals are allowed.
+       quantity = general purchase quantity.
+       price = general purchase price.
+       meatWeightKg = meat weight in kilograms.
+       pricePerKg = ETB per kilogram.
     ===================================================== */
 
     if (
@@ -261,7 +276,11 @@ export async function PUT(request: Request) {
       !Number.isFinite(quantity) ||
       quantity <= 0 ||
       !Number.isFinite(price) ||
-      price < 0
+      price < 0 ||
+      !Number.isFinite(meatWeightKg) ||
+      meatWeightKg <= 0 ||
+      !Number.isFinite(pricePerKg) ||
+      pricePerKg < 0
     ) {
       return NextResponse.json(
         {
@@ -307,8 +326,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Recalculate total using kg × ETB per kg.
-    const total = quantity * price;
+    // Recalculate final total using meat weight × price per kg.
+    const total = meatWeightKg * pricePerKg;
 
     /* =====================================================
        UPDATE CHICKEN MEAT PURCHASE
@@ -326,6 +345,8 @@ export async function PUT(request: Request) {
         purchasedBy,
         quantity,
         price,
+        meatWeightKg,
+        pricePerKg,
         total,
 
         /*
