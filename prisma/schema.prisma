@@ -361,13 +361,18 @@ model LiveChickenSale {
   id          String   @id @default(cuid())
   date        DateTime
   chickenType String
-  location    String
-  ageNumber   Int
-  ageUnit     String
-  quantity    Int
-  price       Float
-  total       Float
-  currency    String   @default("ETB")
+
+  // Customer and seller information
+  companyName String?
+  soldBy      String?
+
+  location  String
+  ageNumber Int
+  ageUnit   String
+  quantity  Int
+  price     Float
+  total     Float
+  currency  String @default("ETB")
 
   createdById String?
   updatedById String?

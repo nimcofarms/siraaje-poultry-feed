@@ -26,6 +26,7 @@ type LiveChickenRecord = AuditFields & {
   chickenType: string;
   companyName?: string | null;
   purchasedBy?: string | null;
+  soldBy?: string | null;
   location: string;
   ageNumber: number;
   ageUnit: AgeUnit;
@@ -63,6 +64,7 @@ type LiveForm = {
   chickenType: string;
   companyName: string;
   purchasedBy: string;
+  soldBy: string;
   location: string;
   ageNumber: string;
   ageUnit: AgeUnit;
@@ -228,6 +230,7 @@ export default function ChickenPage() {
     chickenType: "",
     companyName: "",
     purchasedBy: "",
+    soldBy: "",
     location: "",
     ageNumber: "",
     ageUnit: "DAY",
@@ -388,6 +391,7 @@ export default function ChickenPage() {
       chickenType: "",
       companyName: "",
       purchasedBy: "",
+      soldBy: "",
       location: "",
       ageNumber: "",
       ageUnit: "DAY",
@@ -457,6 +461,7 @@ export default function ChickenPage() {
       chickenType: record.chickenType,
       companyName: record.companyName ?? "",
       purchasedBy: record.purchasedBy ?? "",
+      soldBy: record.soldBy ?? "",
       location: record.location,
       ageNumber: String(record.ageNumber),
       ageUnit: record.ageUnit,
@@ -537,8 +542,10 @@ export default function ChickenPage() {
       if (
         !liveForm.date ||
         !liveForm.chickenType.trim() ||
-        (subTab === "PURCHASES" &&
-          (!liveForm.companyName.trim() || !liveForm.purchasedBy.trim())) ||
+        !liveForm.companyName.trim() ||
+        (subTab === "PURCHASES"
+          ? !liveForm.purchasedBy.trim()
+          : !liveForm.soldBy.trim()) ||
         !liveForm.location.trim() ||
         !Number.isInteger(ageNumber) ||
         ageNumber <= 0 ||
@@ -567,12 +574,10 @@ export default function ChickenPage() {
           ...(editingLiveId ? { id: editingLiveId } : {}),
           date: liveForm.date,
           chickenType: liveForm.chickenType.trim(),
+          companyName: liveForm.companyName.trim(),
           ...(subTab === "PURCHASES"
-            ? {
-                companyName: liveForm.companyName.trim(),
-                purchasedBy: liveForm.purchasedBy.trim(),
-              }
-            : {}),
+            ? { purchasedBy: liveForm.purchasedBy.trim() }
+            : { soldBy: liveForm.soldBy.trim() }),
           location: liveForm.location.trim(),
           ageNumber,
           ageUnit: liveForm.ageUnit,
@@ -1379,6 +1384,42 @@ export default function ChickenPage() {
                 </>
               )}
 
+              {subTab === "SALES" && (
+                <>
+                  <Field label="Shirkadda Loo Iibiyay / Sold To Company">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Tusaale: Customer Company"
+                      value={liveForm.companyName}
+                      onChange={(event) =>
+                        setLiveForm((current) => ({
+                          ...current,
+                          companyName: event.target.value,
+                        }))
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Qofka Iibiyay / Sold By">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Tusaale: Ahmed"
+                      value={liveForm.soldBy}
+                      onChange={(event) =>
+                        setLiveForm((current) => ({
+                          ...current,
+                          soldBy: event.target.value,
+                        }))
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+                </>
+              )}
+
               <Field label="Tirada / Quantity">
                 <input
                   type="number"
@@ -1870,26 +1911,32 @@ function LiveTable({
   onEdit: (record: LiveChickenRecord) => void;
   onDelete: (id: string) => void;
 }) {
-  const baseColumns = isPurchase ? 11 : 9;
+  const baseColumns = 11;
   const columns = canEdit || canDelete ? baseColumns + 1 : baseColumns;
 
   return (
     <div className="overflow-x-auto">
       <table
         className={`w-full text-left ${
-          isPurchase ? "min-w-[1720px]" : "min-w-[1420px]"
+          "min-w-[1720px]"
         }`}
       >
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
             <th className="px-5 py-4">Nooca / Type</th>
-            {isPurchase && (
-              <>
-                <th className="px-5 py-4">Shirkadda / Company</th>
-                <th className="px-5 py-4">Qofka Iibsaday / Purchased By</th>
-              </>
-            )}
+            <>
+              <th className="px-5 py-4">
+                {isPurchase
+                  ? "Laga Iibsaday / Purchased From"
+                  : "Loo Iibiyay / Sold To"}
+              </th>
+              <th className="px-5 py-4">
+                {isPurchase
+                  ? "Qofka Iibsaday / Purchased By"
+                  : "Qofka Iibiyay / Sold By"}
+              </th>
+            </>
             <th className="px-5 py-4">Goobta / Location</th>
             <th className="px-5 py-4">Da&apos;da / Age</th>
             <th className="px-5 py-4">Tirada / Quantity</th>
@@ -1937,16 +1984,14 @@ function LiveTable({
                   {record.chickenType}
                 </td>
 
-                {isPurchase && (
-                  <>
-                    <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
-                      {record.companyName || "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
-                      {record.purchasedBy || "—"}
-                    </td>
-                  </>
-                )}
+                <>
+                  <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                    {record.companyName || "—"}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                    {isPurchase ? record.purchasedBy || "—" : record.soldBy || "—"}
+                  </td>
+                </>
 
 
 

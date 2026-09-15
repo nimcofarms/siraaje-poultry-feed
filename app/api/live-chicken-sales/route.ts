@@ -135,6 +135,14 @@ export async function POST(request: Request) {
       body.chickenType || ""
     ).trim();
 
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
+    const soldBy = String(
+      body.soldBy || ""
+    ).trim();
+
     const location = String(
       body.location || ""
     ).trim();
@@ -154,6 +162,8 @@ export async function POST(request: Request) {
     if (
       !date ||
       !chickenType ||
+      !companyName ||
+      !soldBy ||
       !location ||
       !ageUnit ||
       !Number.isInteger(ageNumber) ||
@@ -227,6 +237,10 @@ export async function POST(request: Request) {
           date: parsedDate,
 
           chickenType,
+
+          companyName,
+
+          soldBy,
 
           location,
 
@@ -319,6 +333,14 @@ export async function PUT(request: Request) {
       body.chickenType || ""
     ).trim();
 
+    const companyName = String(
+      body.companyName || ""
+    ).trim();
+
+    const soldBy = String(
+      body.soldBy || ""
+    ).trim();
+
     const location = String(
       body.location || ""
     ).trim();
@@ -339,6 +361,8 @@ export async function PUT(request: Request) {
       !id ||
       !date ||
       !chickenType ||
+      !companyName ||
+      !soldBy ||
       !location ||
       !ageUnit ||
       !Number.isInteger(ageNumber) ||
@@ -437,6 +461,10 @@ export async function PUT(request: Request) {
           date: parsedDate,
 
           chickenType,
+
+          companyName,
+
+          soldBy,
 
           location,
 
