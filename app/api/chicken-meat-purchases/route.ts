@@ -27,8 +27,7 @@ async function authorize(permission: PermissionKey) {
       user: null,
       response: NextResponse.json(
         {
-          error:
-            "Fadlan marka hore gal. / Please log in first.",
+          error: "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       ),
@@ -69,26 +68,14 @@ export async function GET() {
       return auth.response;
     }
 
-    const purchases =
-      await prisma.chickenMeatPurchase.findMany({
-        include: auditUserInclude,
-
-        orderBy: [
-          {
-            date: "desc",
-          },
-          {
-            createdAt: "desc",
-          },
-        ],
-      });
+    const purchases = await prisma.chickenMeatPurchase.findMany({
+      include: auditUserInclude,
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    });
 
     return NextResponse.json(purchases);
   } catch (error) {
-    console.error(
-      "GET CHICKEN MEAT PURCHASES ERROR:",
-      error
-    );
+    console.error("GET CHICKEN MEAT PURCHASES ERROR:", error);
 
     return NextResponse.json(
       {
@@ -118,8 +105,7 @@ export async function POST(request: Request) {
     if (!auth.user) {
       return NextResponse.json(
         {
-          error:
-            "Fadlan marka hore gal. / Please log in first.",
+          error: "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       );
@@ -127,30 +113,27 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    const date = String(
-      body.date || ""
-    ).trim();
-
-    const location = String(
-      body.location || ""
-    ).trim();
-
-    const companyName = String(
-      body.companyName || ""
-    ).trim();
+    const date = String(body.date || "").trim();
+    const location = String(body.location || "").trim();
+    const companyName = String(body.companyName || "").trim();
+    const purchasedBy = String(body.purchasedBy || "").trim();
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
     /* =====================================================
        BASIC VALIDATION
+
+       quantity = kilograms, so decimals are allowed.
+       Example: 25.5 kg
     ===================================================== */
 
     if (
       !date ||
       !location ||
       !companyName ||
-      !Number.isInteger(quantity) ||
+      !purchasedBy ||
+      !Number.isFinite(quantity) ||
       quantity <= 0 ||
       !Number.isFinite(price) ||
       price < 0
@@ -173,67 +156,50 @@ export async function POST(request: Request) {
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error:
-            "Taariikhda sax ma aha. / Invalid date.",
+          error: "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
     }
 
-    /*
-     * Total-ka server-ka ayaa xisaabinaya.
-     */
+    // quantity is kg and price is ETB per kg.
     const total = quantity * price;
 
     /* =====================================================
        CREATE CHICKEN MEAT PURCHASE
     ===================================================== */
 
-    const purchase =
-      await prisma.chickenMeatPurchase.create({
-        data: {
-          date: parsedDate,
+    const purchase = await prisma.chickenMeatPurchase.create({
+      data: {
+        date: parsedDate,
+        location,
+        companyName,
+        purchasedBy,
+        quantity,
+        price,
+        total,
+        currency: "ETB",
 
-          location,
+        /*
+         * AUDIT TRAIL
+         *
+         * purchasedBy = person who physically handled/made
+         * the meat purchase for Siraaje Poultry Feed.
+         *
+         * createdById = logged-in account that entered
+         * this record into the system.
+         */
+        ...createAuditData(auth.user),
+      },
 
-          companyName,
+      include: auditUserInclude,
+    });
 
-          quantity,
-
-          price,
-
-          total,
-
-          currency: "ETB",
-
-          /*
-           * AUDIT TRAIL
-           *
-           * createdById = account-ka xogta geliyay.
-           *
-           * updatedById = isla account-kaas marka
-           * record-ka markii ugu horreysay la sameeyo.
-           *
-           * User ID-ga waxaa laga qaadayaa session-ka.
-           * Browser-ka kama imaanayo.
-           */
-          ...createAuditData(auth.user),
-        },
-
-        include: auditUserInclude,
-      });
-
-    return NextResponse.json(
-      purchase,
-      {
-        status: 201,
-      }
-    );
+    return NextResponse.json(purchase, {
+      status: 201,
+    });
   } catch (error) {
-    console.error(
-      "POST CHICKEN MEAT PURCHASE ERROR:",
-      error
-    );
+    console.error("POST CHICKEN MEAT PURCHASE ERROR:", error);
 
     return NextResponse.json(
       {
@@ -263,8 +229,7 @@ export async function PUT(request: Request) {
     if (!auth.user) {
       return NextResponse.json(
         {
-          error:
-            "Fadlan marka hore gal. / Please log in first.",
+          error: "Fadlan marka hore gal. / Please log in first.",
         },
         { status: 401 }
       );
@@ -272,27 +237,19 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
 
-    const id = String(
-      body.id || ""
-    ).trim();
-
-    const date = String(
-      body.date || ""
-    ).trim();
-
-    const location = String(
-      body.location || ""
-    ).trim();
-
-    const companyName = String(
-      body.companyName || ""
-    ).trim();
+    const id = String(body.id || "").trim();
+    const date = String(body.date || "").trim();
+    const location = String(body.location || "").trim();
+    const companyName = String(body.companyName || "").trim();
+    const purchasedBy = String(body.purchasedBy || "").trim();
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
     /* =====================================================
        BASIC VALIDATION
+
+       quantity = kilograms, so decimals are allowed.
     ===================================================== */
 
     if (
@@ -300,7 +257,8 @@ export async function PUT(request: Request) {
       !date ||
       !location ||
       !companyName ||
-      !Number.isInteger(quantity) ||
+      !purchasedBy ||
+      !Number.isFinite(quantity) ||
       quantity <= 0 ||
       !Number.isFinite(price) ||
       price < 0
@@ -323,8 +281,7 @@ export async function PUT(request: Request) {
     if (Number.isNaN(parsedDate.getTime())) {
       return NextResponse.json(
         {
-          error:
-            "Taariikhda sax ma aha. / Invalid date.",
+          error: "Taariikhda sax ma aha. / Invalid date.",
         },
         { status: 400 }
       );
@@ -334,12 +291,11 @@ export async function PUT(request: Request) {
        CHECK RECORD EXISTS
     ===================================================== */
 
-    const existingPurchase =
-      await prisma.chickenMeatPurchase.findUnique({
-        where: {
-          id,
-        },
-      });
+    const existingPurchase = await prisma.chickenMeatPurchase.findUnique({
+      where: {
+        id,
+      },
+    });
 
     if (!existingPurchase) {
       return NextResponse.json(
@@ -351,55 +307,40 @@ export async function PUT(request: Request) {
       );
     }
 
-    /*
-     * Total-ka dib ayaa loo xisaabinayaa
-     * marka record-ka wax laga beddelo.
-     */
+    // Recalculate total using kg × ETB per kg.
     const total = quantity * price;
 
     /* =====================================================
        UPDATE CHICKEN MEAT PURCHASE
     ===================================================== */
 
-    const updatedPurchase =
-      await prisma.chickenMeatPurchase.update({
-        where: {
-          id,
-        },
+    const updatedPurchase = await prisma.chickenMeatPurchase.update({
+      where: {
+        id,
+      },
 
-        data: {
-          date: parsedDate,
+      data: {
+        date: parsedDate,
+        location,
+        companyName,
+        purchasedBy,
+        quantity,
+        price,
+        total,
 
-          location,
+        /*
+         * createdById remains unchanged.
+         * updatedById becomes the account editing the record.
+         */
+        ...updateAuditData(auth.user),
+      },
 
-          companyName,
+      include: auditUserInclude,
+    });
 
-          quantity,
-
-          price,
-
-          total,
-
-          /*
-           * createdById lama beddelayo.
-           *
-           * updatedById wuxuu noqonayaa
-           * account-ka hadda wax ka beddelay.
-           */
-          ...updateAuditData(auth.user),
-        },
-
-        include: auditUserInclude,
-      });
-
-    return NextResponse.json(
-      updatedPurchase
-    );
+    return NextResponse.json(updatedPurchase);
   } catch (error) {
-    console.error(
-      "PUT CHICKEN MEAT PURCHASE ERROR:",
-      error
-    );
+    console.error("PUT CHICKEN MEAT PURCHASE ERROR:", error);
 
     return NextResponse.json(
       {
@@ -420,9 +361,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const auth = await authorize(
-      "chickenDelete"
-    );
+    const auth = await authorize("chickenDelete");
 
     if (auth.response) {
       return auth.response;
@@ -430,15 +369,12 @@ export async function DELETE(request: Request) {
 
     const body = await request.json();
 
-    const id = String(
-      body.id || ""
-    ).trim();
+    const id = String(body.id || "").trim();
 
     if (!id) {
       return NextResponse.json(
         {
-          error:
-            "ID-ga waa loo baahan yahay. / ID is required.",
+          error: "ID-ga waa loo baahan yahay. / ID is required.",
         },
         { status: 400 }
       );
@@ -448,12 +384,11 @@ export async function DELETE(request: Request) {
        CHECK RECORD EXISTS
     ===================================================== */
 
-    const existingPurchase =
-      await prisma.chickenMeatPurchase.findUnique({
-        where: {
-          id,
-        },
-      });
+    const existingPurchase = await prisma.chickenMeatPurchase.findUnique({
+      where: {
+        id,
+      },
+    });
 
     if (!existingPurchase) {
       return NextResponse.json(
@@ -477,15 +412,11 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({
       success: true,
-
       message:
         "Xogta waa la tirtiray. / Chicken meat purchase deleted successfully.",
     });
   } catch (error) {
-    console.error(
-      "DELETE CHICKEN MEAT PURCHASE ERROR:",
-      error
-    );
+    console.error("DELETE CHICKEN MEAT PURCHASE ERROR:", error);
 
     return NextResponse.json(
       {

@@ -41,6 +41,7 @@ type MeatPurchase = AuditFields & {
   date: string;
   location: string;
   companyName: string;
+  purchasedBy?: string | null;
   quantity: number;
   price: number;
   total: number;
@@ -76,6 +77,7 @@ type MeatPurchaseForm = {
   date: string;
   location: string;
   companyName: string;
+  purchasedBy: string;
   quantity: string;
   price: string;
 };
@@ -243,6 +245,7 @@ export default function ChickenPage() {
       date: today(),
       location: "",
       companyName: "",
+      purchasedBy: "",
       quantity: "",
       price: "",
     });
@@ -408,6 +411,7 @@ export default function ChickenPage() {
       date: today(),
       location: "",
       companyName: "",
+      purchasedBy: "",
       quantity: "",
       price: "",
     });
@@ -482,6 +486,7 @@ export default function ChickenPage() {
       date: record.date.slice(0, 10),
       location: record.location,
       companyName: record.companyName,
+      purchasedBy: record.purchasedBy ?? "",
       quantity: String(record.quantity),
       price: String(record.price),
     });
@@ -624,7 +629,8 @@ export default function ChickenPage() {
         !meatPurchaseForm.date ||
         !meatPurchaseForm.location.trim() ||
         !meatPurchaseForm.companyName.trim() ||
-        !Number.isInteger(quantity) ||
+        !meatPurchaseForm.purchasedBy.trim() ||
+        !Number.isFinite(quantity) ||
         quantity <= 0 ||
         !Number.isFinite(price) ||
         price < 0
@@ -647,6 +653,7 @@ export default function ChickenPage() {
           date: meatPurchaseForm.date,
           location: meatPurchaseForm.location.trim(),
           companyName: meatPurchaseForm.companyName.trim(),
+          purchasedBy: meatPurchaseForm.purchasedBy.trim(),
           quantity,
           price,
         }),
@@ -1513,10 +1520,11 @@ export default function ChickenPage() {
                   />
                 </Field>
 
-                <Field label="Shirkadda / Company">
+                <Field label="Shirkadda Laga Iibsaday / Purchased From">
                   <input
                     type="text"
                     required
+                    placeholder="Tusaale: Supplier / Company"
                     value={meatPurchaseForm.companyName}
                     onChange={(event) =>
                       setMeatPurchaseForm((current) => ({
@@ -1528,12 +1536,29 @@ export default function ChickenPage() {
                   />
                 </Field>
 
-                <Field label="Tirada / Quantity">
+                <Field label="Qofka Iibsaday / Purchased By">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Magaca qofka iibsaday"
+                    value={meatPurchaseForm.purchasedBy}
+                    onChange={(event) =>
+                      setMeatPurchaseForm((current) => ({
+                        ...current,
+                        purchasedBy: event.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                  />
+                </Field>
+
+                <Field label="Miisaanka Hilibka / Quantity (kg)">
                   <input
                     type="number"
-                    min="1"
-                    step="1"
+                    min="0.01"
+                    step="any"
                     required
+                    placeholder="Tusaale: 25.5"
                     value={meatPurchaseForm.quantity}
                     onChange={(event) =>
                       setMeatPurchaseForm((current) => ({
@@ -1545,7 +1570,7 @@ export default function ChickenPage() {
                   />
                 </Field>
 
-                <Field label="Qiimaha / Price">
+                <Field label="Qiimaha Halkii kg / Price per kg (ETB)">
                   <input
                     type="number"
                     min="0"
@@ -2049,18 +2074,19 @@ function MeatPurchaseTable({
   onEdit: (record: MeatPurchase) => void;
   onDelete: (id: string) => void;
 }) {
-  const columns = canEdit || canDelete ? 9 : 8;
+  const columns = canEdit || canDelete ? 10 : 9;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1270px] text-left">
+      <table className="w-full min-w-[1500px] text-left">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
             <th className="px-5 py-4">Goobta / Location</th>
-            <th className="px-5 py-4">Shirkadda / Company</th>
-            <th className="px-5 py-4">Tirada / Quantity</th>
-            <th className="px-5 py-4">Qiimaha / Price</th>
+            <th className="px-5 py-4">Laga Iibsaday / Purchased From</th>
+            <th className="px-5 py-4">Qofka Iibsaday / Purchased By</th>
+            <th className="px-5 py-4">Miisaanka / Quantity (kg)</th>
+            <th className="px-5 py-4">Qiimaha / Price per kg</th>
             <th className="px-5 py-4">Wadarta / Total</th>
             <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
             <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
@@ -2109,11 +2135,15 @@ function MeatPurchaseTable({
                 </td>
 
                 <td className="px-5 py-4 text-sm">
-                  {formatMoney(record.quantity)}
+                  {record.purchasedBy || "—"}
                 </td>
 
                 <td className="whitespace-nowrap px-5 py-4 text-sm">
-                  {formatMoney(record.price)} ETB
+                  {formatMoney(record.quantity)} kg
+                </td>
+
+                <td className="whitespace-nowrap px-5 py-4 text-sm">
+                  {formatMoney(record.price)} ETB/kg
                 </td>
 
                 <td className="whitespace-nowrap px-5 py-4 text-sm font-extrabold text-[#075b35]">
