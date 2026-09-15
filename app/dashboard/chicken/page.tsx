@@ -645,13 +645,16 @@ export default function ChickenPage() {
         !meatPurchaseForm.companyName.trim() ||
         !meatPurchaseForm.purchasedBy.trim() ||
         !Number.isFinite(quantity) ||
-        quantity <= 0 ||
+        quantity < 0 ||
         !Number.isFinite(price) ||
         price < 0 ||
         !Number.isFinite(meatWeightKg) ||
-        meatWeightKg <= 0 ||
+        meatWeightKg < 0 ||
         !Number.isFinite(pricePerKg) ||
-        pricePerKg < 0
+        pricePerKg < 0 ||
+        (quantity <= 0 && meatWeightKg <= 0) ||
+        (quantity > 0 && price <= 0) ||
+        (meatWeightKg > 0 && pricePerKg <= 0)
       ) {
         setFormError(
           "Fadlan xogta oo dhan si sax ah u geli. / Please enter all required information correctly."
@@ -855,9 +858,16 @@ export default function ChickenPage() {
   const liveFormTotal =
     Number(liveForm.quantity || 0) * Number(liveForm.price || 0);
 
-  const meatPurchaseFormTotal =
+  const meatPurchaseChickenTotal =
+    Number(meatPurchaseForm.quantity || 0) *
+    Number(meatPurchaseForm.price || 0);
+
+  const meatPurchaseMeatTotal =
     Number(meatPurchaseForm.meatWeightKg || 0) *
     Number(meatPurchaseForm.pricePerKg || 0);
+
+  const meatPurchaseFormTotal =
+    meatPurchaseChickenTotal + meatPurchaseMeatTotal;
 
   const meatSaleFormTotal =
     Number(meatSaleForm.quantity || 0) *
@@ -1512,7 +1522,6 @@ export default function ChickenPage() {
                 <Field label="Taariikhda / Date">
                   <input
                     type="date"
-                    required
                     value={meatPurchaseForm.date}
                     onChange={(event) =>
                       setMeatPurchaseForm((current) => ({
@@ -1527,7 +1536,6 @@ export default function ChickenPage() {
                 <Field label="Goobta / Location">
                   <input
                     type="text"
-                    required
                     placeholder="Tusaale: Jigjiga"
                     value={meatPurchaseForm.location}
                     onChange={(event) =>
@@ -1543,7 +1551,6 @@ export default function ChickenPage() {
                 <Field label="Shirkadda Laga Iibsaday / Purchased From">
                   <input
                     type="text"
-                    required
                     placeholder="Tusaale: Supplier / Company"
                     value={meatPurchaseForm.companyName}
                     onChange={(event) =>
@@ -1559,7 +1566,6 @@ export default function ChickenPage() {
                 <Field label="Qofka Iibsaday / Purchased By">
                   <input
                     type="text"
-                    required
                     placeholder="Magaca qofka iibsaday"
                     value={meatPurchaseForm.purchasedBy}
                     onChange={(event) =>
@@ -1577,7 +1583,6 @@ export default function ChickenPage() {
                     type="number"
                     min="0.01"
                     step="any"
-                    required
                     placeholder="Tusaale: 10"
                     value={meatPurchaseForm.quantity}
                     onChange={(event) =>
@@ -1595,7 +1600,6 @@ export default function ChickenPage() {
                     type="number"
                     min="0"
                     step="any"
-                    required
                     placeholder="Tusaale: 500"
                     value={meatPurchaseForm.price}
                     onChange={(event) =>
@@ -1613,7 +1617,6 @@ export default function ChickenPage() {
                     type="number"
                     min="0.01"
                     step="any"
-                    required
                     placeholder="Tusaale: 25.5"
                     value={meatPurchaseForm.meatWeightKg}
                     onChange={(event) =>
@@ -1631,7 +1634,6 @@ export default function ChickenPage() {
                     type="number"
                     min="0"
                     step="any"
-                    required
                     placeholder="Tusaale: 300"
                     value={meatPurchaseForm.pricePerKg}
                     onChange={(event) =>
@@ -1643,6 +1645,26 @@ export default function ChickenPage() {
                     className={inputClass}
                   />
                 </Field>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Wadarta Digaagga / Chicken Total
+                  </p>
+                  <p className="mt-1 text-lg font-extrabold text-slate-900">
+                    {formatMoney(meatPurchaseChickenTotal)} ETB
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Wadarta Hilibka / Meat Total
+                  </p>
+                  <p className="mt-1 text-lg font-extrabold text-slate-900">
+                    {formatMoney(meatPurchaseMeatTotal)} ETB
+                  </p>
+                </div>
               </div>
 
               <TotalBox value={meatPurchaseFormTotal} />
