@@ -133,6 +133,10 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
+    const location = String(
+      body.location || ""
+    ).trim();
+
     const customerType = String(
       body.customerType || ""
     ).trim();
@@ -150,13 +154,14 @@ export async function POST(request: Request) {
 
     if (
       !body.date ||
+      !location ||
       !customerType ||
       !companyName
     ) {
       return NextResponse.json(
         {
           error:
-            "Fadlan buuxi taariikhda, nooca macmiilka iyo magaca macmiilka. / Please enter the date, customer type and customer name.",
+            "Fadlan buuxi taariikhda, goobta, nooca macmiilka iyo magaca macmiilka. / Please enter the date, location, customer type and customer name.",
         },
         { status: 400 }
       );
@@ -210,6 +215,8 @@ export async function POST(request: Request) {
         date: new Date(
           `${body.date}T12:00:00`
         ),
+
+        location,
 
         customerType,
 
@@ -288,6 +295,10 @@ export async function PUT(request: Request) {
       body.id || ""
     ).trim();
 
+    const location = String(
+      body.location || ""
+    ).trim();
+
     const customerType = String(
       body.customerType || ""
     ).trim();
@@ -319,13 +330,14 @@ export async function PUT(request: Request) {
 
     if (
       !body.date ||
+      !location ||
       !customerType ||
       !companyName
     ) {
       return NextResponse.json(
         {
           error:
-            "Fadlan buuxi taariikhda, nooca macmiilka iyo magaca macmiilka. / Please enter the date, customer type and customer name.",
+            "Fadlan buuxi taariikhda, goobta, nooca macmiilka iyo magaca macmiilka. / Please enter the date, location, customer type and customer name.",
         },
         { status: 400 }
       );
@@ -383,6 +395,8 @@ export async function PUT(request: Request) {
         date: new Date(
           `${body.date}T12:00:00`
         ),
+
+        location,
 
         customerType,
 

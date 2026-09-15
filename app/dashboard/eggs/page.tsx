@@ -31,6 +31,7 @@ type PurchasedEgg = {
 type EggSale = {
   id: string;
   date: string;
+  location: string | null;
   customerType: string | null;
   companyName: string;
   quantity: number;
@@ -53,6 +54,7 @@ type PurchaseForm = {
 
 type SaleForm = {
   date: string;
+  location: string;
   customerType: string;
   companyName: string;
   quantity: string;
@@ -169,6 +171,7 @@ export default function EggsPage() {
 
   const [saleForm, setSaleForm] = useState<SaleForm>({
     date: today(),
+    location: "",
     customerType: "",
     companyName: "",
     quantity: "",
@@ -299,6 +302,7 @@ export default function EggsPage() {
   function resetSaleForm() {
     setSaleForm({
       date: today(),
+      location: "",
       customerType: "",
       companyName: "",
       quantity: "",
@@ -343,6 +347,7 @@ export default function EggsPage() {
 
     setSaleForm({
       date: sale.date.slice(0, 10),
+      location: sale.location ?? "",
       customerType: sale.customerType ?? "",
       companyName: sale.companyName,
       quantity: String(sale.quantity),
@@ -449,11 +454,12 @@ export default function EggsPage() {
 
       if (
         !saleForm.date ||
+                !saleForm.location.trim() ||
         !saleForm.customerType ||
         !saleForm.companyName.trim()
       ) {
         setSaleError(
-          "Fadlan buuxi taariikhda, nooca macmiilka iyo magaca macmiilka. / Please complete the date, customer type and customer name."
+          "Fadlan buuxi taariikhda, goobta, nooca macmiilka iyo magaca macmiilka. / Please complete the date, location, customer type and customer name."
         );
         return;
       }
@@ -478,6 +484,7 @@ export default function EggsPage() {
         body: JSON.stringify({
           ...(editingSaleId ? { id: editingSaleId } : {}),
           date: saleForm.date,
+          location: saleForm.location.trim(),
           customerType: saleForm.customerType,
           companyName: saleForm.companyName.trim(),
           quantity,
@@ -985,6 +992,7 @@ export default function EggsPage() {
                 <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-5 py-4">Taariikhda / Date</th>
+                    <th className="px-5 py-4">Goobta / Location</th>
                     <th className="px-5 py-4">
                       Nooca Macmiilka / Customer Type
                     </th>
@@ -1006,7 +1014,7 @@ export default function EggsPage() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={canEdit || canDelete ? 9 : 8}
+                        colSpan={canEdit || canDelete ? 10 : 9}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Xogta waa la soo qaadayaa... / Loading...
@@ -1015,7 +1023,7 @@ export default function EggsPage() {
                   ) : sales.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={canEdit || canDelete ? 9 : 8}
+                        colSpan={canEdit || canDelete ? 10 : 9}
                         className="px-5 py-10 text-center text-slate-500"
                       >
                         Weli wax iib ukun ah lama diiwaangelin. / No egg sales
@@ -1029,6 +1037,10 @@ export default function EggsPage() {
                           {formatDate(sale.date)}
                         </td>
 
+
+                        <td className="px-5 py-4 text-sm font-medium">
+                          {sale.location || "—"}
+                        </td>
                         <td className="px-5 py-4 text-sm font-bold text-slate-700">
                           {formatCustomerType(sale.customerType)}
                         </td>
@@ -1324,6 +1336,26 @@ export default function EggsPage() {
                       setSaleForm((current) => ({
                         ...current,
                         date: event.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-bold text-slate-700">
+                    Goobta / Location
+                  </span>
+
+                  <input
+                    type="text"
+                    required
+                    placeholder="Tusaale: Jigjiga"
+                    value={saleForm.location}
+                    onChange={(event) =>
+                      setSaleForm((current) => ({
+                        ...current,
+                        location: event.target.value,
                       }))
                     }
                     className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"

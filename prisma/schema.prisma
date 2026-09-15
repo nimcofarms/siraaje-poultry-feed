@@ -212,6 +212,7 @@ model PurchasedEgg {
 model EggSale {
   id           String   @id @default(cuid())
   date         DateTime
+  location     String?
   customerType String?
   companyName  String
   quantity     Float
