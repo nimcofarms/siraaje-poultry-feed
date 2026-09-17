@@ -116,7 +116,7 @@ const sidebarItems = [
   },
   {
     href: "/dashboard/feeds",
-    label: "Quudinta / Feeds",
+    label: "Quudinta / Feeds/ sold/product",
     icon: "🌾",
   },
   {

@@ -63,3 +63,5 @@ siraajpoultry_files/
 
 # Misc
 skills-lock.json
+.vercel
+.env*
