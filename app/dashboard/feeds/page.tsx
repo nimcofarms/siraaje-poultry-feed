@@ -83,10 +83,12 @@ function formatDateTime(date: string) {
 }
 
 function formatMoney(value: number, currency = "ETB") {
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value) + ` ${currency}`;
+  return (
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value) + ` ${currency}`
+  );
 }
 
 function feedTypeLabel(feedType: FeedType) {
@@ -554,6 +556,7 @@ export default function FeedsPage() {
                           <p className="font-bold text-slate-900">
                             {feed.createdBy.name}
                           </p>
+
                           <p className="mt-0.5 text-xs text-slate-400">
                             {feed.createdBy.role}
                           </p>
@@ -606,7 +609,7 @@ export default function FeedsPage() {
                   {formatMoney(total)}
                 </td>
 
-                <td />
+                <td colSpan={3} />
               </tr>
             </tfoot>
           </table>
@@ -617,7 +620,11 @@ export default function FeedsPage() {
     return (
     <div className="min-h-screen bg-slate-100">
       <div className="flex min-h-screen">
-        {/* Sidebar */}
+
+        {/* =================================================
+            SIDEBAR
+        ================================================= */}
+
         <aside className="hidden w-72 flex-col border-r border-slate-200 bg-white lg:flex">
           <div className="border-b border-slate-200 px-6 py-6">
             <h1 className="text-xl font-extrabold text-emerald-700">
@@ -646,8 +653,13 @@ export default function FeedsPage() {
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
-                  <span className="text-lg">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span className="text-lg">
+                    {item.icon}
+                  </span>
+
+                  <span>
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -660,9 +672,14 @@ export default function FeedsPage() {
           </div>
         </aside>
 
-        {/* Main */}
+        {/* =================================================
+            MAIN
+        ================================================= */}
+
         <main className="min-w-0 flex-1">
-          {/* Mobile navigation */}
+
+          {/* MOBILE NAVIGATION */}
+
           <div className="border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
             <div className="mb-3">
               <p className="font-extrabold text-emerald-700">
@@ -695,11 +712,15 @@ export default function FeedsPage() {
           </div>
 
           <div className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
-            {/* Header */}
+
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
             <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-emerald-600">
-                  Siraaje Poultry & Feeds Company/
+                  Siraaje Poultry & Feeds Company
                 </p>
 
                 <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">
@@ -707,21 +728,37 @@ export default function FeedsPage() {
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm text-slate-500">
-                  Maamul iibka Starter, Grower iyo Layer Feed. / Manage
-                  Starter, Grower and Layer Feed records.
+                  Maamul iibka Starter, Grower iyo Layer Feed. /
+                  Manage Starter, Grower and Layer Feed records.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => openAddForm("Starter")}
-                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
-              >
-                + Ku Dar Quudin / Add Feed
-              </button>
+              {/* ===============================================
+                  PRODUCTION + ADD FEED
+              =============================================== */}
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/dashboard/feeds/production"
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
+                >
+                  🏭 Production / Wax-soo-saarka
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => openAddForm("Starter")}
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                >
+                  + Ku Dar Quudin / Add Feed
+                </button>
+              </div>
             </div>
 
-            {/* Messages */}
+            {/* =================================================
+                MESSAGES
+            ================================================= */}
+
             {error && (
               <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
                 {error}
@@ -734,8 +771,12 @@ export default function FeedsPage() {
               </div>
             )}
 
-            {/* Summary */}
+            {/* =================================================
+                SUMMARY
+            ================================================= */}
+
             <div className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-semibold text-slate-500">
                   Starter Feed
@@ -793,7 +834,10 @@ export default function FeedsPage() {
               </div>
             </div>
 
-            {/* Feed sections */}
+            {/* =================================================
+                FEED SECTIONS
+            ================================================= */}
+
             <div className="space-y-7">
               <FeedTable
                 title="Starter Feed"
@@ -823,10 +867,16 @@ export default function FeedsPage() {
         </main>
       </div>
 
-      {/* Add / Edit Modal */}
+      {/* =====================================================
+          ADD / EDIT MODAL
+      ===================================================== */}
+
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+
+            {/* MODAL HEADER */}
+
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
               <div>
                 <h2 className="text-xl font-extrabold text-slate-900">
@@ -849,9 +899,18 @@ export default function FeedsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6">
+            {/* =================================================
+                FORM
+            ================================================= */}
+
+            <form
+              onSubmit={handleSubmit}
+              className="p-6"
+            >
               <div className="grid gap-5 sm:grid-cols-2">
-                {/* Date */}
+
+                {/* DATE */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Taariikhda / Date
@@ -871,7 +930,8 @@ export default function FeedsPage() {
                   />
                 </div>
 
-                {/* Location */}
+                {/* LOCATION */}
+
                 <div className="sm:col-span-2">
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Goobta / Location
@@ -892,7 +952,8 @@ export default function FeedsPage() {
                   />
                 </div>
 
-                {/* Feed Type */}
+                {/* FEED TYPE */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Nooca Quudinta / Feed Type
@@ -909,13 +970,22 @@ export default function FeedsPage() {
                     }
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   >
-                    <option value="Starter">Starter Feed</option>
-                    <option value="Grower">Grower Feed</option>
-                    <option value="Layer">Layer Feed</option>
+                    <option value="Starter">
+                      Starter Feed
+                    </option>
+
+                    <option value="Grower">
+                      Grower Feed
+                    </option>
+
+                    <option value="Layer">
+                      Layer Feed
+                    </option>
                   </select>
                 </div>
 
-                {/* Company */}
+                {/* COMPANY */}
+
                 <div className="sm:col-span-2">
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Shirkadda / Company
@@ -936,7 +1006,8 @@ export default function FeedsPage() {
                   />
                 </div>
 
-                {/* Supplied by */}
+                {/* SUPPLIED BY */}
+
                 <div className="sm:col-span-2">
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Qofka Siiyay / Supplied By
@@ -957,7 +1028,8 @@ export default function FeedsPage() {
                   />
                 </div>
 
-                {/* Quantity */}
+                {/* QUANTITY */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Tirada / Quantity
@@ -980,7 +1052,8 @@ export default function FeedsPage() {
                   />
                 </div>
 
-                {/* Price */}
+                {/* PRICE */}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Qiimaha / Price (ETB)
@@ -1003,7 +1076,8 @@ export default function FeedsPage() {
                   />
                 </div>
 
-                {/* Total */}
+                {/* TOTAL */}
+
                 <div className="sm:col-span-2">
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                     <div className="flex items-center justify-between gap-4">
@@ -1023,11 +1097,15 @@ export default function FeedsPage() {
                 </div>
               </div>
 
+              {/* FORM ERROR */}
+
               {error && (
                 <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
                   {error}
                 </div>
               )}
+
+              {/* FORM BUTTONS */}
 
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
@@ -1047,8 +1125,8 @@ export default function FeedsPage() {
                   {saving
                     ? "Waa la kaydinayaa... / Saving..."
                     : editingId
-                    ? "Kaydi Isbeddelka / Save Changes"
-                    : "Kaydi / Save"}
+                      ? "Kaydi Isbeddelka / Save Changes"
+                      : "Kaydi / Save"}
                 </button>
               </div>
             </form>

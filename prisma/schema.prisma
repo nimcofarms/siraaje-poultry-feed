@@ -24,6 +24,7 @@ model User {
   createdPurchasedEggs        PurchasedEgg[]        @relation("PurchasedEggCreatedBy")
   createdEggSales             EggSale[]             @relation("EggSaleCreatedBy")
   createdFeeds                Feed[]                @relation("FeedCreatedBy")
+  createdProductionBatches    ProductionBatch[]     @relation("ProductionBatchCreatedBy")
   createdChickenVaccinations  ChickenVaccination[]  @relation("ChickenVaccinationCreatedBy")
   createdChickenVitamins      ChickenVitamin[]      @relation("ChickenVitaminCreatedBy")
   createdChickenCalciums      ChickenCalcium[]      @relation("ChickenCalciumCreatedBy")
@@ -39,6 +40,7 @@ model User {
   updatedPurchasedEggs        PurchasedEgg[]        @relation("PurchasedEggUpdatedBy")
   updatedEggSales             EggSale[]             @relation("EggSaleUpdatedBy")
   updatedFeeds                Feed[]                @relation("FeedUpdatedBy")
+  updatedProductionBatches    ProductionBatch[]     @relation("ProductionBatchUpdatedBy")
   updatedChickenVaccinations  ChickenVaccination[]  @relation("ChickenVaccinationUpdatedBy")
   updatedChickenVitamins      ChickenVitamin[]      @relation("ChickenVitaminUpdatedBy")
   updatedChickenCalciums      ChickenCalcium[]      @relation("ChickenCalciumUpdatedBy")
@@ -257,6 +259,45 @@ model Feed {
 
   @@index([createdById])
   @@index([updatedById])
+}
+
+model ProductionBatch {
+  id       String   @id @default(cuid())
+  date     DateTime
+  location String
+
+  createdById String?
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items ProductionItem[]
+
+  createdBy User? @relation("ProductionBatchCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("ProductionBatchUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([date])
+  @@index([location])
+  @@index([createdById])
+  @@index([updatedById])
+}
+
+model ProductionItem {
+  id        String @id @default(cuid())
+  batchId   String
+  feedType  String
+  bagSizeKg Float
+  quantity  Int
+  totalKg   Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batch ProductionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([feedType])
 }
 
 model ChickenVaccination {
