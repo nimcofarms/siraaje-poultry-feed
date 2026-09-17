@@ -18,6 +18,7 @@ type Feed = {
   feedType: FeedType;
   companyName: string;
   suppliedBy: string;
+  location: string | null;
   quantity: number;
   price: number;
   total: number;
@@ -33,6 +34,7 @@ type FeedForm = {
   feedType: FeedType;
   companyName: string;
   suppliedBy: string;
+  location: string;
   quantity: string;
   price: string;
 };
@@ -52,6 +54,7 @@ function createEmptyForm(feedType: FeedType = "Starter"): FeedForm {
     feedType,
     companyName: "",
     suppliedBy: "",
+    location: "",
     quantity: "",
     price: "",
   };
@@ -256,6 +259,7 @@ export default function FeedsPage() {
       feedType: feed.feedType,
       companyName: feed.companyName,
       suppliedBy: feed.suppliedBy,
+      location: feed.location ?? "",
       quantity: String(feed.quantity),
       price: String(feed.price),
     });
@@ -281,6 +285,7 @@ export default function FeedsPage() {
 
     const companyName = form.companyName.trim();
     const suppliedBy = form.suppliedBy.trim();
+    const location = form.location.trim();
     const quantity = Number(form.quantity);
     const price = Number(form.price);
 
@@ -288,7 +293,8 @@ export default function FeedsPage() {
       !form.date ||
       !form.feedType ||
       !companyName ||
-      !suppliedBy
+      !suppliedBy ||
+      !location
     ) {
       setError(
         "Fadlan buuxi dhammaan xogta loo baahan yahay. / Please complete all required fields."
@@ -324,6 +330,7 @@ export default function FeedsPage() {
           feedType: form.feedType,
           companyName,
           suppliedBy,
+          location,
           quantity,
           price,
         }),
@@ -443,7 +450,7 @@ export default function FeedsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[1350px] w-full">
+          <table className="min-w-[1480px] w-full">
             <thead className="bg-slate-50">
               <tr className="border-b border-slate-200">
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -456,6 +463,10 @@ export default function FeedsPage() {
 
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
                   Qofka Siiyay / Supplied By
+                </th>
+
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                  Goobta / Location
                 </th>
 
                 <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -488,7 +499,7 @@ export default function FeedsPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-10 text-center text-sm text-slate-500"
                   >
                     Xogta waa la soo qaadayaa... / Loading...
@@ -497,7 +508,7 @@ export default function FeedsPage() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-10 text-center text-sm text-slate-500"
                   >
                     Weli wax xog ah lama diiwaangelin. / No records yet.
@@ -519,6 +530,10 @@ export default function FeedsPage() {
 
                     <td className="px-4 py-4 text-sm text-slate-700">
                       {feed.suppliedBy}
+                    </td>
+
+                    <td className="px-4 py-4 text-sm text-slate-700">
+                      {feed.location || "—"}
                     </td>
 
                     <td className="px-4 py-4 text-right text-sm text-slate-700">
@@ -581,7 +596,7 @@ export default function FeedsPage() {
             <tfoot className="border-t border-slate-200 bg-slate-50">
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-4 text-right text-sm font-bold text-slate-700"
                 >
                   Wadarta Guud / Section Total
@@ -917,6 +932,27 @@ export default function FeedsPage() {
                       }))
                     }
                     placeholder="Magaca qofka / Person's name"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  />
+                </div>
+
+                {/* Location */}
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                    Goobta / Location
+                  </label>
+
+                  <input
+                    type="text"
+                    required
+                    value={form.location}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        location: event.target.value,
+                      }))
+                    }
+                    placeholder="Tusaale: Jigjiga / Example: Jigjiga"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>

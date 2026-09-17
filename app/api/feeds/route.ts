@@ -144,6 +144,10 @@ export async function POST(request: Request) {
       body.suppliedBy || ""
     ).trim();
 
+    const location = String(
+      body.location || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
@@ -155,7 +159,8 @@ export async function POST(request: Request) {
       !body.date ||
       !feedType ||
       !companyName ||
-      !suppliedBy
+      !suppliedBy ||
+      !location
     ) {
       return NextResponse.json(
         {
@@ -216,6 +221,8 @@ export async function POST(request: Request) {
         companyName,
 
         suppliedBy,
+
+        location,
 
         quantity,
 
@@ -303,6 +310,10 @@ export async function PUT(request: Request) {
       body.suppliedBy || ""
     ).trim();
 
+    const location = String(
+      body.location || ""
+    ).trim();
+
     const quantity = Number(body.quantity);
     const price = Number(body.price);
 
@@ -328,7 +339,8 @@ export async function PUT(request: Request) {
       !body.date ||
       !feedType ||
       !companyName ||
-      !suppliedBy
+      !suppliedBy ||
+      !location
     ) {
       return NextResponse.json(
         {
@@ -393,6 +405,8 @@ export async function PUT(request: Request) {
         companyName,
 
         suppliedBy,
+
+        location,
 
         quantity,
 
