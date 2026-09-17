@@ -240,6 +240,7 @@ model Feed {
   feedType    String
   companyName String
   suppliedBy  String
+  location    String?
   quantity    Float
   price       Float
   total       Float
