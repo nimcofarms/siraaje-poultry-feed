@@ -39,10 +39,19 @@ type FeedForm = {
   price: string;
 };
 
-function createEmptyForm(): FeedForm {
+function today() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function createEmptyForm(feedType: FeedType = "Starter"): FeedForm {
   return {
-    date: "",
-    feedType: "Starter",
+    date: today(),
+    feedType,
     companyName: "",
     suppliedBy: "",
     location: "",
@@ -83,14 +92,8 @@ function formatMoney(value: number, currency = "ETB") {
 }
 
 function feedTypeLabel(feedType: FeedType) {
-  if (feedType === "Starter") {
-    return "Starter Feed";
-  }
-
-  if (feedType === "Grower") {
-    return "Grower Feed";
-  }
-
+  if (feedType === "Starter") return "Starter Feed";
+  if (feedType === "Grower") return "Grower Feed";
   return "Layer Feed";
 }
 
@@ -135,7 +138,9 @@ export default function FeedsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [form, setForm] = useState<FeedForm>(() => createEmptyForm());
+  const [form, setForm] = useState<FeedForm>(() =>
+    createEmptyForm()
+  );
 
   async function loadFeeds() {
     try {
@@ -189,7 +194,11 @@ export default function FeedsPage() {
   );
 
   const grandTotal = useMemo(
-    () => feeds.reduce((sum, feed) => sum + Number(feed.total || 0), 0),
+    () =>
+      feeds.reduce(
+        (sum, feed) => sum + Number(feed.total || 0),
+        0
+      ),
     [feeds]
   );
 
@@ -236,6 +245,14 @@ export default function FeedsPage() {
     return quantity * price;
   }, [form.quantity, form.price]);
 
+  function openAddForm(feedType: FeedType) {
+    setEditingId(null);
+    setForm(createEmptyForm(feedType));
+    setError("");
+    setSuccess("");
+    setShowForm(true);
+  }
+
   function openEditForm(feed: Feed) {
     setEditingId(feed.id);
 
@@ -262,15 +279,10 @@ export default function FeedsPage() {
     setForm(createEmptyForm());
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
-
-    if (!editingId) {
-      setError(
-        "This page only allows editing existing feed sales records."
-      );
-      return;
-    }
 
     setError("");
     setSuccess("");
@@ -312,12 +324,12 @@ export default function FeedsPage() {
       setSaving(true);
 
       const response = await fetch("/api/feeds", {
-        method: "PUT",
+        method: editingId ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: editingId,
+          ...(editingId ? { id: editingId } : {}),
           date: form.date,
           feedType: form.feedType,
           companyName,
@@ -333,7 +345,7 @@ export default function FeedsPage() {
       if (!response.ok) {
         throw new Error(
           data.error ||
-            "Xogta quudinta lama cusboonaysiin karin. / Feed record could not be updated."
+            "Xogta quudinta lama kaydin karin. / Feed record could not be saved."
         );
       }
 
@@ -344,7 +356,9 @@ export default function FeedsPage() {
       setForm(createEmptyForm());
 
       setSuccess(
-        "Xogta quudinta waa la cusboonaysiiyay. / Feed record updated successfully."
+        editingId
+          ? "Xogta quudinta waa la cusboonaysiiyay. / Feed record updated successfully."
+          : "Xogta quudinta waa la kaydiyay. / Feed record saved successfully."
       );
     } catch (err) {
       console.error(err);
@@ -352,7 +366,7 @@ export default function FeedsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Xogta quudinta lama cusboonaysiin karin. / Feed record could not be updated."
+          : "Xogta quudinta lama kaydin karin. / Feed record could not be saved."
       );
     } finally {
       setSaving(false);
@@ -409,22 +423,34 @@ export default function FeedsPage() {
     subtitle,
     records,
     total,
+    feedType,
   }: {
     title: string;
     subtitle: string;
     records: Feed[];
     total: number;
+    feedType: FeedType;
   }) {
     return (
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-5">
-          <h2 className="text-xl font-bold text-slate-900">
-            {title}
-          </h2>
+        <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">
+              {title}
+            </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
-            {subtitle}
-          </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {subtitle}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => openAddForm(feedType)}
+            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            + Ku Dar / Add
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -624,13 +650,8 @@ export default function FeedsPage() {
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
-                  <span className="text-lg">
-                    {item.icon}
-                  </span>
-
-                  <span>
-                    {item.label}
-                  </span>
+                  <span className="text-lg">{item.icon}</span>
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
@@ -692,6 +713,7 @@ export default function FeedsPage() {
                 </p>
               </div>
 
+              {/* ONLY PRODUCTION AT THE TOP */}
               <Link
                 href="/dashboard/feeds/production"
                 className="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
@@ -717,11 +739,9 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-slate-500">
                   Starter Feed
                 </p>
-
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
                   {starterFeeds.length}
                 </p>
-
                 <p className="mt-1 text-sm font-semibold text-emerald-700">
                   {formatMoney(starterTotal)}
                 </p>
@@ -731,11 +751,9 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-slate-500">
                   Grower Feed
                 </p>
-
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
                   {growerFeeds.length}
                 </p>
-
                 <p className="mt-1 text-sm font-semibold text-emerald-700">
                   {formatMoney(growerTotal)}
                 </p>
@@ -745,11 +763,9 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-slate-500">
                   Layer Feed
                 </p>
-
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
                   {layerFeeds.length}
                 </p>
-
                 <p className="mt-1 text-sm font-semibold text-emerald-700">
                   {formatMoney(layerTotal)}
                 </p>
@@ -759,11 +775,9 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-emerald-700">
                   Wadarta Guud / Grand Total
                 </p>
-
                 <p className="mt-2 text-2xl font-extrabold text-emerald-800">
                   {formatMoney(grandTotal)}
                 </p>
-
                 <p className="mt-1 text-xs font-medium text-emerald-600">
                   {feeds.length} records
                 </p>
@@ -776,6 +790,7 @@ export default function FeedsPage() {
                 subtitle="Diiwaanka Starter Feed / Starter Feed Records"
                 records={starterFeeds}
                 total={starterTotal}
+                feedType="Starter"
               />
 
               <FeedTable
@@ -783,6 +798,7 @@ export default function FeedsPage() {
                 subtitle="Diiwaanka Grower Feed / Grower Feed Records"
                 records={growerFeeds}
                 total={growerTotal}
+                feedType="Grower"
               />
 
               <FeedTable
@@ -790,23 +806,28 @@ export default function FeedsPage() {
                 subtitle="Diiwaanka Layer Feed / Layer Feed Records"
                 records={layerFeeds}
                 total={layerTotal}
+                feedType="Layer"
               />
             </div>
           </div>
         </main>
       </div>
 
-      {showForm && editingId && (
+      {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
               <div>
                 <h2 className="text-xl font-extrabold text-slate-900">
-                  Beddel Quudinta / Edit Feed
+                  {editingId
+                    ? "Beddel Quudinta / Edit Feed"
+                    : `Ku Dar ${feedTypeLabel(form.feedType)} / Add ${feedTypeLabel(form.feedType)}`}
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Edit this existing sales record
+                  {editingId
+                    ? "Edit this existing sales record"
+                    : `${feedTypeLabel(form.feedType)} sales record`}
                 </p>
               </div>
 
@@ -820,10 +841,7 @@ export default function FeedsPage() {
               </button>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="p-6"
-            >
+            <form onSubmit={handleSubmit} className="p-6">
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
@@ -840,7 +858,7 @@ export default function FeedsPage() {
                         date: event.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
 
@@ -849,21 +867,12 @@ export default function FeedsPage() {
                     Nooca Quudinta / Feed Type
                   </label>
 
-                  <select
-                    required
-                    value={form.feedType}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        feedType: event.target.value as FeedType,
-                      }))
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  >
-                    <option value="Starter">Starter Feed</option>
-                    <option value="Grower">Grower Feed</option>
-                    <option value="Layer">Layer Feed</option>
-                  </select>
+                  <input
+                    type="text"
+                    readOnly
+                    value={feedTypeLabel(form.feedType)}
+                    className="w-full cursor-not-allowed rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800"
+                  />
                 </div>
 
                 <div className="sm:col-span-2">
@@ -882,7 +891,7 @@ export default function FeedsPage() {
                       }))
                     }
                     placeholder="Tusaale: Jigjiga / Example: Jigjiga"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
 
@@ -901,7 +910,8 @@ export default function FeedsPage() {
                         companyName: event.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    placeholder="Tusaale: ABC Poultry Farm"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
 
@@ -920,7 +930,8 @@ export default function FeedsPage() {
                         suppliedBy: event.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    placeholder="Magaca qofka / Person's name"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
 
@@ -941,7 +952,8 @@ export default function FeedsPage() {
                         quantity: event.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    placeholder="0"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
 
@@ -962,7 +974,8 @@ export default function FeedsPage() {
                         price: event.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    placeholder="0.00"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
 
@@ -996,7 +1009,7 @@ export default function FeedsPage() {
                   type="button"
                   onClick={closeForm}
                   disabled={saving}
-                  className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                 >
                   Jooji / Cancel
                 </button>
@@ -1004,11 +1017,13 @@ export default function FeedsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {saving
                     ? "Waa la kaydinayaa... / Saving..."
-                    : "Kaydi Isbeddelka / Save Changes"}
+                    : editingId
+                      ? "Kaydi Isbeddelka / Save Changes"
+                      : "Kaydi / Save"}
                 </button>
               </div>
             </form>
