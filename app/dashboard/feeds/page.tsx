@@ -458,15 +458,15 @@ export default function FeedsPage() {
                 </th>
 
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                  Goobta / Location
+                </th>
+
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
                   Shirkadda / Company
                 </th>
 
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
                   Qofka Siiyay / Supplied By
-                </th>
-
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Goobta / Location
                 </th>
 
                 <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -524,16 +524,16 @@ export default function FeedsPage() {
                       {formatDate(feed.date)}
                     </td>
 
+                    <td className="px-4 py-4 text-sm text-slate-700">
+                      {feed.location || "—"}
+                    </td>
+
                     <td className="px-4 py-4 text-sm font-semibold text-slate-900">
                       {feed.companyName}
                     </td>
 
                     <td className="px-4 py-4 text-sm text-slate-700">
                       {feed.suppliedBy}
-                    </td>
-
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {feed.location || "—"}
                     </td>
 
                     <td className="px-4 py-4 text-right text-sm text-slate-700">
@@ -871,6 +871,27 @@ export default function FeedsPage() {
                   />
                 </div>
 
+                {/* Location */}
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                    Goobta / Location
+                  </label>
+
+                  <input
+                    type="text"
+                    required
+                    value={form.location}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        location: event.target.value,
+                      }))
+                    }
+                    placeholder="Tusaale: Jigjiga / Example: Jigjiga"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  />
+                </div>
+
                 {/* Feed Type */}
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
@@ -932,27 +953,6 @@ export default function FeedsPage() {
                       }))
                     }
                     placeholder="Magaca qofka / Person's name"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  />
-                </div>
-
-                {/* Location */}
-                <div className="sm:col-span-2">
-                  <label className="mb-2 block text-sm font-bold text-slate-700">
-                    Goobta / Location
-                  </label>
-
-                  <input
-                    type="text"
-                    required
-                    value={form.location}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        location: event.target.value,
-                      }))
-                    }
-                    placeholder="Tusaale: Jigjiga / Example: Jigjiga"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
                 </div>
