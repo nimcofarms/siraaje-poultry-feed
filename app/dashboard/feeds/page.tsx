@@ -699,11 +699,11 @@ export default function FeedsPage() {
             <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-emerald-600">
-                  Siraaje Poultry & Feeds Company
+                  Siraaje Poultry & Feeds Company/
                 </p>
 
                 <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">
-                  Quudinta / Feeds
+                  Feeds sold / Cunada la iibiyay
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm text-slate-500">
