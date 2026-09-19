@@ -91,6 +91,41 @@ type AccountEntry = {
   currency: string;
   createdAt: string;
   createdBy: AuditUser | null;
+  feedType?: string | null;
+};
+
+type TransactionFilter =
+  | "ALL"
+  | "PURCHASE"
+  | "SALE"
+  | "EXPENSE";
+
+type FeedTypeFilter =
+  | "ALL"
+  | "Starter"
+  | "Grower"
+  | "Layer";
+
+type ProductionEntry = {
+  id: string;
+  batchId: string;
+  itemId: string;
+  date: string;
+  location: string;
+  feedType: string;
+  bagSizeKg: number;
+  quantity: number;
+  totalKg: number;
+  createdAt: string;
+  createdBy: AuditUser | null;
+};
+
+type ProductionFeedSummary = {
+  feedType: string;
+  batches: number;
+  records: number;
+  bags: number;
+  totalKg: number;
 };
 
 type CurrencySummary = {
@@ -127,8 +162,27 @@ type AccountsResponse = {
 
   selectedCategories: AccountCategory[];
 
+  filters: {
+    categories: AccountCategory[];
+    transaction: TransactionFilter;
+    company: string;
+    feedType: FeedTypeFilter;
+  };
+
   availableCategories: {
     value: AccountCategory;
+    label: string;
+  }[];
+
+  availableTransactions: {
+    value: TransactionFilter;
+    label: string;
+  }[];
+
+  availableParties: string[];
+
+  availableFeedTypes: {
+    value: FeedTypeFilter;
     label: string;
   }[];
 
@@ -139,6 +193,15 @@ type AccountsResponse = {
   };
 
   entries: AccountEntry[];
+
+  production: {
+    totalBatches: number;
+    totalRecords: number;
+    totalBags: number;
+    totalKg: number;
+    byFeedType: ProductionFeedSummary[];
+    entries: ProductionEntry[];
+  };
 };
 
 const CATEGORY_OPTIONS: {
@@ -162,7 +225,7 @@ const CATEGORY_OPTIONS: {
     value: "feeds",
     label: "Quudinta",
     description:
-      "Quudinta la soo iibsaday bishan la doortay.",
+      "Quudinta la soo iibsaday, la iibiyay iyo wax-soo-saarka bishan.",
   },
   {
     value: "expenses",
@@ -322,6 +385,15 @@ export default function MonthlyAccountsPage() {
   const [month, setMonth] =
     useState(getCurrentMonth());
 
+  const [transaction, setTransaction] =
+    useState<TransactionFilter>("ALL");
+
+  const [company, setCompany] =
+    useState("ALL");
+
+  const [feedType, setFeedType] =
+    useState<FeedTypeFilter>("ALL");
+
   const [selectedCategories, setSelectedCategories] =
     useState<AccountCategory[]>(
       CATEGORY_OPTIONS.map(
@@ -432,6 +504,9 @@ export default function MonthlyAccountsPage() {
         new URLSearchParams({
           month,
           categories,
+          transaction,
+          company: company === "ALL" ? "" : company,
+          feedType,
         });
 
       const response = await fetch(
@@ -476,6 +551,9 @@ export default function MonthlyAccountsPage() {
     month,
     router,
     selectedCategories,
+    transaction,
+    company,
+    feedType,
   ]);
 
   useEffect(() => {
@@ -726,23 +804,108 @@ export default function MonthlyAccountsPage() {
             </p>
           </div>
 
-          {/* MONTH + CATEGORY FILTER */}
+          {/* MONTH + ADVANCED FILTERS */}
           <div className="print:hidden rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-7">
-            <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-              <div className="w-full lg:max-w-xs">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
+                Shaandhaynta Xisaabta / Account Filters
+              </p>
+
+              <h3 className="mt-1 text-xl font-extrabold text-[#064b2c]">
+                Dooro xogta aad rabto inaad xisaabiso
+              </h3>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <div>
                 <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
-                  Dooro Bisha
+                  Bisha / Month
                 </label>
 
                 <input
                   type="month"
                   value={month}
-                  onChange={(event) =>
-                    setMonth(event.target.value)
-                  }
+                  onChange={(event) => setMonth(event.target.value)}
                   className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
                 />
               </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
+                  Transaction
+                </label>
+
+                <select
+                  value={transaction}
+                  onChange={(event) =>
+                    setTransaction(event.target.value as TransactionFilter)
+                  }
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
+                >
+                  <option value="ALL">Dhammaan / All</option>
+                  <option value="SALE">La iibiyay / Sold</option>
+                  <option value="PURCHASE">La iibsaday / Purchased</option>
+                  <option value="EXPENSE">Kharash / Expense</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
+                  Shirkad / Customer / Supplier
+                </label>
+
+                <select
+                  value={company}
+                  onChange={(event) => setCompany(event.target.value)}
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
+                >
+                  <option value="ALL">Dhammaan / All</option>
+                  {(data?.availableParties || []).map((party) => (
+                    <option key={party} value={party}>
+                      {party}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
+                  Nooca Quudinta / Feed Type
+                </label>
+
+                <select
+                  value={feedType}
+                  onChange={(event) =>
+                    setFeedType(event.target.value as FeedTypeFilter)
+                  }
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
+                >
+                  <option value="ALL">Dhammaan / All</option>
+                  <option value="Starter">Starter</option>
+                  <option value="Grower">Grower</option>
+                  <option value="Layer">Layer</option>
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTransaction("ALL");
+                    setCompany("ALL");
+                    setFeedType("ALL");
+                  }}
+                  className="min-h-12 w-full rounded-2xl border border-slate-200 px-4 font-extrabold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+              <p className="text-sm font-extrabold text-[#17452f]">
+                Qaybaha / Categories
+              </p>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -757,9 +920,7 @@ export default function MonthlyAccountsPage() {
                 <button
                   type="button"
                   onClick={clearCategories}
-                  disabled={
-                    selectedCategories.length === 0
-                  }
+                  disabled={selectedCategories.length === 0}
                   className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-extrabold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
                 >
                   Ka Saar Dhammaan
@@ -818,17 +979,20 @@ export default function MonthlyAccountsPage() {
             </div>
 
             <div className="mt-5 flex flex-col justify-between gap-3 border-t border-[#ece7dc] pt-5 sm:flex-row sm:items-center">
-              <p className="text-sm text-slate-500">
-                {selectedCategories.length} ka mid ah{" "}
-                {CATEGORY_OPTIONS.length} qaybood ayaa la
-                doortay
-              </p>
+              <div>
+                <p className="text-sm text-slate-500">
+                  {selectedCategories.length} ka mid ah{" "}
+                  {CATEGORY_OPTIONS.length} qaybood ayaa la doortay
+                </p>
+
+                <p className="mt-1 text-xs font-semibold text-slate-400">
+                  Transaction: {transaction} · Company: {company} · Feed: {feedType}
+                </p>
+              </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  void loadAccounts()
-                }
+                onClick={() => void loadAccounts()}
                 disabled={
                   loading ||
                   selectedCategories.length === 0 ||
@@ -836,9 +1000,7 @@ export default function MonthlyAccountsPage() {
                 }
                 className="min-h-11 rounded-2xl bg-[#075b35] px-6 font-extrabold text-white transition hover:bg-[#064b2c] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading
-                  ? "Xisaabinta..."
-                  : "Xisaabi"}
+                {loading ? "Xisaabinta..." : "Xisaabi"}
               </button>
             </div>
           </div>
@@ -1093,7 +1255,176 @@ export default function MonthlyAccountsPage() {
                   </div>
                 </div>
               )}
-                            {/* DIIWAANNADA FAAHFAAHSAN */}
+                            {/* FEED PRODUCTION - NON-MONETARY */}
+              {selectedCategories.includes("feeds") && data.production && (
+                <div className="mt-7 rounded-3xl border border-[#cfe3d5] bg-white p-5 shadow-sm sm:p-7">
+                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                    <div>
+                      <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
+                        Wax-soo-saarka Quudinta / Feed Production
+                      </p>
+
+                      <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
+                        Production-ka Bisha
+                      </h3>
+
+                      <p className="mt-1 max-w-3xl text-sm text-slate-500">
+                        Production-ku waa xog KG iyo bags ah. Laguma daro iibka,
+                        wax iibsiga, kharashaadka ama natiijada lacagta.
+                      </p>
+                    </div>
+
+                    <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
+                      {data.production.totalRecords} records
+                    </span>
+                  </div>
+
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <SummaryCard
+                      label="Production Batches"
+                      value={formatNumber(data.production.totalBatches)}
+                      description="Tirada batches-ka bishan"
+                      variant="positive"
+                    />
+
+                    <SummaryCard
+                      label="Total Bags"
+                      value={formatNumber(data.production.totalBags)}
+                      description="Dhammaan bacaha la soo saaray"
+                      variant="positive"
+                    />
+
+                    <SummaryCard
+                      label="Total Weight"
+                      value={`${formatNumber(data.production.totalKg)} KG`}
+                      description="Miisaanka guud ee production-ka"
+                      variant="positive"
+                    />
+
+                    <SummaryCard
+                      label="Feed Types"
+                      value={formatNumber(data.production.byFeedType.length)}
+                      description="Starter, Grower iyo Layer"
+                      variant="positive"
+                    />
+                  </div>
+
+                  {data.production.byFeedType.length > 0 && (
+                    <div className="mt-6 grid gap-4 md:grid-cols-3">
+                      {data.production.byFeedType.map((item) => (
+                        <div
+                          key={item.feedType}
+                          className="rounded-2xl border border-[#e7e1d4] bg-[#faf9f5] p-5"
+                        >
+                          <p className="text-lg font-extrabold text-[#064b2c]">
+                            {item.feedType}
+                          </p>
+
+                          <div className="mt-3 space-y-2 text-sm text-slate-600">
+                            <p>
+                              Batches:{" "}
+                              <span className="font-extrabold text-slate-800">
+                                {item.batches}
+                              </span>
+                            </p>
+                            <p>
+                              Bags:{" "}
+                              <span className="font-extrabold text-slate-800">
+                                {formatNumber(item.bags)}
+                              </span>
+                            </p>
+                            <p>
+                              Total KG:{" "}
+                              <span className="font-extrabold text-slate-800">
+                                {formatNumber(item.totalKg)} KG
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {data.production.entries.length > 0 ? (
+                    <div className="mt-6 overflow-x-auto">
+                      <table className="w-full min-w-[1100px] text-left">
+                        <thead>
+                          <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
+                            <th className="px-3 py-3">Taariikhda</th>
+                            <th className="px-3 py-3">Feed Type</th>
+                            <th className="px-3 py-3">Goobta</th>
+                            <th className="px-3 py-3 text-right">Bag Size</th>
+                            <th className="px-3 py-3 text-right">Bags</th>
+                            <th className="px-3 py-3 text-right">Total KG</th>
+                            <th className="px-3 py-3">Waxaa Geliyay</th>
+                            <th className="px-3 py-3">Waqtiga</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {data.production.entries.map((entry) => (
+                            <tr
+                              key={entry.id}
+                              className="border-b border-[#ece7dc]"
+                            >
+                              <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
+                                {formatDate(entry.date)}
+                              </td>
+
+                              <td className="px-3 py-4 font-extrabold text-[#17452f]">
+                                {entry.feedType}
+                              </td>
+
+                              <td className="px-3 py-4 text-sm text-slate-600">
+                                {entry.location || "—"}
+                              </td>
+
+                              <td className="px-3 py-4 text-right font-bold text-slate-700">
+                                {formatNumber(entry.bagSizeKg)} KG
+                              </td>
+
+                              <td className="px-3 py-4 text-right font-bold text-slate-700">
+                                {formatNumber(entry.quantity)}
+                              </td>
+
+                              <td className="px-3 py-4 text-right font-extrabold text-[#075b35]">
+                                {formatNumber(entry.totalKg)} KG
+                              </td>
+
+                              <td className="px-3 py-4 text-sm">
+                                {entry.createdBy ? (
+                                  <div>
+                                    <p className="font-extrabold text-[#17452f]">
+                                      {entry.createdBy.name}
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-slate-400">
+                                      {entry.createdBy.role}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <span className="font-semibold text-slate-400">
+                                    Xog hore
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
+                                {formatDateTime(entry.createdAt)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="mt-6 rounded-2xl bg-[#faf9f5] px-5 py-8 text-center text-sm font-semibold text-slate-500">
+                      Production lama helin bisha iyo filters-ka la doortay.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* DIIWAANNADA FAAHFAAHSAN */}
               {data.entries.length > 0 && (
                 <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-7">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">

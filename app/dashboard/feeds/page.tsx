@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type FeedType = "Starter" | "Grower" | "Layer";
+type TransactionType = "PURCHASE" | "SALE";
 
 type AuditUser = {
   id: string;
@@ -16,6 +17,7 @@ type Feed = {
   id: string;
   date: string;
   feedType: FeedType;
+  transactionType: TransactionType;
   companyName: string;
   suppliedBy: string;
   location: string | null;
@@ -32,6 +34,7 @@ type Feed = {
 type FeedForm = {
   date: string;
   feedType: FeedType;
+  transactionType: TransactionType;
   companyName: string;
   suppliedBy: string;
   location: string;
@@ -52,6 +55,7 @@ function createEmptyForm(feedType: FeedType = "Starter"): FeedForm {
   return {
     date: today(),
     feedType,
+    transactionType: "SALE",
     companyName: "",
     suppliedBy: "",
     location: "",
@@ -97,6 +101,14 @@ function feedTypeLabel(feedType: FeedType) {
   return "Layer Feed";
 }
 
+function transactionLabel(transactionType: TransactionType) {
+  if (transactionType === "SALE") {
+    return "Sold / La iibiyay";
+  }
+
+  return "Purchased / La iibsaday";
+}
+
 const sidebarItems = [
   {
     href: "/dashboard",
@@ -115,7 +127,7 @@ const sidebarItems = [
   },
   {
     href: "/dashboard/feeds",
-    label: "Quudinta / Feeds/ sold/product",
+    label: "Quudinta / Feeds",
     icon: "🌾",
   },
   {
@@ -259,6 +271,8 @@ export default function FeedsPage() {
     setForm({
       date: feed.date.slice(0, 10),
       feedType: feed.feedType,
+      transactionType:
+        feed.transactionType === "SALE" ? "SALE" : "PURCHASE",
       companyName: feed.companyName,
       suppliedBy: feed.suppliedBy,
       location: feed.location ?? "",
@@ -296,6 +310,7 @@ export default function FeedsPage() {
     if (
       !form.date ||
       !form.feedType ||
+      !form.transactionType ||
       !companyName ||
       !suppliedBy ||
       !location
@@ -332,11 +347,13 @@ export default function FeedsPage() {
           ...(editingId ? { id: editingId } : {}),
           date: form.date,
           feedType: form.feedType,
+          transactionType: form.transactionType,
           companyName,
           suppliedBy,
           location,
           quantity,
           price,
+          currency: "ETB",
         }),
       });
 
@@ -454,11 +471,15 @@ export default function FeedsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[1480px] w-full">
+          <table className="min-w-[1600px] w-full">
             <thead className="bg-slate-50">
               <tr className="border-b border-slate-200">
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
                   Taariikhda / Date
+                </th>
+
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                  Macaamil / Transaction
                 </th>
 
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
@@ -503,7 +524,7 @@ export default function FeedsPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="px-4 py-10 text-center text-sm text-slate-500"
                   >
                     Xogta waa la soo qaadayaa... / Loading...
@@ -512,7 +533,7 @@ export default function FeedsPage() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="px-4 py-10 text-center text-sm text-slate-500"
                   >
                     Weli wax xog ah lama diiwaangelin. / No records yet.
@@ -526,6 +547,22 @@ export default function FeedsPage() {
                   >
                     <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
                       {formatDate(feed.date)}
+                    </td>
+
+                    <td className="whitespace-nowrap px-4 py-4 text-sm">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                          feed.transactionType === "SALE"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {transactionLabel(
+                          feed.transactionType === "SALE"
+                            ? "SALE"
+                            : "PURCHASE"
+                        )}
+                      </span>
                     </td>
 
                     <td className="px-4 py-4 text-sm text-slate-700">
@@ -601,7 +638,7 @@ export default function FeedsPage() {
             <tfoot className="border-t border-slate-200 bg-slate-50">
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-4 text-right text-sm font-bold text-slate-700"
                 >
                   Wadarta Guud / Section Total
@@ -704,16 +741,16 @@ export default function FeedsPage() {
                 </p>
 
                 <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">
-                  Feeds sold / Cunada la iibiyay
+                  Feeds / Quudinta
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm text-slate-500">
-                  Maamul iibka Starter, Grower iyo Layer Feed. /
-                  Manage Starter, Grower and Layer Feed records.
+                  Maamul quudinta la iibsaday iyo quudinta la iibiyay
+                  ee Starter, Grower iyo Layer. / Manage purchased and
+                  sold Starter, Grower and Layer Feed records.
                 </p>
               </div>
 
-              {/* ONLY PRODUCTION AT THE TOP */}
               <Link
                 href="/dashboard/feeds/production"
                 className="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
@@ -739,9 +776,11 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-slate-500">
                   Starter Feed
                 </p>
+
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
                   {starterFeeds.length}
                 </p>
+
                 <p className="mt-1 text-sm font-semibold text-emerald-700">
                   {formatMoney(starterTotal)}
                 </p>
@@ -751,9 +790,11 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-slate-500">
                   Grower Feed
                 </p>
+
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
                   {growerFeeds.length}
                 </p>
+
                 <p className="mt-1 text-sm font-semibold text-emerald-700">
                   {formatMoney(growerTotal)}
                 </p>
@@ -763,9 +804,11 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-slate-500">
                   Layer Feed
                 </p>
+
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
                   {layerFeeds.length}
                 </p>
+
                 <p className="mt-1 text-sm font-semibold text-emerald-700">
                   {formatMoney(layerTotal)}
                 </p>
@@ -775,9 +818,11 @@ export default function FeedsPage() {
                 <p className="text-sm font-semibold text-emerald-700">
                   Wadarta Guud / Grand Total
                 </p>
+
                 <p className="mt-2 text-2xl font-extrabold text-emerald-800">
                   {formatMoney(grandTotal)}
                 </p>
+
                 <p className="mt-1 text-xs font-medium text-emerald-600">
                   {feeds.length} records
                 </p>
@@ -826,8 +871,8 @@ export default function FeedsPage() {
 
                 <p className="mt-1 text-sm text-slate-500">
                   {editingId
-                    ? "Edit this existing sales record"
-                    : `${feedTypeLabel(form.feedType)} sales record`}
+                    ? "Beddel diiwaanka quudinta / Edit this feed record"
+                    : `${feedTypeLabel(form.feedType)} record`}
                 </p>
               </div>
 
@@ -873,6 +918,39 @@ export default function FeedsPage() {
                     value={feedTypeLabel(form.feedType)}
                     className="w-full cursor-not-allowed rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800"
                   />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                    Nooca Macaamilka / Transaction Type
+                  </label>
+
+                  <select
+                    required
+                    value={form.transactionType}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        transactionType:
+                          event.target.value as TransactionType,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  >
+                    <option value="SALE">
+                      Sold / La iibiyay
+                    </option>
+
+                    <option value="PURCHASE">
+                      Purchased / La iibsaday
+                    </option>
+                  </select>
+
+                  <p className="mt-2 text-xs text-slate-500">
+                    Dooro haddii quudintan la iibiyay ama la
+                    iibsaday. / Choose whether this feed was sold
+                    or purchased.
+                  </p>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -942,7 +1020,7 @@ export default function FeedsPage() {
 
                   <input
                     type="number"
-                    min="0"
+                    min="0.01"
                     step="0.01"
                     required
                     value={form.quantity}

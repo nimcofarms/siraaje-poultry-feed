@@ -237,16 +237,17 @@ model EggSale {
 }
 
 model Feed {
-  id          String   @id @default(cuid())
-  date        DateTime
-  feedType    String
-  companyName String
-  suppliedBy  String
-  location    String?
-  quantity    Float
-  price       Float
-  total       Float
-  currency    String   @default("ETB")
+  id              String   @id @default(cuid())
+  date            DateTime
+  feedType        String
+  transactionType String   @default("PURCHASE")
+  companyName     String
+  suppliedBy      String
+  location        String?
+  quantity        Float
+  price           Float
+  total           Float
+  currency        String   @default("ETB")
 
   createdById String?
   updatedById String?
