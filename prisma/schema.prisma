@@ -52,6 +52,10 @@ model User {
   // Worker files
   workerFilesAssigned WorkerFile[] @relation("WorkerFileAssignedTo")
   workerFilesUploaded WorkerFile[] @relation("WorkerFileUploadedBy")
+
+  // Internal messages
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
 }
 
 model UserPermission {
@@ -531,4 +535,25 @@ model CompanyDocument {
   size         Int?
   uploadedAt   DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+//
+// INTERNAL MESSAGES
+//
+
+model Message {
+  id         String   @id @default(cuid())
+  message    String
+  senderId   String
+  receiverId String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([isRead])
+  @@index([createdAt])
 }

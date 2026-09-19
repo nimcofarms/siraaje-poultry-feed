@@ -618,15 +618,11 @@ export default function DashboardPage() {
 
                   <div className="min-w-0">
                     <p className="truncate font-extrabold text-[#064b2c]">
-                      {
-                        currentUser.name
-                      }
+                      {currentUser.name}
                     </p>
 
                     <p className="mt-0.5 truncate text-sm text-slate-500">
-                      {
-                        currentUser.email
-                      }
+                      {currentUser.email}
                     </p>
 
                     <p className="mt-1 text-xs font-bold text-[#075b35]">
@@ -638,12 +634,8 @@ export default function DashboardPage() {
                 <div className="border-t border-slate-100 p-2">
                   <button
                     type="button"
-                    onClick={
-                      handleLogout
-                    }
-                    disabled={
-                      loggingOut
-                    }
+                    onClick={handleLogout}
+                    disabled={loggingOut}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
                   >
                     <svg
@@ -758,6 +750,13 @@ export default function DashboardPage() {
                 }
               />
             )}
+                        {/* MESSAGES */}
+
+            <SidebarLink
+              href="/dashboard/messages"
+              label="Farriimaha / Messages"
+              icon={<MessagesIcon />}
+            />
 
             {/* ============================================
                 OWNER / ADMIN COMPANY DOCUMENTS
@@ -907,7 +906,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-                    {/* =================================================
+
+          {/* =================================================
               QUICK ACTIONS
           ================================================== */}
 
@@ -962,6 +962,15 @@ export default function DashboardPage() {
                 icon={<HealthIcon />}
               />
             )}
+
+            <QuickActionCard
+              title="Farriimaha / Messages"
+              description="U dir oo ka hel farriimo shaqaalaha kale ee Siraaje Poultry Feed. / Send and receive internal messages with other employees."
+              href="/dashboard/messages"
+              buttonLabel="Fur Farriimaha / Open Messages"
+              icon={<MessagesIcon />}
+              gold
+            />
 
             {/* =============================================
                 OWNER / ADMIN DOCUMENTS
@@ -1422,6 +1431,34 @@ function WorkersIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M22 11h-6"
+      />
+    </svg>
+  );
+}
+
+/* =========================================================
+   MESSAGES ICON
+========================================================= */
+
+function MessagesIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m3 7 9 6 9-6"
       />
     </svg>
   );
