@@ -58,6 +58,10 @@ type CurrentUser = {
   permissions: Permissions | null;
 };
 
+type MessagesResponse = {
+  unreadCount?: number;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
 
@@ -71,6 +75,9 @@ export default function DashboardPage() {
     useState(0);
 
   const [expenseCount, setExpenseCount] =
+    useState(0);
+
+  const [unreadMessages, setUnreadMessages] =
     useState(0);
 
   const [profileOpen, setProfileOpen] =
@@ -87,13 +94,11 @@ export default function DashboardPage() {
 
   const canDashboard =
     isOwner ||
-    currentUser?.permissions?.dashboardView ===
-      true;
+    currentUser?.permissions?.dashboardView === true;
 
   const canExpenses =
     isOwner ||
-    currentUser?.permissions?.expensesView ===
-      true;
+    currentUser?.permissions?.expensesView === true;
 
   const canEggs =
     isOwner ||
@@ -101,33 +106,19 @@ export default function DashboardPage() {
 
   const canChicken =
     isOwner ||
-    currentUser?.permissions?.chickenView ===
-      true;
+    currentUser?.permissions?.chickenView === true;
 
   const canFeeds =
     isOwner ||
-    currentUser?.permissions?.feedsView ===
-      true;
-
-  /*
-   * Company Documents are now strictly
-   * OWNER / ADMIN only.
-   *
-   * We intentionally DO NOT use documentsView
-   * for workers here.
-   */
-  const canDocuments = isOwner;
-
-  /*
-   * Workers receive a completely separate
-   * My Files area.
-   */
-  const canMyFiles = !isOwner;
+    currentUser?.permissions?.feedsView === true;
 
   const canPoultryHealth =
     isOwner ||
-    currentUser?.permissions
-      ?.poultryHealthView === true;
+    currentUser?.permissions?.poultryHealthView === true;
+
+  const canDocuments = isOwner;
+
+  const canMyFiles = !isOwner;
 
   /* =====================================================
      LOAD CURRENT USER
@@ -136,28 +127,20 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadCurrentUser() {
       try {
-        const response = await fetch(
-          "/api/me",
-          {
-            cache: "no-store",
-          }
-        );
+        const response = await fetch("/api/me", {
+          cache: "no-store",
+        });
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
         if (response.status === 401) {
           router.replace("/");
           return;
         }
 
-        if (
-          !response.ok ||
-          !data.user
-        ) {
+        if (!response.ok || !data.user) {
           throw new Error(
-            data.error ||
-              "Could not load user."
+            data.error || "Could not load user."
           );
         }
 
@@ -176,43 +159,84 @@ export default function DashboardPage() {
   }, [router]);
 
   /* =====================================================
+     LOAD UNREAD MESSAGES
+  ====================================================== */
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadUnreadMessages() {
+      try {
+        const response = await fetch(
+          "/api/messages",
+          {
+            cache: "no-store",
+          }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data: MessagesResponse =
+          await response.json();
+
+        if (active) {
+          setUnreadMessages(
+            Number(data.unreadCount || 0)
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unread messages error:",
+          error
+        );
+      }
+    }
+
+    void loadUnreadMessages();
+
+    const interval = window.setInterval(() => {
+      void loadUnreadMessages();
+    }, 15000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [currentUser]);
+
+  /* =====================================================
      REDIRECT USER TO PERMITTED SECTION
   ====================================================== */
 
   useEffect(() => {
-    if (
-      userLoading ||
-      !currentUser
-    ) {
+    if (userLoading || !currentUser) {
       return;
     }
 
     if (!canDashboard) {
       if (canExpenses) {
-        router.replace(
-          "/dashboard/expenses"
-        );
+        router.replace("/dashboard/expenses");
         return;
       }
 
       if (canEggs) {
-        router.replace(
-          "/dashboard/eggs"
-        );
+        router.replace("/dashboard/eggs");
         return;
       }
 
       if (canChicken) {
-        router.replace(
-          "/dashboard/chicken"
-        );
+        router.replace("/dashboard/chicken");
         return;
       }
 
       if (canFeeds) {
-        router.replace(
-          "/dashboard/feeds"
-        );
+        router.replace("/dashboard/feeds");
         return;
       }
 
@@ -223,27 +247,13 @@ export default function DashboardPage() {
         return;
       }
 
-      /*
-       * OWNER / ADMIN can be redirected
-       * to Company Documents.
-       */
       if (canDocuments) {
-        router.replace(
-          "/dashboard/documents"
-        );
+        router.replace("/dashboard/documents");
         return;
       }
 
-      /*
-       * Worker fallback:
-       * if the worker has no other dashboard
-       * permission, they can still access
-       * their assigned files.
-       */
       if (canMyFiles) {
-        router.replace(
-          "/dashboard/my-files"
-        );
+        router.replace("/dashboard/my-files");
         return;
       }
     }
@@ -255,9 +265,9 @@ export default function DashboardPage() {
     canEggs,
     canChicken,
     canFeeds,
+    canPoultryHealth,
     canDocuments,
     canMyFiles,
-    canPoultryHealth,
     router,
   ]);
 
@@ -278,19 +288,13 @@ export default function DashboardPage() {
           constructionResponse,
           productResponse,
         ] = await Promise.all([
-          fetch(
-            "/api/construction-expenses",
-            {
-              cache: "no-store",
-            }
-          ),
+          fetch("/api/construction-expenses", {
+            cache: "no-store",
+          }),
 
-          fetch(
-            "/api/product-expenses",
-            {
-              cache: "no-store",
-            }
-          ),
+          fetch("/api/product-expenses", {
+            cache: "no-store",
+          }),
         ]);
 
         if (
@@ -309,26 +313,19 @@ export default function DashboardPage() {
         const constructionTotal =
           constructionData.reduce(
             (sum, expense) =>
-              sum +
-              Number(
-                expense.total || 0
-              ),
+              sum + Number(expense.total || 0),
             0
           );
 
         const productTotal =
           productData.reduce(
             (sum, expense) =>
-              sum +
-              Number(
-                expense.total || 0
-              ),
+              sum + Number(expense.total || 0),
             0
           );
 
         setTotalExpenses(
-          constructionTotal +
-            productTotal
+          constructionTotal + productTotal
         );
 
         setExpenseCount(
@@ -346,10 +343,7 @@ export default function DashboardPage() {
     if (currentUser) {
       void loadExpenses();
     }
-  }, [
-    currentUser,
-    canExpenses,
-  ]);
+  }, [currentUser, canExpenses]);
 
   /* =====================================================
      PROFILE OUTSIDE CLICK
@@ -398,9 +392,7 @@ export default function DashboardPage() {
       );
 
       if (!response.ok) {
-        throw new Error(
-          "Logout failed"
-        );
+        throw new Error("Logout failed");
       }
 
       router.replace("/");
@@ -426,8 +418,7 @@ export default function DashboardPage() {
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#dce9df] border-t-[#075b35]" />
 
           <p className="mt-4 font-bold text-[#064b2c]">
-            Loading Siraaje Poultry
-            Feed...
+            Loading Siraaje Poultry Feed...
           </p>
         </div>
       </main>
@@ -438,20 +429,15 @@ export default function DashboardPage() {
     return null;
   }
 
-  /*
-   * A worker always has My Files available,
-   * even if no operational permissions have
-   * been assigned.
-   */
   if (
     !canDashboard &&
     !canExpenses &&
     !canEggs &&
     !canChicken &&
     !canFeeds &&
+    !canPoultryHealth &&
     !canDocuments &&
-    !canMyFiles &&
-    !canPoultryHealth
+    !canMyFiles
   ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed] px-5">
@@ -480,10 +466,9 @@ export default function DashboardPage() {
           </h1>
 
           <p className="mt-3 text-slate-500">
-            Your account is active,
-            but an administrator has
-            not assigned access to any
-            section yet.
+            Your account is active, but an
+            administrator has not assigned
+            access to any section yet.
           </p>
 
           <button
@@ -502,8 +487,7 @@ export default function DashboardPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed]">
         <p className="font-bold text-[#064b2c]">
-          Opening your permitted
-          section...
+          Opening your permitted section...
         </p>
       </main>
     );
@@ -527,8 +511,6 @@ export default function DashboardPage() {
 
       <header className="relative z-50 border-b border-[#e5dfd0] bg-[#075b35] text-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          {/* LOGO */}
-
           <div className="flex items-center gap-4">
             <div className="relative h-14 w-16 overflow-hidden rounded-xl bg-white">
               <Image
@@ -547,8 +529,8 @@ export default function DashboardPage() {
               </h1>
 
               <p className="text-xs text-green-100 sm:text-sm">
-                Nidaamka Maareynta
-                Quudinta Digaagga
+                Nidaamka Maareynta Quudinta
+                Digaagga
               </p>
             </div>
           </div>
@@ -563,14 +545,11 @@ export default function DashboardPage() {
               type="button"
               onClick={() =>
                 setProfileOpen(
-                  (current) =>
-                    !current
+                  (current) => !current
                 )
               }
               className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5 transition hover:bg-white/15 sm:px-4"
-              aria-expanded={
-                profileOpen
-              }
+              aria-expanded={profileOpen}
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-extrabold text-[#075b35] shadow-sm">
                 {initial}
@@ -606,8 +585,6 @@ export default function DashboardPage() {
                 />
               </svg>
             </button>
-
-            {/* PROFILE DROPDOWN */}
 
             {profileOpen && (
               <div className="absolute right-0 top-[calc(100%+10px)] w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
@@ -682,32 +659,22 @@ export default function DashboardPage() {
 
         <aside className="h-fit rounded-3xl border border-[#e7e1d4] bg-white p-4 shadow-sm">
           <nav className="space-y-2">
-            {/* DASHBOARD */}
-
             {canDashboard && (
               <SidebarLink
                 href="/dashboard"
                 label="Dashboard"
                 active
-                icon={
-                  <DashboardIcon />
-                }
+                icon={<DashboardIcon />}
               />
             )}
-
-            {/* EXPENSES */}
 
             {canExpenses && (
               <SidebarLink
                 href="/dashboard/expenses"
                 label="Kharashaadka / Expenses"
-                icon={
-                  <ExpensesIcon />
-                }
+                icon={<ExpensesIcon />}
               />
             )}
-
-            {/* EGGS */}
 
             {canEggs && (
               <SidebarLink
@@ -717,19 +684,13 @@ export default function DashboardPage() {
               />
             )}
 
-            {/* CHICKEN */}
-
             {canChicken && (
               <SidebarLink
                 href="/dashboard/chicken"
                 label="Digaag / Chicken"
-                icon={
-                  <ChickenIcon />
-                }
+                icon={<ChickenIcon />}
               />
             )}
-
-            {/* FEEDS */}
 
             {canFeeds && (
               <SidebarLink
@@ -739,36 +700,37 @@ export default function DashboardPage() {
               />
             )}
 
-            {/* POULTRY HEALTH */}
-
             {canPoultryHealth && (
               <SidebarLink
                 href="/dashboard/poultry-health"
                 label="Daaweynta Digaagga / Poultry Health"
-                icon={
-                  <HealthIcon />
-                }
+                icon={<HealthIcon />}
               />
             )}
-                        {/* MESSAGES */}
+
+            {/* ============================================
+                MESSAGES + UNREAD BADGE
+            ============================================= */}
 
             <SidebarLink
               href="/dashboard/messages"
               label="Farriimaha / Messages"
               icon={<MessagesIcon />}
+              badge={unreadMessages}
             />
 
             {/* ============================================
-                OWNER / ADMIN COMPANY DOCUMENTS
+                PART 2 CONTINUES DIRECTLY HERE
+            ============================================= */}
+                        {/* ============================================
+                OWNER / ADMIN DOCUMENTS
             ============================================= */}
 
             {isOwner && (
               <SidebarLink
                 href="/dashboard/documents"
                 label="Documents"
-                icon={
-                  <DocumentsIcon />
-                }
+                icon={<DocumentsIcon />}
               />
             )}
 
@@ -780,15 +742,12 @@ export default function DashboardPage() {
               <SidebarLink
                 href="/dashboard/my-files"
                 label="Faylashayda / My Files"
-                icon={
-                  <MyFilesIcon />
-                }
+                icon={<MyFilesIcon />}
               />
             )}
 
             {/* ============================================
                 WORKERS & ACCESS
-                OWNER / ADMIN ONLY
             ============================================= */}
 
             {isOwner && (
@@ -798,9 +757,7 @@ export default function DashboardPage() {
                 <SidebarLink
                   href="/dashboard/workers"
                   label="Workers & Access"
-                  icon={
-                    <WorkersIcon />
-                  }
+                  icon={<WorkersIcon />}
                 />
               </>
             )}
@@ -822,8 +779,7 @@ export default function DashboardPage() {
             </h2>
 
             <p className="mt-2 text-slate-500">
-              Ku soo dhawoow nidaamka
-              maamulka Siraaje Poultry
+              Ku soo dhawoow nidaamka maamulka Siraaje Poultry
               Feed, {currentUser.name}.
             </p>
           </div>
@@ -835,19 +791,15 @@ export default function DashboardPage() {
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {canExpenses && (
               <>
-                {/* TOTAL EXPENSES */}
-
                 <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-bold text-slate-500">
-                        Wadarta
-                        Kharashaadka
+                        Wadarta Kharashaadka
                       </p>
 
                       <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
-                        {totalExpenses.toLocaleString()}{" "}
-                        ETB
+                        {totalExpenses.toLocaleString()} ETB
                       </p>
                     </div>
 
@@ -857,14 +809,11 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* EXPENSE COUNT */}
-
                 <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-bold text-slate-500">
-                        Diiwaannada
-                        Kharashaadka
+                        Diiwaannada Kharashaadka
                       </p>
 
                       <p className="mt-3 text-3xl font-extrabold text-[#075b35]">
@@ -879,8 +828,6 @@ export default function DashboardPage() {
                 </div>
               </>
             )}
-
-            {/* SYSTEM STATUS */}
 
             <div className="rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
@@ -963,18 +910,28 @@ export default function DashboardPage() {
               />
             )}
 
+            {/* =============================================
+                MESSAGES
+            ============================================== */}
+
             <QuickActionCard
-              title="Farriimaha / Messages"
-              description="U dir oo ka hel farriimo shaqaalaha kale ee Siraaje Poultry Feed. / Send and receive internal messages with other employees."
+              title={
+                unreadMessages > 0
+                  ? `Farriimaha / Messages (${unreadMessages})`
+                  : "Farriimaha / Messages"
+              }
+              description={
+                unreadMessages > 0
+                  ? `Waxaad haysataa ${unreadMessages} farriin oo aan la akhrin. / You have ${unreadMessages} unread message${
+                      unreadMessages === 1 ? "" : "s"
+                    }.`
+                  : "U dir oo ka hel farriimo shaqaalaha kale ee Siraaje Poultry Feed. / Send and receive internal messages with other employees."
+              }
               href="/dashboard/messages"
               buttonLabel="Fur Farriimaha / Open Messages"
               icon={<MessagesIcon />}
               gold
             />
-
-            {/* =============================================
-                OWNER / ADMIN DOCUMENTS
-            ============================================== */}
 
             {isOwner && (
               <QuickActionCard
@@ -986,10 +943,6 @@ export default function DashboardPage() {
               />
             )}
 
-            {/* =============================================
-                WORKER MY FILES
-            ============================================== */}
-
             {!isOwner && (
               <QuickActionCard
                 title="Faylashayda / My Files"
@@ -1000,11 +953,6 @@ export default function DashboardPage() {
                 gold
               />
             )}
-
-            {/* =============================================
-                WORKERS & ACCESS
-                OWNER / ADMIN ONLY
-            ============================================== */}
 
             {isOwner && (
               <QuickActionCard
@@ -1035,11 +983,13 @@ function SidebarLink({
   label,
   icon,
   active = false,
+  badge = 0,
 }: {
   href: string;
   label: string;
   icon: React.ReactNode;
   active?: boolean;
+  badge?: number;
 }) {
   return (
     <Link
@@ -1054,7 +1004,20 @@ function SidebarLink({
         {icon}
       </span>
 
-      <span>{label}</span>
+      <span className="min-w-0 flex-1">
+        {label}
+      </span>
+
+      {badge > 0 && (
+        <span
+          className="flex min-w-6 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-extrabold leading-5 text-white shadow-sm"
+          title={`${badge} unread message${
+            badge === 1 ? "" : "s"
+          }`}
+        >
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -1307,6 +1270,62 @@ function FeedIcon() {
 }
 
 /* =========================================================
+   HEALTH ICON
+========================================================= */
+
+function HealthIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3v18"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 12h18"
+      />
+    </svg>
+  );
+}
+
+/* =========================================================
+   MESSAGES ICON
+========================================================= */
+
+function MessagesIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+      />
+
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m3 7 9 6 9-6"
+      />
+    </svg>
+  );
+}
+
+/* =========================================================
    DOCUMENTS ICON
 ========================================================= */
 
@@ -1369,34 +1388,6 @@ function MyFilesIcon() {
 }
 
 /* =========================================================
-   HEALTH ICON
-========================================================= */
-
-function HealthIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-5 w-5"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 3v18"
-      />
-
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 12h18"
-      />
-    </svg>
-  );
-}
-
-/* =========================================================
    WORKERS ICON
 ========================================================= */
 
@@ -1431,34 +1422,6 @@ function WorkersIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M22 11h-6"
-      />
-    </svg>
-  );
-}
-
-/* =========================================================
-   MESSAGES ICON
-========================================================= */
-
-function MessagesIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-5 w-5"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
-      />
-
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m3 7 9 6 9-6"
       />
     </svg>
   );
