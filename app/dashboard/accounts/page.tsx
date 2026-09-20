@@ -4,10 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 
 // =========================================================
@@ -211,27 +211,27 @@ const CATEGORY_OPTIONS: {
 }[] = [
   {
     value: "chicken",
-    label: "Digaag",
+    label: "Chicken / Digaag",
     description:
-      "Digaagga nool iyo hilibka digaagga ee la soo iibsaday ama la iibiyay.",
+      "Purchased and sold live chicken and chicken meat. / Digaagga nool iyo hilibka digaagga ee la soo iibsaday ama la iibiyay.",
   },
   {
     value: "eggs",
-    label: "Ukumo",
+    label: "Eggs / Ukumo",
     description:
-      "Ukumaha la soo iibsaday iyo kuwa la iibiyay.",
+      "Purchased and sold eggs. / Ukumaha la soo iibsaday iyo kuwa la iibiyay.",
   },
   {
     value: "feeds",
-    label: "Quudinta",
+    label: "Feeds / Quudinta",
     description:
-      "Quudinta la soo iibsaday, la iibiyay iyo wax-soo-saarka bishan.",
+      "Feed records and this month's production. / Diiwaanka quudinta iyo wax-soo-saarka bishan.",
   },
   {
     value: "expenses",
-    label: "Kharashaadka",
+    label: "Expenses / Kharashaadka",
     description:
-      "Kharashaadka guud, dhismaha iyo alaabta.",
+      "General, construction and product expenses. / Kharashaadka guud, dhismaha iyo alaabta.",
   },
 ];
 
@@ -317,18 +317,18 @@ function formatMonthLabel(month: string) {
     .map(Number);
 
   const monthNames = [
-    "Janaayo",
-    "Febraayo",
-    "Maarso",
-    "Abriil",
-    "Maajo",
-    "Juun",
-    "Luulyo",
-    "Agoosto",
-    "Sebtembar",
-    "Oktoobar",
-    "Nofeembar",
-    "Diseembar",
+    "January / Janaayo",
+    "February / Febraayo",
+    "March / Maarso",
+    "April / Abriil",
+    "May / Maajo",
+    "June / Juun",
+    "July / Luulyo",
+    "August / Agoosto",
+    "September / Sebtembar",
+    "October / Oktoobar",
+    "November / Nofeembar",
+    "December / Diseembar",
   ];
 
   return `${monthNames[monthNumber - 1]} ${year}`;
@@ -347,14 +347,14 @@ function isOwnerOrAdmin(user: CurrentUser | null) {
 
 function typeLabel(type: EntryType) {
   if (type === "SALE") {
-    return "Iib";
+    return "Sale / Iib";
   }
 
   if (type === "PURCHASE") {
-    return "Soo Iibsi";
+    return "Purchase / Soo Iibsi";
   }
 
-  return "Kharash";
+  return "Expense / Kharash";
 }
 
 function typeClass(type: EntryType) {
@@ -436,7 +436,7 @@ export default function MonthlyAccountsPage() {
         if (!response.ok) {
           throw new Error(
             result.error ||
-              "Akoonkaaga lama soo gelin karin."
+              "Your account could not be loaded. / Akoonkaaga lama soo gelin karin."
           );
         }
 
@@ -464,7 +464,7 @@ export default function MonthlyAccountsPage() {
         setError(
           error instanceof Error
             ? error.message
-            : "Akoonkaaga lama soo gelin karin."
+            : "Your account could not be loaded. / Akoonkaaga lama soo gelin karin."
         );
       } finally {
         if (active) {
@@ -488,7 +488,7 @@ export default function MonthlyAccountsPage() {
     if (selectedCategories.length === 0) {
       setData(null);
       setError(
-        "Fadlan dooro ugu yaraan hal qayb."
+        "Please select at least one category. / Fadlan dooro ugu yaraan hal qayb."
       );
       return;
     }
@@ -531,7 +531,7 @@ export default function MonthlyAccountsPage() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-            "Xisaabta bishan lama soo gelin karin."
+            "This month's accounts could not be loaded. / Xisaabta bishan lama soo gelin karin."
         );
       }
 
@@ -542,7 +542,7 @@ export default function MonthlyAccountsPage() {
       setError(
         error instanceof Error
           ? error.message
-          : "Xisaabta bishan lama soo gelin karin."
+          : "This month's accounts could not be loaded. / Xisaabta bishan lama soo gelin karin."
       );
     } finally {
       setLoading(false);
@@ -634,7 +634,7 @@ export default function MonthlyAccountsPage() {
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d9eadf] border-t-[#075b35]" />
 
           <p className="font-extrabold text-[#064b2c]">
-            Xisaabta waa la soo gelinayaa...
+            Loading accounts... / Xisaabta waa la soo gelinayaa...
           </p>
         </div>
       </main>
@@ -668,14 +668,14 @@ export default function MonthlyAccountsPage() {
               </h1>
 
               <p className="text-xs text-green-100 sm:text-sm">
-                Nidaamka Maareynta Quudinta Digaagga
+                Poultry Feed Management System / Nidaamka Maareynta Quudinta Digaagga
               </p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
             <p className="text-sm font-bold">
-              Xisaab Xirka Bilaha
+              Monthly Accounts / Xisaab Xirka Bilaha
             </p>
           </div>
         </div>
@@ -687,50 +687,50 @@ export default function MonthlyAccountsPage() {
           <nav className="space-y-2">
             <SidebarLink
               href="/dashboard"
-              text="Bogga Guud"
+              text="Dashboard / Bogga Guud"
             />
 
             <SidebarLink
               href="/dashboard/expenses"
-              text="Kharashaadka"
+              text="Expenses / Kharashaadka"
             />
 
             <SidebarLink
               href="/dashboard/eggs"
-              text="Ukumaha"
+              text="Eggs / Ukumaha"
             />
 
             <SidebarLink
               href="/dashboard/chicken"
-              text="Digaagga"
+              text="Chicken / Digaagga"
             />
 
             <SidebarLink
               href="/dashboard/feeds"
-              text="Quudinta"
+              text="Feeds / Quudinta"
             />
 
             <SidebarLink
               href="/dashboard/documents"
-              text="Dukumentiyada"
+              text="Documents / Dukumentiyada"
             />
 
             <SidebarLink
               href="/dashboard/poultry-health"
-              text="Caafimaadka Digaagga"
+              text="Poultry Health / Caafimaadka Digaagga"
             />
 
             {isOwnerOrAdmin(currentUser) && (
               <SidebarLink
                 href="/dashboard/workers"
-                text="Shaqaalaha & Ogolaanshaha"
+                text="Workers & Permissions / Shaqaalaha & Ogolaanshaha"
               />
             )}
 
             <div className="my-4 border-t border-[#e7e1d4]" />
 
             <p className="px-3 pb-1 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#9a7a32]">
-              Xisaabaadka
+              Accounts / Xisaabaadka
             </p>
 
             <Link
@@ -740,7 +740,7 @@ export default function MonthlyAccountsPage() {
               <AccountsIcon />
 
               <span>
-                Xisaab Xirka Bilaha
+                Monthly Accounts / Xisaab Xirka Bilaha
               </span>
             </Link>
           </nav>
@@ -756,7 +756,7 @@ export default function MonthlyAccountsPage() {
               </h1>
 
               <p className="mt-1 font-semibold">
-                Xisaab Xirka Bisha — {monthLabel}
+                Monthly Accounts / Xisaab Xirka Bisha — {monthLabel}
               </p>
             </div>
           </div>
@@ -765,17 +765,18 @@ export default function MonthlyAccountsPage() {
           <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.15em] text-[#b38420]">
-                Xisaabaadka
+                Accounts / Xisaabaadka
               </p>
 
               <h2 className="mt-1 text-3xl font-extrabold text-[#064b2c] sm:text-4xl">
-                Xisaab Xir
+                Monthly Accounts / Xisaab Xir
               </h2>
 
               <p className="mt-2 max-w-3xl text-slate-500">
-                Eeg iibka, wax iibsiga iyo kharashaadka
-                la diiwaangeliyay bisha aad doorato, kadibna
-                si otomaatig ah u arag natiijada xisaabta.
+                View sales, purchases and expenses recorded for the selected
+                month and automatically see the account result. / Eeg iibka,
+                wax iibsiga iyo kharashaadka la diiwaangeliyay bisha aad
+                doorato, kadibna si otomaatig ah u arag natiijada xisaabta.
               </p>
             </div>
 
@@ -785,22 +786,23 @@ export default function MonthlyAccountsPage() {
               disabled={!data || loading}
               className="print:hidden min-h-11 rounded-2xl border border-[#075b35] bg-white px-5 font-extrabold text-[#075b35] transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Daabac Xisaabta
+              Print Accounts / Daabac Xisaabta
             </button>
           </div>
 
           {/* IMPORTANT ACCOUNTING NOTE */}
           <div className="mb-6 rounded-2xl border border-[#ead9a6] bg-[#fffaf0] px-5 py-4">
             <p className="font-extrabold text-[#725b25]">
-              Natiijada xisaabta bisha
+              Monthly Account Result / Natiijada Xisaabta Bisha
             </p>
 
             <p className="mt-1 text-sm leading-6 text-[#806d3f]">
-              Natiijada Xisaabtu waxay ka dhigan tahay
-              iibka la diiwaangeliyay oo laga jaray wax
-              iibsiga iyo kharashaadka la diiwaangeliyay
-              bisha iyo qaybaha aad dooratay. Waa soo
-              koobidda xogta ku jirta nidaamkan.
+              The account result is the recorded sales minus recorded
+              purchases and expenses for the selected month and categories.
+              It is a summary of the data stored in this system. /
+              Natiijada xisaabtu waxay ka dhigan tahay iibka la
+              diiwaangeliyay oo laga jaray wax iibsiga iyo kharashaadka
+              la diiwaangeliyay bisha iyo qaybaha aad dooratay.
             </p>
           </div>
 
@@ -808,18 +810,18 @@ export default function MonthlyAccountsPage() {
           <div className="print:hidden rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-7">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                Shaandhaynta Xisaabta / Account Filters
+                Account Filters / Shaandhaynta Xisaabta
               </p>
 
               <h3 className="mt-1 text-xl font-extrabold text-[#064b2c]">
-                Dooro xogta aad rabto inaad xisaabiso
+                Choose the data you want to calculate / Dooro xogta aad rabto inaad xisaabiso
               </h3>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               <div>
                 <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
-                  Bisha / Month
+                  Month / Bisha
                 </label>
 
                 <input
@@ -832,58 +834,91 @@ export default function MonthlyAccountsPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
-                  Transaction
+                  Transaction / Macaamilka
                 </label>
 
                 <select
                   value={transaction}
                   onChange={(event) =>
-                    setTransaction(event.target.value as TransactionFilter)
+                    setTransaction(
+                      event.target.value as TransactionFilter
+                    )
                   }
                   className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
                 >
-                  <option value="ALL">Dhammaan / All</option>
-                  <option value="SALE">La iibiyay / Sold</option>
-                  <option value="PURCHASE">La iibsaday / Purchased</option>
-                  <option value="EXPENSE">Kharash / Expense</option>
+                  <option value="ALL">
+                    All / Dhammaan
+                  </option>
+
+                  <option value="SALE">
+                    Sold / La iibiyay
+                  </option>
+
+                  <option value="PURCHASE">
+                    Purchased / La iibsaday
+                  </option>
+
+                  <option value="EXPENSE">
+                    Expense / Kharash
+                  </option>
                 </select>
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
-                  Shirkad / Customer / Supplier
+                  Company / Customer / Supplier / Shirkad
                 </label>
 
                 <select
                   value={company}
-                  onChange={(event) => setCompany(event.target.value)}
+                  onChange={(event) =>
+                    setCompany(event.target.value)
+                  }
                   className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
                 >
-                  <option value="ALL">Dhammaan / All</option>
-                  {(data?.availableParties || []).map((party) => (
-                    <option key={party} value={party}>
-                      {party}
-                    </option>
-                  ))}
+                  <option value="ALL">
+                    All / Dhammaan
+                  </option>
+
+                  {(data?.availableParties || []).map(
+                    (party) => (
+                      <option
+                        key={party}
+                        value={party}
+                      >
+                        {party}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-extrabold text-[#17452f]">
-                  Nooca Quudinta / Feed Type
+                  Feed Type / Nooca Quudinta
                 </label>
 
                 <select
                   value={feedType}
                   onChange={(event) =>
-                    setFeedType(event.target.value as FeedTypeFilter)
+                    setFeedType(
+                      event.target.value as FeedTypeFilter
+                    )
                   }
                   className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
                 >
-                  <option value="ALL">Dhammaan / All</option>
-                  <option value="Starter">Starter</option>
-                  <option value="Grower">Grower</option>
-                  <option value="Layer">Layer</option>
+                  <option value="ALL">
+                    All / Dhammaan
+                  </option>
+                  <option value="Starter">
+                    Starter
+                  </option>
+                  <option value="Grower">
+                    Grower
+                  </option>
+                  <option value="Layer">
+                    Layer
+                  </option>
                 </select>
               </div>
 
@@ -897,14 +932,14 @@ export default function MonthlyAccountsPage() {
                   }}
                   className="min-h-12 w-full rounded-2xl border border-slate-200 px-4 font-extrabold text-slate-600 transition hover:bg-slate-50"
                 >
-                  Reset Filters
+                  Reset Filters / Dib u celi
                 </button>
               </div>
             </div>
 
             <div className="mt-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <p className="text-sm font-extrabold text-[#17452f]">
-                Qaybaha / Categories
+                Categories / Qaybaha
               </p>
 
               <div className="flex flex-wrap gap-2">
@@ -914,7 +949,7 @@ export default function MonthlyAccountsPage() {
                   disabled={allSelected}
                   className="rounded-xl border border-[#075b35] px-4 py-2 text-sm font-extrabold text-[#075b35] hover:bg-green-50 disabled:opacity-40"
                 >
-                  Dooro Dhammaan
+                  Select All / Dooro Dhammaan
                 </button>
 
                 <button
@@ -923,7 +958,7 @@ export default function MonthlyAccountsPage() {
                   disabled={selectedCategories.length === 0}
                   className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-extrabold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
                 >
-                  Ka Saar Dhammaan
+                  Clear All / Ka Saar Dhammaan
                 </button>
               </div>
             </div>
@@ -981,7 +1016,9 @@ export default function MonthlyAccountsPage() {
             <div className="mt-5 flex flex-col justify-between gap-3 border-t border-[#ece7dc] pt-5 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm text-slate-500">
-                  {selectedCategories.length} ka mid ah{" "}
+                  {selectedCategories.length} of{" "}
+                  {CATEGORY_OPTIONS.length} categories selected /
+                  {" "}{selectedCategories.length} ka mid ah{" "}
                   {CATEGORY_OPTIONS.length} qaybood ayaa la doortay
                 </p>
 
@@ -992,7 +1029,9 @@ export default function MonthlyAccountsPage() {
 
               <button
                 type="button"
-                onClick={() => void loadAccounts()}
+                onClick={() =>
+                  void loadAccounts()
+                }
                 disabled={
                   loading ||
                   selectedCategories.length === 0 ||
@@ -1000,7 +1039,9 @@ export default function MonthlyAccountsPage() {
                 }
                 className="min-h-11 rounded-2xl bg-[#075b35] px-6 font-extrabold text-white transition hover:bg-[#064b2c] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Xisaabinta..." : "Xisaabi"}
+                {loading
+                  ? "Calculating... / Xisaabinta..."
+                  : "Calculate / Xisaabi"}
               </button>
             </div>
           </div>
@@ -1018,8 +1059,7 @@ export default function MonthlyAccountsPage() {
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d9eadf] border-t-[#075b35]" />
 
               <p className="font-extrabold text-[#064b2c]">
-                Xisaabta {monthLabel} waa la
-                xisaabinayaa...
+                Calculating {monthLabel}... / Xisaabta {monthLabel} waa la xisaabinayaa...
               </p>
             </div>
           )}
@@ -1030,7 +1070,7 @@ export default function MonthlyAccountsPage() {
               <div className="mt-7 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                    Xisaab Xirka Bisha
+                    Monthly Accounts / Xisaab Xirka Bisha
                   </p>
 
                   <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
@@ -1040,11 +1080,11 @@ export default function MonthlyAccountsPage() {
 
                 <div className="flex flex-wrap gap-2">
                   <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
-                    {data.summary.totalRecords} diiwaan
+                    {data.summary.totalRecords} records / diiwaan
                   </span>
 
                   <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
-                    {currencyCount} nooc lacag ah
+                    {currencyCount} currencies / nooc lacag ah
                   </span>
                 </div>
               </div>
@@ -1057,12 +1097,13 @@ export default function MonthlyAccountsPage() {
                   </div>
 
                   <h4 className="mt-4 text-xl font-extrabold text-[#064b2c]">
-                    Wax xog ah lama helin
+                    No Data Found / Wax xog ah lama helin
                   </h4>
 
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                    Wax diiwaan maaliyadeed ah lagama helin
-                    qaybaha aad dooratay bisha {monthLabel}.
+                    No financial records were found for the selected
+                    categories in {monthLabel}. / Wax diiwaan maaliyadeed
+                    ah lagama helin qaybaha aad dooratay bisha {monthLabel}.
                   </p>
                 </div>
               ) : (
@@ -1076,7 +1117,7 @@ export default function MonthlyAccountsPage() {
                         <div className="mb-5 flex items-center justify-between gap-3">
                           <div>
                             <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-slate-400">
-                              Lacagta
+                              Currency / Lacagta
                             </p>
 
                             <h4 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
@@ -1085,51 +1126,51 @@ export default function MonthlyAccountsPage() {
                           </div>
 
                           <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
-                            {summary.records} diiwaan
+                            {summary.records} records / diiwaan
                           </span>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                           <SummaryCard
-                            label="Wadarta Iibka"
+                            label="Total Sales / Wadarta Iibka"
                             value={formatMoney(
                               summary.sales,
                               summary.currency
                             )}
-                            description="Lacagta ka soo gashay iibka"
+                            description="Money received from sales / Lacagta ka soo gashay iibka"
                             variant="positive"
                           />
 
                           <SummaryCard
-                            label="Wax Iibsiga"
+                            label="Purchases / Wax Iibsiga"
                             value={formatMoney(
                               summary.purchases,
                               summary.currency
                             )}
-                            description="Digaag, ukumo iyo quudin la soo iibsaday"
+                            description="Purchased chicken, eggs and feed / Digaag, ukumo iyo quudin la soo iibsaday"
                             variant="warning"
                           />
 
                           <SummaryCard
-                            label="Kharashaadka Kale"
+                            label="Other Expenses / Kharashaadka Kale"
                             value={formatMoney(
                               summary.expenses,
                               summary.currency
                             )}
-                            description="Kharashaadka guud iyo kuwa kale"
+                            description="General and other expenses / Kharashaadka guud iyo kuwa kale"
                             variant="negative"
                           />
 
                           <SummaryCard
-                            label="Natiijada Xisaabta"
+                            label="Account Result / Natiijada Xisaabta"
                             value={formatMoney(
                               summary.netResult,
                               summary.currency
                             )}
-                            description={`Iibka laga jaray ${formatMoney(
+                            description={`Sales minus ${formatMoney(
                               summary.outgoing,
                               summary.currency
-                            )} oo baxay`}
+                            )} outgoing / Iibka laga jaray lacagta baxday`}
                             variant={
                               summary.netResult >= 0
                                 ? "positive"
@@ -1142,22 +1183,22 @@ export default function MonthlyAccountsPage() {
                   )}
                 </div>
               )}
-
-              {/* CATEGORY BREAKDOWN */}
+                            {/* CATEGORY BREAKDOWN */}
               {data.summary.categories.length > 0 && (
                 <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-7">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                      Faahfaahinta
+                      Details / Faahfaahinta
                     </p>
 
                     <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
-                      Soo Koobidda Qaybaha
+                      Category Summary / Soo Koobidda Qaybaha
                     </h3>
 
                     <p className="mt-1 text-sm text-slate-500">
-                      Eeg qayb kasta sida ay uga qayb qaadatay
-                      xisaabta bisha.
+                      See how each category contributed to the monthly
+                      accounts. / Eeg qayb kasta sida ay uga qayb
+                      qaadatay xisaabta bisha.
                     </p>
                   </div>
 
@@ -1166,31 +1207,31 @@ export default function MonthlyAccountsPage() {
                       <thead>
                         <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
                           <th className="px-4 py-3">
-                            Qaybta
+                            Category / Qaybta
                           </th>
 
                           <th className="px-4 py-3">
-                            Lacagta
+                            Currency / Lacagta
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Iibka
+                            Sales / Iibka
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Wax Iibsiga
+                            Purchases / Wax Iibsiga
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Kharashaadka
+                            Expenses / Kharashaadka
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Natiijada
+                            Result / Natiijada
                           </th>
 
                           <th className="px-4 py-3 text-right">
-                            Diiwaannada
+                            Records / Diiwaannada
                           </th>
                         </tr>
                       </thead>
@@ -1255,197 +1296,270 @@ export default function MonthlyAccountsPage() {
                   </div>
                 </div>
               )}
-                            {/* FEED PRODUCTION - NON-MONETARY */}
-              {selectedCategories.includes("feeds") && data.production && (
-                <div className="mt-7 rounded-3xl border border-[#cfe3d5] bg-white p-5 shadow-sm sm:p-7">
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-                    <div>
-                      <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                        Wax-soo-saarka Quudinta / Feed Production
-                      </p>
 
-                      <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
-                        Production-ka Bisha
-                      </h3>
+              {/* FEED PRODUCTION - NON-MONETARY */}
+              {selectedCategories.includes("feeds") &&
+                data.production && (
+                  <div className="mt-7 rounded-3xl border border-[#cfe3d5] bg-white p-5 shadow-sm sm:p-7">
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                      <div>
+                        <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
+                          Feed Production / Wax-soo-saarka Quudinta
+                        </p>
 
-                      <p className="mt-1 max-w-3xl text-sm text-slate-500">
-                        Production-ku waa xog KG iyo bags ah. Laguma daro iibka,
-                        wax iibsiga, kharashaadka ama natiijada lacagta.
-                      </p>
+                        <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
+                          Monthly Production / Production-ka Bisha
+                        </h3>
+
+                        <p className="mt-1 max-w-3xl text-sm text-slate-500">
+                          Production is measured in KG and bags. It is not
+                          included in sales, purchases, expenses or the
+                          financial result. / Production-ku waa xog KG iyo
+                          bags ah. Laguma daro iibka, wax iibsiga,
+                          kharashaadka ama natiijada lacagta.
+                        </p>
+                      </div>
+
+                      <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
+                        {data.production.totalRecords} records / diiwaan
+                      </span>
                     </div>
 
-                    <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
-                      {data.production.totalRecords} records
-                    </span>
-                  </div>
+                    <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <SummaryCard
+                        label="Production Batches"
+                        value={formatNumber(
+                          data.production.totalBatches
+                        )}
+                        description="Number of batches this month / Tirada batches-ka bishan"
+                        variant="positive"
+                      />
 
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <SummaryCard
-                      label="Production Batches"
-                      value={formatNumber(data.production.totalBatches)}
-                      description="Tirada batches-ka bishan"
-                      variant="positive"
-                    />
+                      <SummaryCard
+                        label="Total Bags / Wadarta Bacaha"
+                        value={formatNumber(
+                          data.production.totalBags
+                        )}
+                        description="All bags produced / Dhammaan bacaha la soo saaray"
+                        variant="positive"
+                      />
 
-                    <SummaryCard
-                      label="Total Bags"
-                      value={formatNumber(data.production.totalBags)}
-                      description="Dhammaan bacaha la soo saaray"
-                      variant="positive"
-                    />
+                      <SummaryCard
+                        label="Total Weight / Miisaanka Guud"
+                        value={`${formatNumber(
+                          data.production.totalKg
+                        )} KG`}
+                        description="Total production weight / Miisaanka guud ee production-ka"
+                        variant="positive"
+                      />
 
-                    <SummaryCard
-                      label="Total Weight"
-                      value={`${formatNumber(data.production.totalKg)} KG`}
-                      description="Miisaanka guud ee production-ka"
-                      variant="positive"
-                    />
-
-                    <SummaryCard
-                      label="Feed Types"
-                      value={formatNumber(data.production.byFeedType.length)}
-                      description="Starter, Grower iyo Layer"
-                      variant="positive"
-                    />
-                  </div>
-
-                  {data.production.byFeedType.length > 0 && (
-                    <div className="mt-6 grid gap-4 md:grid-cols-3">
-                      {data.production.byFeedType.map((item) => (
-                        <div
-                          key={item.feedType}
-                          className="rounded-2xl border border-[#e7e1d4] bg-[#faf9f5] p-5"
-                        >
-                          <p className="text-lg font-extrabold text-[#064b2c]">
-                            {item.feedType}
-                          </p>
-
-                          <div className="mt-3 space-y-2 text-sm text-slate-600">
-                            <p>
-                              Batches:{" "}
-                              <span className="font-extrabold text-slate-800">
-                                {item.batches}
-                              </span>
-                            </p>
-                            <p>
-                              Bags:{" "}
-                              <span className="font-extrabold text-slate-800">
-                                {formatNumber(item.bags)}
-                              </span>
-                            </p>
-                            <p>
-                              Total KG:{" "}
-                              <span className="font-extrabold text-slate-800">
-                                {formatNumber(item.totalKg)} KG
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                      <SummaryCard
+                        label="Feed Types / Noocyada Quudinta"
+                        value={formatNumber(
+                          data.production.byFeedType.length
+                        )}
+                        description="Starter, Grower and Layer / Starter, Grower iyo Layer"
+                        variant="positive"
+                      />
                     </div>
-                  )}
 
-                  {data.production.entries.length > 0 ? (
-                    <div className="mt-6 overflow-x-auto">
-                      <table className="w-full min-w-[1100px] text-left">
-                        <thead>
-                          <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
-                            <th className="px-3 py-3">Taariikhda</th>
-                            <th className="px-3 py-3">Feed Type</th>
-                            <th className="px-3 py-3">Goobta</th>
-                            <th className="px-3 py-3 text-right">Bag Size</th>
-                            <th className="px-3 py-3 text-right">Bags</th>
-                            <th className="px-3 py-3 text-right">Total KG</th>
-                            <th className="px-3 py-3">Waxaa Geliyay</th>
-                            <th className="px-3 py-3">Waqtiga</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {data.production.entries.map((entry) => (
-                            <tr
-                              key={entry.id}
-                              className="border-b border-[#ece7dc]"
+                    {data.production.byFeedType.length >
+                      0 && (
+                      <div className="mt-6 grid gap-4 md:grid-cols-3">
+                        {data.production.byFeedType.map(
+                          (item) => (
+                            <div
+                              key={item.feedType}
+                              className="rounded-2xl border border-[#e7e1d4] bg-[#faf9f5] p-5"
                             >
-                              <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
-                                {formatDate(entry.date)}
-                              </td>
+                              <p className="text-lg font-extrabold text-[#064b2c]">
+                                {item.feedType}
+                              </p>
 
-                              <td className="px-3 py-4 font-extrabold text-[#17452f]">
-                                {entry.feedType}
-                              </td>
-
-                              <td className="px-3 py-4 text-sm text-slate-600">
-                                {entry.location || "—"}
-                              </td>
-
-                              <td className="px-3 py-4 text-right font-bold text-slate-700">
-                                {formatNumber(entry.bagSizeKg)} KG
-                              </td>
-
-                              <td className="px-3 py-4 text-right font-bold text-slate-700">
-                                {formatNumber(entry.quantity)}
-                              </td>
-
-                              <td className="px-3 py-4 text-right font-extrabold text-[#075b35]">
-                                {formatNumber(entry.totalKg)} KG
-                              </td>
-
-                              <td className="px-3 py-4 text-sm">
-                                {entry.createdBy ? (
-                                  <div>
-                                    <p className="font-extrabold text-[#17452f]">
-                                      {entry.createdBy.name}
-                                    </p>
-                                    <p className="mt-0.5 text-xs text-slate-400">
-                                      {entry.createdBy.role}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <span className="font-semibold text-slate-400">
-                                    Xog hore
+                              <div className="mt-3 space-y-2 text-sm text-slate-600">
+                                <p>
+                                  Batches:{" "}
+                                  <span className="font-extrabold text-slate-800">
+                                    {item.batches}
                                   </span>
-                                )}
-                              </td>
+                                </p>
 
-                              <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
-                                {formatDateTime(entry.createdAt)}
-                              </td>
+                                <p>
+                                  Bags:{" "}
+                                  <span className="font-extrabold text-slate-800">
+                                    {formatNumber(
+                                      item.bags
+                                    )}
+                                  </span>
+                                </p>
+
+                                <p>
+                                  Total KG:{" "}
+                                  <span className="font-extrabold text-slate-800">
+                                    {formatNumber(
+                                      item.totalKg
+                                    )}{" "}
+                                    KG
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+
+                    {data.production.entries.length >
+                    0 ? (
+                      <div className="mt-6 overflow-x-auto">
+                        <table className="w-full min-w-[1100px] text-left">
+                          <thead>
+                            <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
+                              <th className="px-3 py-3">
+                                Date / Taariikhda
+                              </th>
+
+                              <th className="px-3 py-3">
+                                Feed Type / Nooca Quudinta
+                              </th>
+
+                              <th className="px-3 py-3">
+                                Location / Goobta
+                              </th>
+
+                              <th className="px-3 py-3 text-right">
+                                Bag Size / Cabbirka Bacda
+                              </th>
+
+                              <th className="px-3 py-3 text-right">
+                                Bags / Bacaha
+                              </th>
+
+                              <th className="px-3 py-3 text-right">
+                                Total KG / Wadarta KG
+                              </th>
+
+                              <th className="px-3 py-3">
+                                Entered By / Waxaa Geliyay
+                              </th>
+
+                              <th className="px-3 py-3">
+                                Time / Waqtiga
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="mt-6 rounded-2xl bg-[#faf9f5] px-5 py-8 text-center text-sm font-semibold text-slate-500">
-                      Production lama helin bisha iyo filters-ka la doortay.
-                    </div>
-                  )}
-                </div>
-              )}
+                          </thead>
 
-              {/* DIIWAANNADA FAAHFAAHSAN */}
+                          <tbody>
+                            {data.production.entries.map(
+                              (entry) => (
+                                <tr
+                                  key={entry.id}
+                                  className="border-b border-[#ece7dc]"
+                                >
+                                  <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
+                                    {formatDate(
+                                      entry.date
+                                    )}
+                                  </td>
+
+                                  <td className="px-3 py-4 font-extrabold text-[#17452f]">
+                                    {entry.feedType}
+                                  </td>
+
+                                  <td className="px-3 py-4 text-sm text-slate-600">
+                                    {entry.location ||
+                                      "—"}
+                                  </td>
+
+                                  <td className="px-3 py-4 text-right font-bold text-slate-700">
+                                    {formatNumber(
+                                      entry.bagSizeKg
+                                    )}{" "}
+                                    KG
+                                  </td>
+
+                                  <td className="px-3 py-4 text-right font-bold text-slate-700">
+                                    {formatNumber(
+                                      entry.quantity
+                                    )}
+                                  </td>
+
+                                  <td className="px-3 py-4 text-right font-extrabold text-[#075b35]">
+                                    {formatNumber(
+                                      entry.totalKg
+                                    )}{" "}
+                                    KG
+                                  </td>
+
+                                  <td className="px-3 py-4 text-sm">
+                                    {entry.createdBy ? (
+                                      <div>
+                                        <p className="font-extrabold text-[#17452f]">
+                                          {
+                                            entry
+                                              .createdBy
+                                              .name
+                                          }
+                                        </p>
+
+                                        <p className="mt-0.5 text-xs text-slate-400">
+                                          {
+                                            entry
+                                              .createdBy
+                                              .role
+                                          }
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <span className="font-semibold text-slate-400">
+                                        Previous Data / Xog hore
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
+                                    {formatDateTime(
+                                      entry.createdAt
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="mt-6 rounded-2xl bg-[#faf9f5] px-5 py-8 text-center text-sm font-semibold text-slate-500">
+                        No production records were found for the selected
+                        month and filters. / Production lama helin bisha
+                        iyo filters-ka la doortay.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              {/* DETAILED MONTHLY RECORDS */}
               {data.entries.length > 0 && (
                 <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-7">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
                       <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
-                        Diiwaannada Bisha
+                        Monthly Records / Diiwaannada Bisha
                       </p>
 
                       <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
-                        Dhammaan Xogta Bishan La Geliyay
+                        All Records Entered This Month / Dhammaan Xogta Bishan La Geliyay
                       </h3>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        Hoos waxaad ka arkaysaa dhammaan
-                        diiwaannada lagu daray xisaabinta
-                        bishan.
+                        Below are all records included in this month's
+                        calculation. / Hoos waxaad ka arkaysaa dhammaan
+                        diiwaannada lagu daray xisaabinta bishan.
                       </p>
                     </div>
 
                     <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
-                      {data.entries.length} diiwaan
+                      {data.entries.length} records / diiwaan
                     </span>
                   </div>
 
@@ -1454,189 +1568,214 @@ export default function MonthlyAccountsPage() {
                       <thead>
                         <tr className="border-b-2 border-[#075b35] text-sm text-[#17452f]">
                           <th className="px-3 py-3">
-                            Taariikhda
+                            Date / Taariikhda
                           </th>
 
                           <th className="px-3 py-3">
-                            Qaybta
+                            Category / Qaybta
                           </th>
 
                           <th className="px-3 py-3">
-                            Nooca
+                            Type / Nooca
                           </th>
 
                           <th className="px-3 py-3">
-                            Isha Xogta
+                            Source / Isha Xogta
                           </th>
 
                           <th className="px-3 py-3">
-                            Faahfaahin
+                            Description / Faahfaahin
                           </th>
 
                           <th className="px-3 py-3">
-                            Goobta
+                            Location / Goobta
                           </th>
 
                           <th className="px-3 py-3">
-                            Shirkad / Macmiil
+                            Company / Customer / Shirkad / Macmiil
                           </th>
 
                           <th className="px-3 py-3 text-right">
-                            Tirada
+                            Quantity / Tirada
                           </th>
 
                           <th className="px-3 py-3 text-right">
-                            Qiimaha Halkii
+                            Unit Price / Qiimaha Halkii
                           </th>
 
                           <th className="px-3 py-3 text-right">
-                            Wadarta
+                            Total / Wadarta
                           </th>
 
                           <th className="px-3 py-3">
-                            Waxaa Geliyay
+                            Entered By / Waxaa Geliyay
                           </th>
 
                           <th className="px-3 py-3">
-                            Waqtiga la Geliyay
+                            Entered At / Waqtiga la Geliyay
                           </th>
                         </tr>
                       </thead>
 
                       <tbody>
-                        {data.entries.map((entry) => (
-                          <tr
-                            key={`${entry.source}-${entry.id}`}
-                            className="border-b border-[#ece7dc] align-top"
-                          >
-                            <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
-                              {formatDate(entry.date)}
-                            </td>
-
-                            <td className="px-3 py-4">
-                              <span className="font-extrabold text-[#17452f]">
-                                {entry.categoryLabel}
-                              </span>
-                            </td>
-
-                            <td className="px-3 py-4">
-                              <span
-                                className={`inline-flex rounded-full border px-3 py-1 text-xs font-extrabold ${typeClass(
-                                  entry.type
-                                )}`}
-                              >
-                                {typeLabel(entry.type)}
-                              </span>
-                            </td>
-
-                            <td className="px-3 py-4 text-sm font-semibold text-slate-600">
-                              {entry.source}
-                            </td>
-
-                            <td className="px-3 py-4 text-sm text-slate-600">
-                              {entry.description}
-                            </td>
-
-                            <td className="px-3 py-4 text-sm text-slate-600">
-                              {entry.location || "—"}
-                            </td>
-
-                            <td className="px-3 py-4 text-sm text-slate-600">
-                              {entry.party || "—"}
-                            </td>
-
-                            <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
-                              {formatNumber(
-                                entry.quantity
-                              )}
-                            </td>
-
-                            <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
-                              {entry.unitPrice === null
-                                ? "—"
-                                : formatMoney(
-                                    entry.unitPrice,
-                                    entry.currency
-                                  )}
-                            </td>
-
-                            <td
-                              className={`whitespace-nowrap px-3 py-4 text-right font-extrabold ${
-                                entry.type === "SALE"
-                                  ? "text-green-700"
-                                  : entry.type ===
-                                      "PURCHASE"
-                                    ? "text-amber-700"
-                                    : "text-red-700"
-                              }`}
+                        {data.entries.map(
+                          (entry) => (
+                            <tr
+                              key={`${entry.source}-${entry.id}`}
+                              className="border-b border-[#ece7dc] align-top"
                             >
-                              {formatMoney(
-                                entry.total,
-                                entry.currency
-                              )}
-                            </td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
+                                {formatDate(
+                                  entry.date
+                                )}
+                              </td>
 
-                            <td className="whitespace-nowrap px-3 py-4 text-sm">
-                              {entry.createdBy ? (
-                                <div>
-                                  <p className="font-extrabold text-[#17452f]">
-                                    {entry.createdBy.name}
-                                  </p>
-
-                                  <p className="mt-0.5 text-xs text-slate-400">
-                                    {entry.createdBy.role}
-                                  </p>
-                                </div>
-                              ) : (
-                                <span className="font-semibold text-slate-400">
-                                  Xog hore
+                              <td className="px-3 py-4">
+                                <span className="font-extrabold text-[#17452f]">
+                                  {
+                                    entry.categoryLabel
+                                  }
                                 </span>
-                              )}
-                            </td>
+                              </td>
 
-                            <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
-                              {formatDateTime(entry.createdAt)}
-                            </td>
-                          </tr>
-                        ))}
+                              <td className="px-3 py-4">
+                                <span
+                                  className={`inline-flex rounded-full border px-3 py-1 text-xs font-extrabold ${typeClass(
+                                    entry.type
+                                  )}`}
+                                >
+                                  {typeLabel(
+                                    entry.type
+                                  )}
+                                </span>
+                              </td>
+
+                              <td className="px-3 py-4 text-sm font-semibold text-slate-600">
+                                {entry.source}
+                              </td>
+
+                              <td className="px-3 py-4 text-sm text-slate-600">
+                                {
+                                  entry.description
+                                }
+                              </td>
+
+                              <td className="px-3 py-4 text-sm text-slate-600">
+                                {entry.location ||
+                                  "—"}
+                              </td>
+
+                              <td className="px-3 py-4 text-sm text-slate-600">
+                                {entry.party ||
+                                  "—"}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
+                                {formatNumber(
+                                  entry.quantity
+                                )}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
+                                {entry.unitPrice ===
+                                null
+                                  ? "—"
+                                  : formatMoney(
+                                      entry.unitPrice,
+                                      entry.currency
+                                    )}
+                              </td>
+
+                              <td
+                                className={`whitespace-nowrap px-3 py-4 text-right font-extrabold ${
+                                  entry.type ===
+                                  "SALE"
+                                    ? "text-green-700"
+                                    : entry.type ===
+                                        "PURCHASE"
+                                      ? "text-amber-700"
+                                      : "text-red-700"
+                                }`}
+                              >
+                                {formatMoney(
+                                  entry.total,
+                                  entry.currency
+                                )}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                {entry.createdBy ? (
+                                  <div>
+                                    <p className="font-extrabold text-[#17452f]">
+                                      {
+                                        entry
+                                          .createdBy
+                                          .name
+                                      }
+                                    </p>
+
+                                    <p className="mt-0.5 text-xs text-slate-400">
+                                      {
+                                        entry
+                                          .createdBy
+                                          .role
+                                      }
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <span className="font-semibold text-slate-400">
+                                    Previous Data / Xog hore
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
+                                {formatDateTime(
+                                  entry.createdAt
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        )}
                       </tbody>
                     </table>
                   </div>
 
                   <div className="mt-5 rounded-2xl bg-[#faf9f5] px-5 py-4">
                     <p className="text-xs leading-5 text-slate-500">
-                      Jadwalkan wuxuu muujinayaa diiwaannada
-                      loo isticmaalay xisaabinta natiijada
-                      kore. Haddii aad rabto inaad wax ka
-                      beddesho diiwaan, ka beddel qaybtii
-                      markii hore lagu geliyay sida
-                      Kharashaadka, Ukumaha, Quudinta ama
-                      Digaagga.
+                      This table shows the records used for the account
+                      result above. To change a record, edit it in the
+                      original section where it was entered, such as
+                      Expenses, Eggs, Feeds or Chicken. / Jadwalkan wuxuu
+                      muujinayaa diiwaannada loo isticmaalay xisaabinta
+                      natiijada kore. Haddii aad rabto inaad wax ka
+                      beddesho diiwaan, ka beddel qaybtii markii hore
+                      lagu geliyay sida Kharashaadka, Ukumaha, Quudinta
+                      ama Digaagga.
                     </p>
                   </div>
                 </div>
               )}
-
-              {/* QAYBTA SAXIIXA MARKA LA DAABACO */}
+                            {/* PRINT SIGNATURE SECTION */}
               <div className="mt-8 hidden border-t border-slate-300 pt-5 print:block">
                 <div className="grid grid-cols-2 gap-10">
                   <div>
                     <p className="text-xs font-bold uppercase text-slate-500">
-                      Waxaa Diyaariyay
+                      Prepared By / Waxaa Diyaariyay
                     </p>
 
                     <p className="mt-8 border-t border-slate-400 pt-2 text-sm">
-                      Magaca / Saxiixa
+                      Name / Signature / Magaca / Saxiixa
                     </p>
                   </div>
 
                   <div>
                     <p className="text-xs font-bold uppercase text-slate-500">
-                      Waxaa Ansixiyay
+                      Approved By / Waxaa Ansixiyay
                     </p>
 
                     <p className="mt-8 border-t border-slate-400 pt-2 text-sm">
-                      Magaca / Saxiixa
+                      Name / Signature / Magaca / Saxiixa
                     </p>
                   </div>
                 </div>
@@ -1686,7 +1825,7 @@ export default function MonthlyAccountsPage() {
 }
 
 // =========================================================
-// KAARKA SOO KOOBIDDA
+// SUMMARY CARD
 // =========================================================
 
 function SummaryCard({
