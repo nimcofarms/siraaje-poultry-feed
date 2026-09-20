@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 
 
@@ -640,7 +640,7 @@ export default function EggsPage() {
           <div className="flex items-center gap-4">
             <div className="relative h-14 w-16 overflow-hidden rounded-xl bg-white">
               <Image
-                src="/siraaje-logo.jpg"
+                src="/siraaje-logo.png"
                 alt="Siraaje Poultry & Feeds Company"
                 fill
                 sizes="64px"

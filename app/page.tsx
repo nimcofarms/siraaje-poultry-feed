@@ -79,7 +79,7 @@ export default function Home() {
         {/* LOGO */}
         <div className="relative h-[185px] w-[210px]">
           <Image
-            src="/siraaje-logo.jpg"
+            src="/siraaje-logo.png"
             alt="Siraaje Poultry & Feeds Company"
             fill
             sizes="210px"
