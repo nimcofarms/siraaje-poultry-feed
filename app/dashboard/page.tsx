@@ -738,6 +738,13 @@ export default function DashboardPage() {
                 WORKER MY FILES
             ============================================= */}
 
+            {isOwner && (
+              <SidebarLink
+                href="/dashboard/worker-files"
+                label="Faylasha Shaqaalaha / Employee Files"
+                icon={<MyFilesIcon />}
+              />
+            )}
             {!isOwner && (
               <SidebarLink
                 href="/dashboard/my-files"
