@@ -1,10 +1,13 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-
-type FeedType = "Starter" | "Grower" | "Layer";
+import {
+  FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type AuditUser = {
   id: string;
@@ -15,7 +18,6 @@ type AuditUser = {
 type Feed = {
   id: string;
   date: string;
-  feedType: FeedType;
   companyName: string;
   suppliedBy: string;
   location: string | null;
@@ -31,7 +33,6 @@ type Feed = {
 
 type FeedForm = {
   date: string;
-  feedType: FeedType;
   companyName: string;
   suppliedBy: string;
   location: string;
@@ -41,17 +42,23 @@ type FeedForm = {
 
 function today() {
   const now = new Date();
+
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+
+  const month = String(
+    now.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    now.getDate()
+  ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
-function createEmptyForm(feedType: FeedType = "Starter"): FeedForm {
+function createEmptyForm(): FeedForm {
   return {
     date: today(),
-    feedType,
     companyName: "",
     suppliedBy: "",
     location: "",
@@ -82,19 +89,16 @@ function formatDateTime(date: string) {
   }).format(new Date(date));
 }
 
-function formatMoney(value: number, currency = "ETB") {
+function formatMoney(
+  value: number,
+  currency = "ETB"
+) {
   return (
     new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value) + ` ${currency}`
   );
-}
-
-function feedTypeLabel(feedType: FeedType) {
-  if (feedType === "Starter") return "Starter Feed";
-  if (feedType === "Grower") return "Grower Feed";
-  return "Layer Feed";
 }
 
 const sidebarItems = [
@@ -128,30 +132,46 @@ const sidebarItems = [
 export default function FeedsPage() {
   const pathname = usePathname();
 
-  const [feeds, setFeeds] = useState<Feed[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [feeds, setFeeds] =
+    useState<Feed[]>([]);
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [loading, setLoading] =
+    useState(true);
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] =
+    useState(false);
 
-  const [form, setForm] = useState<FeedForm>(() =>
-    createEmptyForm()
-  );
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
+
+  const [showForm, setShowForm] =
+    useState(false);
+
+  const [editingId, setEditingId] =
+    useState<string | null>(null);
+
+  const [form, setForm] =
+    useState<FeedForm>(() =>
+      createEmptyForm()
+    );
 
   async function loadFeeds() {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch("/api/feeds", {
-        cache: "no-store",
-      });
+      const response = await fetch(
+        "/api/feeds",
+        {
+          cache: "no-store",
+        }
+      );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -160,7 +180,11 @@ export default function FeedsPage() {
         );
       }
 
-      setFeeds(Array.isArray(data) ? data : []);
+      setFeeds(
+        Array.isArray(data)
+          ? data
+          : []
+      );
     } catch (err) {
       console.error(err);
 
@@ -175,95 +199,85 @@ export default function FeedsPage() {
   }
 
   useEffect(() => {
-    loadFeeds();
+    void loadFeeds();
   }, []);
 
-  const starterFeeds = useMemo(
-    () => feeds.filter((feed) => feed.feedType === "Starter"),
-    [feeds]
-  );
+  const grandTotal =
+    useMemo(
+      () =>
+        feeds.reduce(
+          (sum, feed) =>
+            sum +
+            Number(feed.total || 0),
+          0
+        ),
+      [feeds]
+    );
 
-  const growerFeeds = useMemo(
-    () => feeds.filter((feed) => feed.feedType === "Grower"),
-    [feeds]
-  );
+  const totalQuantity =
+    useMemo(
+      () =>
+        feeds.reduce(
+          (sum, feed) =>
+            sum +
+            Number(
+              feed.quantity || 0
+            ),
+          0
+        ),
+      [feeds]
+    );
 
-  const layerFeeds = useMemo(
-    () => feeds.filter((feed) => feed.feedType === "Layer"),
-    [feeds]
-  );
+  const formTotal =
+    useMemo(() => {
+      const quantity =
+        Number(form.quantity);
 
-  const grandTotal = useMemo(
-    () =>
-      feeds.reduce(
-        (sum, feed) => sum + Number(feed.total || 0),
-        0
-      ),
-    [feeds]
-  );
+      const price =
+        Number(form.price);
 
-  const starterTotal = useMemo(
-    () =>
-      starterFeeds.reduce(
-        (sum, feed) => sum + Number(feed.total || 0),
-        0
-      ),
-    [starterFeeds]
-  );
+      if (
+        !Number.isFinite(quantity) ||
+        !Number.isFinite(price) ||
+        quantity <= 0 ||
+        price < 0
+      ) {
+        return 0;
+      }
 
-  const growerTotal = useMemo(
-    () =>
-      growerFeeds.reduce(
-        (sum, feed) => sum + Number(feed.total || 0),
-        0
-      ),
-    [growerFeeds]
-  );
+      return quantity * price;
+    }, [
+      form.quantity,
+      form.price,
+    ]);
 
-  const layerTotal = useMemo(
-    () =>
-      layerFeeds.reduce(
-        (sum, feed) => sum + Number(feed.total || 0),
-        0
-      ),
-    [layerFeeds]
-  );
-
-  const formTotal = useMemo(() => {
-    const quantity = Number(form.quantity);
-    const price = Number(form.price);
-
-    if (
-      !Number.isFinite(quantity) ||
-      !Number.isFinite(price) ||
-      quantity <= 0 ||
-      price < 0
-    ) {
-      return 0;
-    }
-
-    return quantity * price;
-  }, [form.quantity, form.price]);
-
-  function openAddForm(feedType: FeedType) {
+  function openAddForm() {
     setEditingId(null);
-    setForm(createEmptyForm(feedType));
+    setForm(createEmptyForm());
     setError("");
     setSuccess("");
     setShowForm(true);
   }
 
-  function openEditForm(feed: Feed) {
+  function openEditForm(
+    feed: Feed
+  ) {
     setEditingId(feed.id);
 
     setForm({
       date: feed.date.slice(0, 10),
-      feedType: feed.feedType,
-      companyName: feed.companyName,
-      suppliedBy: feed.suppliedBy,
-      location: feed.location ?? "",
-      quantity: String(feed.quantity),
-      price: String(feed.price),
+      companyName:
+        feed.companyName,
+      suppliedBy:
+        feed.suppliedBy,
+      location:
+        feed.location ?? "",
+      quantity: String(
+        feed.quantity
+      ),
+      price: String(
+        feed.price
+      ),
     });
 
     setError("");
@@ -287,15 +301,23 @@ export default function FeedsPage() {
     setError("");
     setSuccess("");
 
-    const companyName = form.companyName.trim();
-    const suppliedBy = form.suppliedBy.trim();
-    const location = form.location.trim();
-    const quantity = Number(form.quantity);
-    const price = Number(form.price);
+    const companyName =
+      form.companyName.trim();
+
+    const suppliedBy =
+      form.suppliedBy.trim();
+
+    const location =
+      form.location.trim();
+
+    const quantity =
+      Number(form.quantity);
+
+    const price =
+      Number(form.price);
 
     if (
       !form.date ||
-      !form.feedType ||
       !companyName ||
       !suppliedBy ||
       !location
@@ -303,45 +325,68 @@ export default function FeedsPage() {
       setError(
         "Fadlan buuxi dhammaan xogta loo baahan yahay. / Please complete all required fields."
       );
+
       return;
     }
 
-    if (!Number.isFinite(quantity) || quantity <= 0) {
+    if (
+      !Number.isFinite(quantity) ||
+      quantity <= 0
+    ) {
       setError(
         "Fadlan geli tiro sax ah. / Please enter a valid quantity."
       );
+
       return;
     }
 
-    if (!Number.isFinite(price) || price < 0) {
+    if (
+      !Number.isFinite(price) ||
+      price < 0
+    ) {
       setError(
         "Fadlan geli qiime sax ah. / Please enter a valid price."
       );
+
       return;
     }
 
     try {
       setSaving(true);
 
-      const response = await fetch("/api/feeds", {
-        method: editingId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...(editingId ? { id: editingId } : {}),
-          date: form.date,
-          feedType: form.feedType,
-          companyName,
-          suppliedBy,
-          location,
-          quantity,
-          price,
-          currency: "ETB",
-        }),
-      });
+      const response =
+        await fetch(
+          "/api/feeds",
+          {
+            method: editingId
+              ? "PUT"
+              : "POST",
 
-      const data = await response.json();
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              ...(editingId
+                ? {
+                    id: editingId,
+                  }
+                : {}),
+
+              date: form.date,
+              companyName,
+              suppliedBy,
+              location,
+              quantity,
+              price,
+              currency: "ETB",
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -354,7 +399,9 @@ export default function FeedsPage() {
 
       setShowForm(false);
       setEditingId(null);
-      setForm(createEmptyForm());
+      setForm(
+        createEmptyForm()
+      );
 
       setSuccess(
         editingId
@@ -374,12 +421,13 @@ export default function FeedsPage() {
     }
   }
 
-  async function handleDelete(feed: Feed) {
-    const confirmed = window.confirm(
-      `Ma hubtaa inaad tirtirayso ${feedTypeLabel(
-        feed.feedType
-      )} ee ${feed.companyName}? / Are you sure you want to delete this record?`
-    );
+  async function handleDelete(
+    feed: Feed
+  ) {
+    const confirmed =
+      window.confirm(
+        `Ma hubtaa inaad tirtirayso diiwaanka quudinta ee ${feed.companyName}? / Are you sure you want to delete this feed record?`
+      );
 
     if (!confirmed) return;
 
@@ -387,14 +435,18 @@ export default function FeedsPage() {
       setError("");
       setSuccess("");
 
-      const response = await fetch(
-        `/api/feeds?id=${encodeURIComponent(feed.id)}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response =
+        await fetch(
+          `/api/feeds?id=${encodeURIComponent(
+            feed.id
+          )}`,
+          {
+            method: "DELETE",
+          }
+        );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -419,207 +471,6 @@ export default function FeedsPage() {
     }
   }
 
-  function FeedTable({
-    title,
-    subtitle,
-    records,
-    total,
-    feedType,
-  }: {
-    title: string;
-    subtitle: string;
-    records: Feed[];
-    total: number;
-    feedType: FeedType;
-  }) {
-    return (
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">
-              {title}
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              {subtitle}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => openAddForm(feedType)}
-            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            + Ku Dar / Add
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-[1450px] w-full">
-            <thead className="bg-slate-50">
-              <tr className="border-b border-slate-200">
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Taariikhda / Date
-                </th>
-
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Goobta / Location
-                </th>
-
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Shirkadda / Company
-                </th>
-
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Qofka Siiyay / Supplied By
-                </th>
-
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Tirada / Quantity
-                </th>
-
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Qiimaha / Price
-                </th>
-
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Wadarta / Total
-                </th>
-
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Waxaa Geliyay / Entered By
-                </th>
-
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Waqtiga la Geliyay / Entered At
-                </th>
-
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-600">
-                  Maamul / Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={10}
-                    className="px-4 py-10 text-center text-sm text-slate-500"
-                  >
-                    Xogta waa la soo qaadayaa... / Loading...
-                  </td>
-                </tr>
-              ) : records.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={10}
-                    className="px-4 py-10 text-center text-sm text-slate-500"
-                  >
-                    Weli wax xog ah lama diiwaangelin. / No records yet.
-                  </td>
-                </tr>
-              ) : (
-                records.map((feed) => (
-                  <tr
-                    key={feed.id}
-                    className="transition hover:bg-slate-50"
-                  >
-                    <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
-                      {formatDate(feed.date)}
-                    </td>
-
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {feed.location || "—"}
-                    </td>
-
-                    <td className="px-4 py-4 text-sm font-semibold text-slate-900">
-                      {feed.companyName}
-                    </td>
-
-                    <td className="px-4 py-4 text-sm text-slate-700">
-                      {feed.suppliedBy}
-                    </td>
-
-                    <td className="px-4 py-4 text-right text-sm text-slate-700">
-                      {feed.quantity}
-                    </td>
-
-                    <td className="px-4 py-4 text-right text-sm text-slate-700">
-                      {formatMoney(feed.price, feed.currency)}
-                    </td>
-
-                    <td className="px-4 py-4 text-right text-sm font-bold text-slate-900">
-                      {formatMoney(feed.total, feed.currency)}
-                    </td>
-
-                    <td className="whitespace-nowrap px-4 py-4 text-sm">
-                      {feed.createdBy ? (
-                        <div>
-                          <p className="font-bold text-slate-900">
-                            {feed.createdBy.name}
-                          </p>
-
-                          <p className="mt-0.5 text-xs text-slate-400">
-                            {feed.createdBy.role}
-                          </p>
-                        </div>
-                      ) : (
-                        <span className="font-semibold text-slate-400">
-                          Xog hore
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
-                      {formatDateTime(feed.createdAt)}
-                    </td>
-
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditForm(feed)}
-                          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                        >
-                          Beddel / Edit
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(feed)}
-                          className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
-                        >
-                          Tirtir / Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-
-            <tfoot className="border-t border-slate-200 bg-slate-50">
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-4 text-right text-sm font-bold text-slate-700"
-                >
-                  Wadarta Guud / Section Total
-                </td>
-
-                <td className="px-4 py-4 text-right text-sm font-extrabold text-emerald-700">
-                  {formatMoney(total)}
-                </td>
-
-                <td colSpan={3} />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </section>
-    );
-  }
     return (
     <div className="min-h-screen bg-slate-100">
       <div className="flex min-h-screen">
@@ -635,27 +486,38 @@ export default function FeedsPage() {
           </div>
 
           <nav className="flex-1 space-y-2 p-4">
-            {sidebarItems.map((item) => {
-              const active =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
+            {sidebarItems.map(
+              (item) => {
+                const active =
+                  item.href ===
+                  "/dashboard"
+                    ? pathname ===
+                      "/dashboard"
+                    : pathname.startsWith(
+                        item.href
+                      );
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                    active
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <span className="text-lg">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                      active
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                  >
+                    <span className="text-lg">
+                      {item.icon}
+                    </span>
+
+                    <span>
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              }
+            )}
           </nav>
 
           <div className="border-t border-slate-200 p-4">
@@ -674,26 +536,32 @@ export default function FeedsPage() {
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {sidebarItems.map((item) => {
-                const active =
-                  item.href === "/dashboard"
-                    ? pathname === "/dashboard"
-                    : pathname.startsWith(item.href);
+              {sidebarItems.map(
+                (item) => {
+                  const active =
+                    item.href ===
+                    "/dashboard"
+                      ? pathname ===
+                        "/dashboard"
+                      : pathname.startsWith(
+                          item.href
+                        );
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold ${
-                      active
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold ${
+                        active
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
+              )}
             </div>
           </div>
 
@@ -709,17 +577,26 @@ export default function FeedsPage() {
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm text-slate-500">
-                  Maamul diiwaanka quudinta Starter, Grower iyo Layer.
-                  / Manage Starter, Grower and Layer Feed records.
+                  Maamul diiwaanka quudinta shirkadda. / Manage company feed records.
                 </p>
               </div>
 
-              <Link
-                href="/dashboard/feeds/production"
-                className="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
-              >
-                🏭 Production / Wax-soo-saarka
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/feeds/production"
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
+                >
+                  🏭 Production / Wax-soo-saarka
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={openAddForm}
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                >
+                  + Ku Dar / Add Feed
+                </button>
+              </div>
             </div>
 
             {error && !showForm && (
@@ -734,46 +611,40 @@ export default function FeedsPage() {
               </div>
             )}
 
-            <div className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {/* SUMMARY */}
+            <div className="mb-7 grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-semibold text-slate-500">
-                  Starter Feed
+                  Diiwaannada / Records
                 </p>
 
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
-                  {starterFeeds.length}
+                  {feeds.length}
                 </p>
 
-                <p className="mt-1 text-sm font-semibold text-emerald-700">
-                  {formatMoney(starterTotal)}
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Total feed records / Wadarta diiwaannada quudinta
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-semibold text-slate-500">
-                  Grower Feed
+                  Tirada Guud / Total Quantity
                 </p>
 
                 <p className="mt-2 text-2xl font-extrabold text-slate-900">
-                  {growerFeeds.length}
+                  {new Intl.NumberFormat(
+                    "en-US",
+                    {
+                      maximumFractionDigits: 2,
+                    }
+                  ).format(
+                    totalQuantity
+                  )}
                 </p>
 
-                <p className="mt-1 text-sm font-semibold text-emerald-700">
-                  {formatMoney(growerTotal)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold text-slate-500">
-                  Layer Feed
-                </p>
-
-                <p className="mt-2 text-2xl font-extrabold text-slate-900">
-                  {layerFeeds.length}
-                </p>
-
-                <p className="mt-1 text-sm font-semibold text-emerald-700">
-                  {formatMoney(layerTotal)}
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Combined quantity / Tirada la isku daray
                 </p>
               </div>
 
@@ -783,44 +654,249 @@ export default function FeedsPage() {
                 </p>
 
                 <p className="mt-2 text-2xl font-extrabold text-emerald-800">
-                  {formatMoney(grandTotal)}
+                  {formatMoney(
+                    grandTotal
+                  )}
                 </p>
 
                 <p className="mt-1 text-xs font-medium text-emerald-600">
-                  {feeds.length} records
+                  Total value of feed records / Wadarta qiimaha quudinta
                 </p>
               </div>
             </div>
 
-            <div className="space-y-7">
-              <FeedTable
-                title="Starter Feed"
-                subtitle="Diiwaanka Starter Feed / Starter Feed Records"
-                records={starterFeeds}
-                total={starterTotal}
-                feedType="Starter"
-              />
+            {/* ONE FEED TABLE */}
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Quudinta / Feed Records
+                  </h2>
 
-              <FeedTable
-                title="Grower Feed"
-                subtitle="Diiwaanka Grower Feed / Grower Feed Records"
-                records={growerFeeds}
-                total={growerTotal}
-                feedType="Grower"
-              />
+                  <p className="mt-1 text-sm text-slate-500">
+                    Dhammaan diiwaannada quudinta / All feed records
+                  </p>
+                </div>
 
-              <FeedTable
-                title="Layer Feed"
-                subtitle="Diiwaanka Layer Feed / Layer Feed Records"
-                records={layerFeeds}
-                total={layerTotal}
-                feedType="Layer"
-              />
-            </div>
+                <button
+                  type="button"
+                  onClick={openAddForm}
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  + Ku Dar / Add
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-[1450px] w-full">
+                  <thead className="bg-slate-50">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Taariikhda / Date
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Goobta / Location
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Shirkadda / Company
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Qofka Siiyay / Supplied By
+                      </th>
+
+                      <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Tirada / Quantity
+                      </th>
+
+                      <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Qiimaha / Price
+                      </th>
+
+                      <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Wadarta / Total
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Waxaa Geliyay / Entered By
+                      </th>
+
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Waqtiga la Geliyay / Entered At
+                      </th>
+
+                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Maamul / Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-100">
+                    {loading ? (
+                      <tr>
+                        <td
+                          colSpan={10}
+                          className="px-4 py-10 text-center text-sm text-slate-500"
+                        >
+                          Xogta waa la soo qaadayaa... / Loading...
+                        </td>
+                      </tr>
+                    ) : feeds.length ===
+                      0 ? (
+                      <tr>
+                        <td
+                          colSpan={10}
+                          className="px-4 py-10 text-center text-sm text-slate-500"
+                        >
+                          Weli wax xog ah lama diiwaangelin. / No records yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      feeds.map(
+                        (feed) => (
+                          <tr
+                            key={
+                              feed.id
+                            }
+                            className="transition hover:bg-slate-50"
+                          >
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
+                              {formatDate(
+                                feed.date
+                              )}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-slate-700">
+                              {feed.location ||
+                                "—"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm font-semibold text-slate-900">
+                              {
+                                feed.companyName
+                              }
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-slate-700">
+                              {
+                                feed.suppliedBy
+                              }
+                            </td>
+
+                            <td className="px-4 py-4 text-right text-sm text-slate-700">
+                              {
+                                feed.quantity
+                              }
+                            </td>
+
+                            <td className="px-4 py-4 text-right text-sm text-slate-700">
+                              {formatMoney(
+                                feed.price,
+                                feed.currency
+                              )}
+                            </td>
+
+                            <td className="px-4 py-4 text-right text-sm font-bold text-slate-900">
+                              {formatMoney(
+                                feed.total,
+                                feed.currency
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm">
+                              {feed.createdBy ? (
+                                <div>
+                                  <p className="font-bold text-slate-900">
+                                    {
+                                      feed
+                                        .createdBy
+                                        .name
+                                    }
+                                  </p>
+
+                                  <p className="mt-0.5 text-xs text-slate-400">
+                                    {
+                                      feed
+                                        .createdBy
+                                        .role
+                                    }
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-slate-400">
+                                  Xog hore
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">
+                              {formatDateTime(
+                                feed.createdAt
+                              )}
+                            </td>
+
+                            <td className="px-4 py-4">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openEditForm(
+                                      feed
+                                    )
+                                  }
+                                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                                >
+                                  Beddel / Edit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void handleDelete(
+                                      feed
+                                    )
+                                  }
+                                  className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                                >
+                                  Tirtir / Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      )
+                    )}
+                  </tbody>
+
+                  <tfoot className="border-t border-slate-200 bg-slate-50">
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-4 text-right text-sm font-bold text-slate-700"
+                      >
+                        Wadarta Guud / Grand Total
+                      </td>
+
+                      <td className="px-4 py-4 text-right text-sm font-extrabold text-emerald-700">
+                        {formatMoney(
+                          grandTotal
+                        )}
+                      </td>
+
+                      <td
+                        colSpan={3}
+                      />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </section>
           </div>
         </main>
       </div>
-
+            {/* ADD / EDIT MODAL */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
@@ -829,13 +905,13 @@ export default function FeedsPage() {
                 <h2 className="text-xl font-extrabold text-slate-900">
                   {editingId
                     ? "Beddel Quudinta / Edit Feed"
-                    : `Ku Dar ${feedTypeLabel(form.feedType)} / Add ${feedTypeLabel(form.feedType)}`}
+                    : "Ku Dar Quudin / Add Feed"}
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
                   {editingId
                     ? "Beddel diiwaanka quudinta / Edit this feed record"
-                    : `${feedTypeLabel(form.feedType)} record`}
+                    : "Diiwaan cusub oo quudin ah / New feed record"}
                 </p>
               </div>
 
@@ -849,9 +925,12 @@ export default function FeedsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6">
+            <form
+              onSubmit={handleSubmit}
+              className="p-6"
+            >
               <div className="grid gap-5 sm:grid-cols-2">
-                <div>
+                <div className="sm:col-span-2">
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Taariikhda / Date
                   </label>
@@ -860,26 +939,21 @@ export default function FeedsPage() {
                     type="date"
                     required
                     value={form.date}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        date: event.target.value,
-                      }))
+                    onChange={(
+                      event
+                    ) =>
+                      setForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+                          date: event
+                            .target
+                            .value,
+                        })
+                      )
                     }
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">
-                    Nooca Quudinta / Feed Type
-                  </label>
-
-                  <input
-                    type="text"
-                    readOnly
-                    value={feedTypeLabel(form.feedType)}
-                    className="w-full cursor-not-allowed rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800"
                   />
                 </div>
 
@@ -891,12 +965,23 @@ export default function FeedsPage() {
                   <input
                     type="text"
                     required
-                    value={form.location}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        location: event.target.value,
-                      }))
+                    value={
+                      form.location
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+                          location:
+                            event
+                              .target
+                              .value,
+                        })
+                      )
                     }
                     placeholder="Tusaale: Jigjiga / Example: Jigjiga"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -911,12 +996,23 @@ export default function FeedsPage() {
                   <input
                     type="text"
                     required
-                    value={form.companyName}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        companyName: event.target.value,
-                      }))
+                    value={
+                      form.companyName
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+                          companyName:
+                            event
+                              .target
+                              .value,
+                        })
+                      )
                     }
                     placeholder="Tusaale: ABC Poultry Farm"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -931,12 +1027,23 @@ export default function FeedsPage() {
                   <input
                     type="text"
                     required
-                    value={form.suppliedBy}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        suppliedBy: event.target.value,
-                      }))
+                    value={
+                      form.suppliedBy
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+                          suppliedBy:
+                            event
+                              .target
+                              .value,
+                        })
+                      )
                     }
                     placeholder="Magaca qofka / Person's name"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -953,12 +1060,23 @@ export default function FeedsPage() {
                     min="0.01"
                     step="0.01"
                     required
-                    value={form.quantity}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        quantity: event.target.value,
-                      }))
+                    value={
+                      form.quantity
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+                          quantity:
+                            event
+                              .target
+                              .value,
+                        })
+                      )
                     }
                     placeholder="0"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -975,12 +1093,23 @@ export default function FeedsPage() {
                     min="0"
                     step="0.01"
                     required
-                    value={form.price}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        price: event.target.value,
-                      }))
+                    value={
+                      form.price
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+                          price:
+                            event
+                              .target
+                              .value,
+                        })
+                      )
                     }
                     placeholder="0.00"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
@@ -995,7 +1124,9 @@ export default function FeedsPage() {
                       </span>
 
                       <span className="text-xl font-extrabold text-emerald-800">
-                        {formatMoney(formTotal)}
+                        {formatMoney(
+                          formTotal
+                        )}
                       </span>
                     </div>
 
@@ -1015,8 +1146,12 @@ export default function FeedsPage() {
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  onClick={closeForm}
-                  disabled={saving}
+                  onClick={
+                    closeForm
+                  }
+                  disabled={
+                    saving
+                  }
                   className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                 >
                   Jooji / Cancel
@@ -1024,7 +1159,9 @@ export default function FeedsPage() {
 
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={
+                    saving
+                  }
                   className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {saving
