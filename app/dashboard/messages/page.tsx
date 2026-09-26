@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type UserInfo = {
   id: string;
@@ -21,15 +28,20 @@ type Message = {
   receiver: UserInfo;
 };
 
+type Conversation = {
+  user: UserInfo;
+  messages: Message[];
+  lastMessage: Message;
+  unreadCount: number;
+  totalMessages: number;
+};
+
 type MessagesResponse = {
   currentUser: UserInfo;
   employees: UserInfo[];
-  inbox: Message[];
-  sent: Message[];
+  conversations: Conversation[];
   unreadCount: number;
 };
-
-type Tab = "inbox" | "sent" | "new";
 
 export default function MessagesPage() {
   const [data, setData] = useState<MessagesResponse | null>(null);
@@ -37,14 +49,16 @@ export default function MessagesPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [activeTab, setActiveTab] = useState<Tab>("inbox");
-  const [selectedMessage, setSelectedMessage] =
-    useState<Message | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [newMessageMode, setNewMessageMode] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
   const [receiverId, setReceiverId] = useState("");
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const [deletingId, setDeletingId] = useState("");
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -79,20 +93,127 @@ export default function MessagesPage() {
     loadMessages();
   }, [loadMessages]);
 
+  const selectedConversation = useMemo(() => {
+    if (!data || !selectedUserId) {
+      return null;
+    }
+
+    return (
+      data.conversations.find(
+        (conversation) =>
+          conversation.user.id === selectedUserId
+      ) ?? null
+    );
+  }, [data, selectedUserId]);
+
+  const selectedEmployee = useMemo(() => {
+    if (!data || !selectedUserId) {
+      return null;
+    }
+
+    return (
+      data.employees.find(
+        (employee) => employee.id === selectedUserId
+      ) ?? null
+    );
+  }, [data, selectedUserId]);
+
+  const activeChatUser =
+    selectedConversation?.user ?? selectedEmployee ?? null;
+
+  const filteredConversations = useMemo(() => {
+    if (!data) {
+      return [];
+    }
+
+    const search = searchText.trim().toLowerCase();
+
+    if (!search) {
+      return data.conversations;
+    }
+
+    return data.conversations.filter((conversation) => {
+      return (
+        conversation.user.name.toLowerCase().includes(search) ||
+        conversation.user.email.toLowerCase().includes(search) ||
+        conversation.lastMessage.message
+          .toLowerCase()
+          .includes(search)
+      );
+    });
+  }, [data, searchText]);
+
+  useEffect(() => {
+    if (!selectedUserId || newMessageMode) {
+      return;
+    }
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [
+    selectedUserId,
+    selectedConversation?.messages.length,
+    newMessageMode,
+  ]);
+
   function formatDate(date: string) {
+    const messageDate = new Date(date);
+    const today = new Date();
+
+    const sameDay =
+      messageDate.getFullYear() === today.getFullYear() &&
+      messageDate.getMonth() === today.getMonth() &&
+      messageDate.getDate() === today.getDate();
+
+    if (sameDay) {
+      return new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(messageDate);
+    }
+
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(messageDate);
+  }
+
+  function formatFullDate(date: string) {
     return new Intl.DateTimeFormat("en-GB", {
       year: "numeric",
-      month: "short",
+      month: "long",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
     }).format(new Date(date));
   }
 
-  async function openInboxMessage(message: Message) {
-    setSelectedMessage(message);
+  function getInitial(name: string) {
+    const trimmed = name.trim();
 
-    if (message.isRead) {
+    if (!trimmed) {
+      return "?";
+    }
+
+    return trimmed.charAt(0).toUpperCase();
+  }
+
+  async function openConversation(userId: string) {
+    setSelectedUserId(userId);
+    setReceiverId(userId);
+    setNewMessageMode(false);
+    setMessageText("");
+    setSuccess("");
+    setError("");
+
+    const conversation = data?.conversations.find(
+      (item) => item.user.id === userId
+    );
+
+    if (!conversation || conversation.unreadCount === 0) {
       return;
     }
 
@@ -103,7 +224,7 @@ export default function MessagesPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messageId: message.id,
+          userId,
         }),
       });
 
@@ -111,61 +232,106 @@ export default function MessagesPage() {
 
       if (!response.ok) {
         throw new Error(
-          result.error || "Failed to mark message as read."
+          result.error ||
+            "Failed to mark conversation as read."
         );
       }
 
       setData((current) => {
-        if (!current) return current;
+        if (!current) {
+          return current;
+        }
+
+        const amountRead = conversation.unreadCount;
 
         return {
           ...current,
           unreadCount: Math.max(
             0,
-            current.unreadCount - 1
+            current.unreadCount - amountRead
           ),
-          inbox: current.inbox.map((item) =>
-            item.id === message.id
-              ? {
-                  ...item,
-                  isRead: true,
+          conversations: current.conversations.map((item) => {
+            if (item.user.id !== userId) {
+              return item;
+            }
+
+            return {
+              ...item,
+              unreadCount: 0,
+              messages: item.messages.map((message) => {
+                if (
+                  message.senderId === userId &&
+                  message.receiverId === current.currentUser.id &&
+                  !message.isRead
+                ) {
+                  return {
+                    ...message,
+                    isRead: true,
+                  };
                 }
-              : item
-          ),
+
+                return message;
+              }),
+              lastMessage: {
+                ...item.lastMessage,
+                isRead:
+                  item.lastMessage.senderId === userId &&
+                  item.lastMessage.receiverId ===
+                    current.currentUser.id
+                    ? true
+                    : item.lastMessage.isRead,
+              },
+            };
+          }),
         };
       });
-
-      setSelectedMessage((current) =>
-        current
-          ? {
-              ...current,
-              isRead: true,
-            }
-          : current
-      );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to mark message as read."
+          : "Failed to mark conversation as read."
       );
     }
   }
 
-  function openSentMessage(message: Message) {
-    setSelectedMessage(message);
-  }
-
-  function replyToMessage(message: Message) {
-    setReceiverId(message.sender.id);
+  function openNewMessage() {
+    setNewMessageMode(true);
+    setSelectedUserId("");
+    setReceiverId("");
     setMessageText("");
-    setSelectedMessage(null);
-    setSuccess("");
     setError("");
-    setActiveTab("new");
+    setSuccess("");
   }
 
-  async function handleSend(event: FormEvent<HTMLFormElement>) {
+  function cancelNewMessage() {
+    setNewMessageMode(false);
+    setReceiverId("");
+    setMessageText("");
+    setError("");
+    setSuccess("");
+  }
+
+  function chooseNewMessageEmployee(userId: string) {
+    const existingConversation = data?.conversations.find(
+      (conversation) => conversation.user.id === userId
+    );
+
+    if (existingConversation) {
+      openConversation(userId);
+      return;
+    }
+
+    setSelectedUserId(userId);
+    setReceiverId(userId);
+    setNewMessageMode(false);
+    setMessageText("");
+    setError("");
+    setSuccess("");
+  }
+
+  async function sendMessage(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     if (!receiverId) {
@@ -173,7 +339,9 @@ export default function MessagesPage() {
       return;
     }
 
-    if (!messageText.trim()) {
+    const cleanMessage = messageText.trim();
+
+    if (!cleanMessage) {
       setError("Please write a message.");
       return;
     }
@@ -190,7 +358,7 @@ export default function MessagesPage() {
         },
         body: JSON.stringify({
           receiverId,
-          message: messageText,
+          message: cleanMessage,
         }),
       });
 
@@ -202,13 +370,14 @@ export default function MessagesPage() {
         );
       }
 
-      setReceiverId("");
+      const userId = receiverId;
+
       setMessageText("");
-      setSuccess("Message sent successfully.");
+      setNewMessageMode(false);
+      setSelectedUserId(userId);
+      setReceiverId(userId);
 
       await loadMessages();
-
-      setActiveTab("sent");
     } catch (err) {
       setError(
         err instanceof Error
@@ -220,9 +389,9 @@ export default function MessagesPage() {
     }
   }
 
-  async function deleteSentMessage(messageId: string) {
+  async function deleteMessage(messageId: string) {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this sent message?"
+      "Are you sure you want to delete this message?"
     );
 
     if (!confirmed) {
@@ -232,6 +401,7 @@ export default function MessagesPage() {
     try {
       setDeletingId(messageId);
       setError("");
+      setSuccess("");
 
       const response = await fetch(
         `/api/messages?id=${encodeURIComponent(messageId)}`,
@@ -248,18 +418,9 @@ export default function MessagesPage() {
         );
       }
 
-      setSelectedMessage(null);
+      await loadMessages();
 
-      setData((current) => {
-        if (!current) return current;
-
-        return {
-          ...current,
-          sent: current.sent.filter(
-            (message) => message.id !== messageId
-          ),
-        };
-      });
+      setSuccess("Message deleted.");
     } catch (err) {
       setError(
         err instanceof Error
@@ -271,15 +432,7 @@ export default function MessagesPage() {
     }
   }
 
-  function changeTab(tab: Tab) {
-    setActiveTab(tab);
-    setSelectedMessage(null);
-    setError("");
-    setSuccess("");
-  }
-
-  const inbox = data?.inbox ?? [];
-  const sent = data?.sent ?? [];
+  const conversations = data?.conversations ?? [];
   const employees = data?.employees ?? [];
   const unreadCount = data?.unreadCount ?? 0;
 
@@ -292,12 +445,20 @@ export default function MessagesPage() {
               Siraaje Poultry Feed
             </p>
 
-            <h1 className="text-2xl font-bold sm:text-3xl">
-              Messages / Farriimaha
-            </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold sm:text-3xl">
+                Messages / Farriimaha
+              </h1>
+
+              {unreadCount > 0 && (
+                <span className="rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
 
             <p className="mt-2 text-sm text-slate-400">
-              Send and receive internal messages between employees.
+              Internal conversations between employees.
             </p>
           </div>
 
@@ -321,449 +482,489 @@ export default function MessagesPage() {
           </div>
         )}
 
-        <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
-          <aside className="h-fit rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-xl">
-            <button
-              type="button"
-              onClick={() => changeTab("new")}
-              className="mb-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-500"
-            >
-              + New Message
-            </button>
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
+          {loading ? (
+            <div className="flex min-h-[650px] items-center justify-center">
+              <div className="text-center">
+                <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-emerald-500" />
 
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => changeTab("inbox")}
-                className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left font-semibold transition ${
-                  activeTab === "inbox"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-300 hover:bg-slate-800"
-                }`}
-              >
-                <span>📥 Inbox</span>
-
-                {unreadCount > 0 && (
-                  <span className="rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => changeTab("sent")}
-                className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left font-semibold transition ${
-                  activeTab === "sent"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-300 hover:bg-slate-800"
-                }`}
-              >
-                <span>📤 Sent</span>
-
-                <span className="text-xs text-slate-500">
-                  {sent.length}
-                </span>
-              </button>
+                <p className="text-slate-400">
+                  Loading conversations...
+                </p>
+              </div>
             </div>
+          ) : (
+            <div className="grid min-h-[680px] lg:grid-cols-[360px_1fr]">
+              <aside className="border-b border-slate-800 lg:border-b-0 lg:border-r">
+                <div className="border-b border-slate-800 p-4">
+                  <button
+                    type="button"
+                    onClick={openNewMessage}
+                    className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-500"
+                  >
+                    + New Message / Farriin Cusub
+                  </button>
 
-            {data?.currentUser && (
-              <div className="mt-6 border-t border-slate-800 pt-4">
-                <p className="text-xs uppercase tracking-wider text-slate-500">
-                  Signed in as
-                </p>
-
-                <p className="mt-2 font-semibold">
-                  {data.currentUser.name}
-                </p>
-
-                <p className="text-sm text-slate-400">
-                  {data.currentUser.role}
-                </p>
-              </div>
-            )}
-          </aside>
-
-          <section className="min-h-[600px] rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
-            {loading ? (
-              <div className="flex min-h-[500px] items-center justify-center">
-                <div className="text-center">
-                  <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-emerald-500" />
-
-                  <p className="text-slate-400">
-                    Loading messages...
-                  </p>
-                </div>
-              </div>
-            ) : activeTab === "new" ? (
-              <div className="p-5 sm:p-7">
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold">
-                    New Message / Farriin Cusub
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-400">
-                    Select an employee and write your message.
-                  </p>
-                </div>
-
-                <form
-                  onSubmit={handleSend}
-                  className="max-w-3xl space-y-5"
-                >
-                  <div>
-                    <label
-                      htmlFor="receiver"
-                      className="mb-2 block text-sm font-semibold text-slate-300"
-                    >
-                      Send To / U Dir
-                    </label>
-
-                    <select
-                      id="receiver"
-                      value={receiverId}
+                  <div className="relative mt-4">
+                    <input
+                      type="text"
+                      value={searchText}
                       onChange={(event) =>
-                        setReceiverId(event.target.value)
+                        setSearchText(event.target.value)
                       }
-                      required
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-500"
-                    >
-                      <option value="">
-                        Select employee
-                      </option>
-
-                      {employees.map((employee) => (
-                        <option
-                          key={employee.id}
-                          value={employee.id}
-                        >
-                          {employee.name} — {employee.role}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <label
-                        htmlFor="message"
-                        className="text-sm font-semibold text-slate-300"
-                      >
-                        Message / Farriinta
-                      </label>
-
-                      <span className="text-xs text-slate-500">
-                        {messageText.length}/5000
-                      </span>
-                    </div>
-
-                    <textarea
-                      id="message"
-                      value={messageText}
-                      onChange={(event) =>
-                        setMessageText(event.target.value)
-                      }
-                      maxLength={5000}
-                      required
-                      rows={10}
-                      placeholder="Write your message..."
-                      className="w-full resize-y rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-emerald-500"
+                      placeholder="Search conversations..."
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 pr-10 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-emerald-500"
                     />
-                  </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="submit"
-                      disabled={sending}
-                      className="rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {sending
-                        ? "Sending..."
-                        : "Send Message"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReceiverId("");
-                        setMessageText("");
-                      }}
-                      className="rounded-xl border border-slate-700 bg-slate-800 px-6 py-3 font-semibold transition hover:bg-slate-700"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : selectedMessage ? (
-              <div className="p-5 sm:p-7">
-                <button
-                  type="button"
-                  onClick={() => setSelectedMessage(null)}
-                  className="mb-6 text-sm font-semibold text-emerald-400 hover:text-emerald-300"
-                >
-                  ← Back to{" "}
-                  {activeTab === "inbox"
-                    ? "Inbox"
-                    : "Sent Messages"}
-                </button>
-
-                <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5 sm:p-6">
-                  <div className="border-b border-slate-800 pb-5">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-sm text-slate-500">
-                          {activeTab === "inbox"
-                            ? "From"
-                            : "To"}
-                        </p>
-
-                        <h2 className="mt-1 text-xl font-bold">
-                          {activeTab === "inbox"
-                            ? selectedMessage.sender.name
-                            : selectedMessage.receiver.name}
-                        </h2>
-
-                        <p className="mt-1 text-sm text-slate-400">
-                          {activeTab === "inbox"
-                            ? selectedMessage.sender.email
-                            : selectedMessage.receiver.email}
-                        </p>
-                      </div>
-
-                      <div className="text-sm text-slate-500">
-                        {formatDate(
-                          selectedMessage.createdAt
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="min-h-[180px] whitespace-pre-wrap break-words py-6 leading-7 text-slate-200">
-                    {selectedMessage.message}
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 border-t border-slate-800 pt-5">
-                    {activeTab === "inbox" ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          replyToMessage(selectedMessage)
-                        }
-                        className="rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold text-white transition hover:bg-emerald-500"
-                      >
-                        ↩ Reply
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={
-                          deletingId ===
-                          selectedMessage.id
-                        }
-                        onClick={() =>
-                          deleteSentMessage(
-                            selectedMessage.id
-                          )
-                        }
-                        className="rounded-xl bg-red-700 px-5 py-2.5 font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
-                      >
-                        {deletingId ===
-                        selectedMessage.id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
-                    )}
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+                      🔍
+                    </span>
                   </div>
                 </div>
-              </div>
-            ) : activeTab === "inbox" ? (
-              <div>
-                <div className="border-b border-slate-800 p-5 sm:p-6">
+
+                <div className="border-b border-slate-800 px-4 py-3">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xl font-bold">
-                        Inbox
-                      </h2>
+                    <p className="text-sm font-bold">
+                      Conversations / Wadahadallada
+                    </p>
 
-                      <p className="mt-1 text-sm text-slate-400">
-                        Messages sent to you.
-                      </p>
-                    </div>
-
-                    {unreadCount > 0 && (
-                      <span className="rounded-full bg-red-500/15 px-3 py-1.5 text-sm font-bold text-red-400">
-                        {unreadCount} unread
-                      </span>
-                    )}
+                    <span className="text-xs text-slate-500">
+                      {conversations.length}
+                    </span>
                   </div>
                 </div>
 
-                {inbox.length === 0 ? (
-                  <div className="flex min-h-[400px] items-center justify-center p-6 text-center">
-                    <div>
-                      <div className="mb-3 text-5xl">
-                        📭
-                      </div>
-
-                      <h3 className="font-bold">
-                        Inbox is empty
-                      </h3>
-
-                      <p className="mt-1 text-sm text-slate-500">
-                        You have no messages yet.
-                      </p>
+                {filteredConversations.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <div className="mb-3 text-4xl">
+                      💬
                     </div>
+
+                    <h3 className="font-bold">
+                      No conversations
+                    </h3>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                      Start a new conversation with an employee.
+                    </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-800">
-                    {inbox.map((message) => (
-                      <button
-                        key={message.id}
-                        type="button"
-                        onClick={() =>
-                          openInboxMessage(message)
-                        }
-                        className={`flex w-full gap-4 p-5 text-left transition hover:bg-slate-800/70 ${
-                          !message.isRead
-                            ? "bg-emerald-950/20"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400">
-                          {message.sender.name
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
+                  <div className="max-h-[555px] overflow-y-auto">
+                    {filteredConversations.map(
+                      (conversation) => {
+                        const selected =
+                          selectedUserId ===
+                            conversation.user.id &&
+                          !newMessageMode;
 
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-2">
-                              <p
-                                className={`truncate ${
-                                  !message.isRead
-                                    ? "font-bold text-white"
-                                    : "font-semibold text-slate-300"
-                                }`}
-                              >
-                                {message.sender.name}
-                              </p>
+                        const lastMessageFromMe =
+                          conversation.lastMessage.senderId ===
+                          data?.currentUser.id;
 
-                              {!message.isRead && (
-                                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        return (
+                          <button
+                            key={conversation.user.id}
+                            type="button"
+                            onClick={() =>
+                              openConversation(
+                                conversation.user.id
+                              )
+                            }
+                            className={`flex w-full gap-3 border-b border-slate-800 p-4 text-left transition ${
+                              selected
+                                ? "bg-slate-800"
+                                : conversation.unreadCount > 0
+                                  ? "bg-emerald-950/20 hover:bg-slate-800/80"
+                                  : "hover:bg-slate-800/70"
+                            }`}
+                          >
+                            <div className="relative shrink-0">
+                              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold text-emerald-400">
+                                {getInitial(
+                                  conversation.user.name
+                                )}
+                              </div>
+
+                              {conversation.unreadCount > 0 && (
+                                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                                  {conversation.unreadCount}
+                                </span>
                               )}
                             </div>
 
-                            <p className="shrink-0 text-xs text-slate-500">
-                              {formatDate(
-                                message.createdAt
-                              )}
-                            </p>
-                          </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <p
+                                  className={`truncate ${
+                                    conversation.unreadCount > 0
+                                      ? "font-bold text-white"
+                                      : "font-semibold text-slate-300"
+                                  }`}
+                                >
+                                  {conversation.user.name}
+                                </p>
 
-                          <p
-                            className={`mt-2 truncate text-sm ${
-                              !message.isRead
-                                ? "text-slate-200"
-                                : "text-slate-500"
-                            }`}
-                          >
-                            {message.message}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
+                                <span
+                                  className={`shrink-0 text-[11px] ${
+                                    conversation.unreadCount > 0
+                                      ? "font-semibold text-emerald-400"
+                                      : "text-slate-500"
+                                  }`}
+                                >
+                                  {formatDate(
+                                    conversation.lastMessage
+                                      .createdAt
+                                  )}
+                                </span>
+                              </div>
+
+                              <div className="mt-1 flex items-center gap-1">
+                                {lastMessageFromMe && (
+                                  <span className="shrink-0 text-xs text-slate-500">
+                                    You:
+                                  </span>
+                                )}
+
+                                <p
+                                  className={`truncate text-sm ${
+                                    conversation.unreadCount > 0
+                                      ? "font-medium text-slate-200"
+                                      : "text-slate-500"
+                                  }`}
+                                >
+                                  {
+                                    conversation.lastMessage
+                                      .message
+                                  }
+                                </p>
+                              </div>
+
+                              <p className="mt-1 text-[11px] text-slate-600">
+                                {conversation.totalMessages}{" "}
+                                {conversation.totalMessages === 1
+                                  ? "message"
+                                  : "messages"}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      }
+                    )}
                   </div>
                 )}
-              </div>
-            ) : (
-              <div>
-                <div className="border-b border-slate-800 p-5 sm:p-6">
-                  <h2 className="text-xl font-bold">
-                    Sent Messages
-                  </h2>
 
-                  <p className="mt-1 text-sm text-slate-400">
-                    Messages you have sent to employees.
-                  </p>
-                </div>
+                {data?.currentUser && (
+                  <div className="border-t border-slate-800 p-4">
+                    <p className="text-xs uppercase tracking-wider text-slate-500">
+                      Signed in as
+                    </p>
 
-                {sent.length === 0 ? (
-                  <div className="flex min-h-[400px] items-center justify-center p-6 text-center">
-                    <div>
-                      <div className="mb-3 text-5xl">
-                        📤
+                    <p className="mt-1 truncate text-sm font-semibold">
+                      {data.currentUser.name}
+                    </p>
+
+                    <p className="truncate text-xs text-slate-500">
+                      {data.currentUser.role}
+                    </p>
+                  </div>
+                )}
+              </aside>
+
+              <section className="min-w-0">
+                {newMessageMode ? (
+                  <div className="p-5 sm:p-7">
+                    <div className="mb-6 flex items-start justify-between gap-4 border-b border-slate-800 pb-5">
+                      <div>
+                        <h2 className="text-xl font-bold">
+                          New Message / Farriin Cusub
+                        </h2>
+
+                        <p className="mt-1 text-sm text-slate-400">
+                          Select an employee to start or open a
+                          conversation.
+                        </p>
                       </div>
-
-                      <h3 className="font-bold">
-                        No sent messages
-                      </h3>
 
                       <button
                         type="button"
-                        onClick={() => changeTab("new")}
-                        className="mt-4 rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-500"
+                        onClick={cancelNewMessage}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-semibold hover:bg-slate-700"
                       >
-                        Send a Message
+                        Cancel
                       </button>
+                    </div>
+
+                    {employees.length === 0 ? (
+                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-8 text-center text-slate-500">
+                        No other employees are available.
+                      </div>
+                    ) : (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {employees.map((employee) => {
+                          const existingConversation =
+                            conversations.some(
+                              (conversation) =>
+                                conversation.user.id ===
+                                employee.id
+                            );
+
+                          return (
+                            <button
+                              key={employee.id}
+                              type="button"
+                              onClick={() =>
+                                chooseNewMessageEmployee(
+                                  employee.id
+                                )
+                              }
+                              className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-left transition hover:border-emerald-700 hover:bg-slate-800"
+                            >
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-800 text-lg font-bold text-emerald-400">
+                                {getInitial(employee.name)}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-bold">
+                                  {employee.name}
+                                </p>
+
+                                <p className="truncate text-sm text-slate-500">
+                                  {employee.email}
+                                </p>
+
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <span className="rounded-full bg-slate-800 px-2 py-1 text-[11px] font-semibold text-slate-400">
+                                    {employee.role}
+                                  </span>
+
+                                  {existingConversation && (
+                                    <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold text-emerald-400">
+                                      Existing conversation
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : activeChatUser ? (
+                  <div className="flex min-h-[680px] flex-col">
+                    <div className="flex items-center gap-4 border-b border-slate-800 px-5 py-4 sm:px-6">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400">
+                        {getInitial(activeChatUser.name)}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <h2 className="truncate font-bold">
+                          {activeChatUser.name}
+                        </h2>
+
+                        <p className="truncate text-xs text-slate-500">
+                          {activeChatUser.email} ·{" "}
+                          {activeChatUser.role}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={openNewMessage}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold transition hover:bg-slate-700"
+                      >
+                        New Chat
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto bg-slate-950/40 p-4 sm:p-6">
+                      {!selectedConversation ||
+                      selectedConversation.messages.length === 0 ? (
+                        <div className="flex min-h-[430px] items-center justify-center text-center">
+                          <div>
+                            <div className="mb-4 text-5xl">
+                              👋
+                            </div>
+
+                            <h3 className="text-lg font-bold">
+                              Start your conversation
+                            </h3>
+
+                            <p className="mt-2 text-sm text-slate-500">
+                              Send the first message to{" "}
+                              {activeChatUser.name}.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {selectedConversation.messages.map(
+                            (message) => {
+                              const mine =
+                                message.senderId ===
+                                data?.currentUser.id;
+
+                              return (
+                                <div
+                                  key={message.id}
+                                  className={`flex ${
+                                    mine
+                                      ? "justify-end"
+                                      : "justify-start"
+                                  }`}
+                                >
+                                  <div
+                                    className={`group max-w-[85%] sm:max-w-[72%] ${
+                                      mine
+                                        ? "items-end"
+                                        : "items-start"
+                                    }`}
+                                  >
+                                    <div
+                                      className={`rounded-2xl px-4 py-3 shadow-sm ${
+                                        mine
+                                          ? "rounded-br-md bg-emerald-600 text-white"
+                                          : "rounded-bl-md border border-slate-800 bg-slate-900 text-slate-200"
+                                      }`}
+                                    >
+                                      <p className="whitespace-pre-wrap break-words text-sm leading-6">
+                                        {message.message}
+                                      </p>
+                                    </div>
+
+                                    <div
+                                      className={`mt-1.5 flex items-center gap-2 px-1 ${
+                                        mine
+                                          ? "justify-end"
+                                          : "justify-start"
+                                      }`}
+                                    >
+                                      <span className="text-[11px] text-slate-600">
+                                        {formatFullDate(
+                                          message.createdAt
+                                        )}
+                                      </span>
+
+                                      {mine && (
+                                        <>
+                                          <span
+                                            className={`text-[11px] ${
+                                              message.isRead
+                                                ? "text-emerald-400"
+                                                : "text-slate-600"
+                                            }`}
+                                          >
+                                            {message.isRead
+                                              ? "Read"
+                                              : "Sent"}
+                                          </span>
+
+                                          <button
+                                            type="button"
+                                            disabled={
+                                              deletingId ===
+                                              message.id
+                                            }
+                                            onClick={() =>
+                                              deleteMessage(
+                                                message.id
+                                              )
+                                            }
+                                            className="text-[11px] text-slate-600 transition hover:text-red-400 disabled:opacity-50"
+                                          >
+                                            {deletingId ===
+                                            message.id
+                                              ? "Deleting..."
+                                              : "Delete"}
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )}
+
+                          <div ref={messagesEndRef} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-slate-800 bg-slate-900 p-4 sm:p-5">
+                      <form
+                        onSubmit={sendMessage}
+                        className="flex items-end gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <label
+                              htmlFor="chat-message"
+                              className="text-xs font-semibold text-slate-500"
+                            >
+                              Message / Farriinta
+                            </label>
+
+                            <span className="text-[11px] text-slate-600">
+                              {messageText.length}/5000
+                            </span>
+                          </div>
+
+                          <textarea
+                            id="chat-message"
+                            value={messageText}
+                            onChange={(event) =>
+                              setMessageText(event.target.value)
+                            }
+                            maxLength={5000}
+                            rows={2}
+                            placeholder={`Message ${activeChatUser.name}...`}
+                            className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-emerald-500"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={
+                            sending || !messageText.trim()
+                          }
+                          className="rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {sending ? "Sending..." : "Send"}
+                        </button>
+                      </form>
                     </div>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-800">
-                    {sent.map((message) => (
+                  <div className="flex min-h-[680px] items-center justify-center p-6 text-center">
+                    <div className="max-w-md">
+                      <div className="mb-5 text-6xl">
+                        💬
+                      </div>
+
+                      <h2 className="text-2xl font-bold">
+                        Messages / Farriimaha
+                      </h2>
+
+                      <p className="mt-3 text-sm leading-6 text-slate-500">
+                        Select a conversation from the left or
+                        start a new conversation with an
+                        employee.
+                      </p>
+
                       <button
-                        key={message.id}
                         type="button"
-                        onClick={() =>
-                          openSentMessage(message)
-                        }
-                        className="flex w-full gap-4 p-5 text-left transition hover:bg-slate-800/70"
+                        onClick={openNewMessage}
+                        className="mt-6 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white transition hover:bg-emerald-500"
                       >
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-blue-400">
-                          {message.receiver.name
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="truncate font-semibold text-slate-300">
-                              To:{" "}
-                              {message.receiver.name}
-                            </p>
-
-                            <p className="shrink-0 text-xs text-slate-500">
-                              {formatDate(
-                                message.createdAt
-                              )}
-                            </p>
-                          </div>
-
-                          <div className="mt-2 flex items-center gap-3">
-                            <p className="min-w-0 flex-1 truncate text-sm text-slate-500">
-                              {message.message}
-                            </p>
-
-                            <span
-                              className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
-                                message.isRead
-                                  ? "bg-emerald-500/15 text-emerald-400"
-                                  : "bg-slate-800 text-slate-500"
-                              }`}
-                            >
-                              {message.isRead
-                                ? "Read"
-                                : "Unread"}
-                            </span>
-                          </div>
-                        </div>
+                        + New Message
                       </button>
-                    ))}
+                    </div>
                   </div>
                 )}
-              </div>
-            )}
-          </section>
+              </section>
+            </div>
+          )}
         </div>
       </div>
     </main>
