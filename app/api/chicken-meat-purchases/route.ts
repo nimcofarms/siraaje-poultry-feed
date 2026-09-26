@@ -120,16 +120,9 @@ export async function POST(request: Request) {
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
-    const meatWeightKg = Number(body.meatWeightKg);
-    const pricePerKg = Number(body.pricePerKg);
 
     /* =====================================================
        BASIC VALIDATION
-
-       quantity = general purchase quantity.
-       price = general purchase price.
-       meatWeightKg = meat weight in kilograms.
-       pricePerKg = ETB per kilogram.
     ===================================================== */
 
     if (
@@ -140,11 +133,7 @@ export async function POST(request: Request) {
       !Number.isFinite(quantity) ||
       quantity <= 0 ||
       !Number.isFinite(price) ||
-      price < 0 ||
-      !Number.isFinite(meatWeightKg) ||
-      meatWeightKg <= 0 ||
-      !Number.isFinite(pricePerKg) ||
-      pricePerKg < 0
+      price < 0
     ) {
       return NextResponse.json(
         {
@@ -170,8 +159,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Final total is based on meat weight × price per kg.
-    const total = meatWeightKg * pricePerKg;
+    /* =====================================================
+       TOTAL
+       quantity × price
+    ===================================================== */
+
+    const total = quantity * price;
 
     /* =====================================================
        CREATE CHICKEN MEAT PURCHASE
@@ -185,20 +178,9 @@ export async function POST(request: Request) {
         purchasedBy,
         quantity,
         price,
-        meatWeightKg,
-        pricePerKg,
         total,
         currency: "ETB",
 
-        /*
-         * AUDIT TRAIL
-         *
-         * purchasedBy = person who physically handled/made
-         * the meat purchase for Siraaje Poultry Feed.
-         *
-         * createdById = logged-in account that entered
-         * this record into the system.
-         */
         ...createAuditData(auth.user),
       },
 
@@ -255,16 +237,9 @@ export async function PUT(request: Request) {
 
     const quantity = Number(body.quantity);
     const price = Number(body.price);
-    const meatWeightKg = Number(body.meatWeightKg);
-    const pricePerKg = Number(body.pricePerKg);
 
     /* =====================================================
        BASIC VALIDATION
-
-       quantity = general purchase quantity.
-       price = general purchase price.
-       meatWeightKg = meat weight in kilograms.
-       pricePerKg = ETB per kilogram.
     ===================================================== */
 
     if (
@@ -276,11 +251,7 @@ export async function PUT(request: Request) {
       !Number.isFinite(quantity) ||
       quantity <= 0 ||
       !Number.isFinite(price) ||
-      price < 0 ||
-      !Number.isFinite(meatWeightKg) ||
-      meatWeightKg <= 0 ||
-      !Number.isFinite(pricePerKg) ||
-      pricePerKg < 0
+      price < 0
     ) {
       return NextResponse.json(
         {
@@ -326,8 +297,12 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Recalculate final total using meat weight × price per kg.
-    const total = meatWeightKg * pricePerKg;
+    /* =====================================================
+       TOTAL
+       quantity × price
+    ===================================================== */
+
+    const total = quantity * price;
 
     /* =====================================================
        UPDATE CHICKEN MEAT PURCHASE
@@ -345,14 +320,8 @@ export async function PUT(request: Request) {
         purchasedBy,
         quantity,
         price,
-        meatWeightKg,
-        pricePerKg,
         total,
 
-        /*
-         * createdById remains unchanged.
-         * updatedById becomes the account editing the record.
-         */
         ...updateAuditData(auth.user),
       },
 
@@ -401,10 +370,6 @@ export async function DELETE(request: Request) {
       );
     }
 
-    /* =====================================================
-       CHECK RECORD EXISTS
-    ===================================================== */
-
     const existingPurchase = await prisma.chickenMeatPurchase.findUnique({
       where: {
         id,
@@ -420,10 +385,6 @@ export async function DELETE(request: Request) {
         { status: 404 }
       );
     }
-
-    /* =====================================================
-       DELETE
-    ===================================================== */
 
     await prisma.chickenMeatPurchase.delete({
       where: {
