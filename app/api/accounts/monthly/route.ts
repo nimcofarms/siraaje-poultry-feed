@@ -440,10 +440,6 @@ export async function GET(
   request: Request
 ) {
   try {
-    // =====================================================
-    // AUTHORIZATION
-    // =====================================================
-
     const currentUser =
       await getCurrentUser();
 
@@ -475,10 +471,6 @@ export async function GET(
         }
       );
     }
-
-    // =====================================================
-    // QUERY PARAMETERS
-    // =====================================================
 
     const url =
       new URL(request.url);
@@ -572,13 +564,6 @@ export async function GET(
     // =====================================================
     // PRODUCT EXPENSES ONLY
     // =====================================================
-    //
-    // General expenses and construction expenses are
-    // intentionally NOT included in Monthly Accounts.
-    //
-    // They remain in the database and Expenses section.
-    // Only Product Expenses are used in Xisaab Xir.
-    // =====================================================
 
     if (
       categories.includes(
@@ -605,51 +590,37 @@ export async function GET(
       ) {
         rawEntries.push({
           id: item.id,
-
           date:
             item.date.toISOString(),
-
           category: "expenses",
-
           categoryLabel:
             CATEGORY_LABELS.expenses,
-
           type: "EXPENSE",
-
           source:
             "Product Expense",
-
           description:
             `${item.name} - ${item.type}`,
-
           location:
             item.location || null,
-
           party: null,
-
           quantity:
             nullableNumber(
               item.quantity
             ),
-
           unitPrice:
             nullableNumber(
               item.price
             ),
-
           total:
             safeNumber(
               item.total
             ),
-
           currency:
             normalizeCurrency(
               item.currency
             ),
-
           createdAt:
             item.createdAt.toISOString(),
-
           createdBy:
             auditUser(
               item.createdBy
@@ -785,7 +756,16 @@ export async function GET(
     }
 
         // =====================================================
-    // FEEDS - PURCHASE + SALE
+    // FEEDS - SALES ONLY
+    // =====================================================
+    //
+    // Starter, Grower and Layer are finished products.
+    //
+    // They are manufactured in Feed Production.
+    // Records entered in the Starter/Grower/Layer tables
+    // represent actual SALES of those finished products.
+    //
+    // Production itself is NOT financial revenue.
     // =====================================================
 
     if (
@@ -808,14 +788,6 @@ export async function GET(
       for (
         const item of feeds
       ) {
-        const feedTransaction:
-          | "PURCHASE"
-          | "SALE" =
-          item.transactionType ===
-          "SALE"
-            ? "SALE"
-            : "PURCHASE";
-
         rawEntries.push({
           id: item.id,
           date:
@@ -823,41 +795,49 @@ export async function GET(
           category: "feeds",
           categoryLabel:
             CATEGORY_LABELS.feeds,
-          type:
-            feedTransaction,
-          source:
-            feedTransaction ===
-            "SALE"
-              ? "Feed Sale"
-              : "Feed Purchase",
+
+          // Every Starter/Grower/Layer entry is a sale.
+          type: "SALE",
+
+          source: "Feed Sale",
+
           description:
             item.feedType,
+
           feedType:
             item.feedType,
+
           location:
             item.location || null,
+
           party:
             item.companyName ||
             item.suppliedBy ||
             null,
+
           quantity:
             nullableNumber(
               item.quantity
             ),
+
           unitPrice:
             nullableNumber(
               item.price
             ),
+
           total:
             safeNumber(
               item.total
             ),
+
           currency:
             normalizeCurrency(
               item.currency
             ),
+
           createdAt:
             item.createdAt.toISOString(),
+
           createdBy:
             auditUser(
               item.createdBy
@@ -868,16 +848,6 @@ export async function GET(
 
     // =====================================================
     // CHICKEN
-    // =====================================================
-    //
-    // ALL:
-    //   Live Chicken + Chicken Meat
-    //
-    // LIVE:
-    //   Live Chicken only
-    //
-    // MEAT:
-    //   Chicken Meat only
     // =====================================================
 
     if (
@@ -944,9 +914,7 @@ export async function GET(
         ),
       ]);
 
-      // ===================================================
       // LIVE CHICKEN PURCHASES
-      // ===================================================
 
       if (
         chickenType === "ALL" ||
@@ -997,9 +965,7 @@ export async function GET(
         }
       }
 
-      // ===================================================
       // LIVE CHICKEN SALES
-      // ===================================================
 
       if (
         chickenType === "ALL" ||
@@ -1050,9 +1016,7 @@ export async function GET(
         }
       }
 
-      // ===================================================
       // CHICKEN MEAT PURCHASES
-      // ===================================================
 
       if (
         chickenType === "ALL" ||
@@ -1104,9 +1068,7 @@ export async function GET(
         }
       }
 
-      // ===================================================
       // CHICKEN MEAT SALES
-      // ===================================================
 
       if (
         chickenType === "ALL" ||
@@ -1237,7 +1199,7 @@ export async function GET(
     }
 
     // =====================================================
-    // SORT FILTERED MONETARY RECORDS
+    // SORT MONETARY RECORDS
     // =====================================================
 
     entries.sort(
@@ -1310,8 +1272,12 @@ export async function GET(
     // =====================================================
     // FEED PRODUCTION
     //
-    // Production remains operational data only.
-    // It is NOT included in the financial calculation.
+    // IMPORTANT:
+    // Production records how much Starter/Grower/Layer
+    // was manufactured.
+    //
+    // Production does NOT count as revenue.
+    // Only actual Feed records above count as Feed Sales.
     // =====================================================
 
     const productionEntries:
@@ -1621,10 +1587,6 @@ export async function GET(
             "Layer Feed",
         },
       ],
-
-      // ===================================================
-      // CHICKEN FILTER OPTIONS
-      // ===================================================
 
       availableChickenTypes: [
         {

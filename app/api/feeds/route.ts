@@ -21,7 +21,20 @@ export const runtime = "nodejs";
 
 const ALLOWED_FEED_TYPES = ["Starter", "Grower", "Layer"] as const;
 
-const ALLOWED_TRANSACTION_TYPES = ["PURCHASE", "SALE"] as const;
+/* =========================================================
+   BUSINESS RULE
+
+   Feed records are finished-feed SALES.
+
+   Starter / Grower / Layer:
+   - Produced in the Production section
+   - Sold in the Feeds section
+
+   transactionType remains in the database for compatibility,
+   but every record created/updated here is automatically SALE.
+========================================================= */
+
+const FEED_TRANSACTION_TYPE = "SALE" as const;
 
 /* =========================================================
    AUTHORIZE
@@ -74,10 +87,6 @@ function normalizeFeedType(value: unknown) {
   return normalizeText(value);
 }
 
-function normalizeTransactionType(value: unknown) {
-  return normalizeText(value).toUpperCase();
-}
-
 function normalizeNumber(value: unknown) {
   if (
     value === null ||
@@ -113,17 +122,13 @@ function createFeedDate(value: unknown) {
 }
 
 /* =========================================================
-   VALIDATE FEED INPUT
+   VALIDATE FEED SALE INPUT
 ========================================================= */
 
 function validateFeedInput(body: Record<string, unknown>) {
   const date = createFeedDate(body.date);
 
   const feedType = normalizeFeedType(body.feedType);
-
-  const transactionType = normalizeTransactionType(
-    body.transactionType
-  );
 
   const companyName = normalizeText(body.companyName);
 
@@ -157,21 +162,7 @@ function validateFeedInput(body: Record<string, unknown>) {
     };
   }
 
-  /* TRANSACTION TYPE */
-
-  if (
-    !ALLOWED_TRANSACTION_TYPES.includes(
-      transactionType as never
-    )
-  ) {
-    return {
-      success: false as const,
-      error:
-        "Nooca macaamilku waa inuu noqdaa Purchased ama Sold. / Transaction type must be PURCHASE or SALE.",
-    };
-  }
-
-  /* COMPANY */
+  /* COMPANY / CUSTOMER */
 
   if (!companyName) {
     return {
@@ -187,7 +178,7 @@ function validateFeedInput(body: Record<string, unknown>) {
     return {
       success: false as const,
       error:
-        "Fadlan geli cidda quudinta bixisay. / Please enter who supplied the feed.",
+        "Fadlan geli cidda quudinta siisay macmiilka. / Please enter who supplied the feed to the customer.",
     };
   }
 
@@ -223,7 +214,8 @@ function validateFeedInput(body: Record<string, unknown>) {
 
       feedType,
 
-      transactionType,
+      // Every Starter / Grower / Layer record is a sale.
+      transactionType: FEED_TRANSACTION_TYPE,
 
       companyName,
 
@@ -244,7 +236,7 @@ function validateFeedInput(body: Record<string, unknown>) {
 
 /* =========================================================
    GET
-   LOAD ALL FEED RECORDS
+   LOAD ALL FEED SALES
 ========================================================= */
 
 export async function GET() {
@@ -277,7 +269,7 @@ export async function GET() {
     return NextResponse.json(
       {
         error:
-          "Xogta quudinta lama soo qaadi karin. / Feed records could not be loaded.",
+          "Xogta iibka quudinta lama soo qaadi karin. / Feed sales could not be loaded.",
       },
       { status: 500 }
     );
@@ -286,7 +278,7 @@ export async function GET() {
 
 /* =========================================================
    POST
-   CREATE FEED RECORD
+   CREATE FEED SALE
 ========================================================= */
 
 export async function POST(request: Request) {
@@ -344,7 +336,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Quudinta lama kaydin karin. / Feed record could not be saved.",
+          "Iibka quudinta lama kaydin karin. / Feed sale could not be saved.",
       },
       { status: 500 }
     );
@@ -353,7 +345,7 @@ export async function POST(request: Request) {
 
 /* =========================================================
    PUT
-   UPDATE FEED RECORD
+   UPDATE FEED SALE
 ========================================================= */
 
 export async function PUT(request: Request) {
@@ -385,13 +377,11 @@ export async function PUT(request: Request) {
       return NextResponse.json(
         {
           error:
-            "ID-ga quudinta lama helin. / Feed ID is missing.",
+            "ID-ga iibka quudinta lama helin. / Feed sale ID is missing.",
         },
         { status: 400 }
       );
     }
-
-    /* CHECK EXISTING RECORD */
 
     const existing = await prisma.feed.findUnique({
       where: {
@@ -407,7 +397,7 @@ export async function PUT(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Xogtan quudinta lama helin. / Feed record was not found.",
+            "Xogtan iibka quudinta lama helin. / Feed sale was not found.",
         },
         { status: 404 }
       );
@@ -447,7 +437,7 @@ export async function PUT(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Xogta quudinta lama beddeli karin. / Feed record could not be updated.",
+          "Iibka quudinta lama beddeli karin. / Feed sale could not be updated.",
       },
       { status: 500 }
     );
@@ -456,7 +446,7 @@ export async function PUT(request: Request) {
 
 /* =========================================================
    DELETE
-   DELETE FEED RECORD
+   DELETE FEED SALE
 ========================================================= */
 
 export async function DELETE(request: Request) {
@@ -475,13 +465,11 @@ export async function DELETE(request: Request) {
       return NextResponse.json(
         {
           error:
-            "ID-ga quudinta lama helin. / Feed ID is missing.",
+            "ID-ga iibka quudinta lama helin. / Feed sale ID is missing.",
         },
         { status: 400 }
       );
     }
-
-    /* CHECK EXISTING RECORD */
 
     const existing = await prisma.feed.findUnique({
       where: {
@@ -497,7 +485,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Xogtan quudinta lama helin. / Feed record was not found.",
+            "Xogtan iibka quudinta lama helin. / Feed sale was not found.",
         },
         { status: 404 }
       );
@@ -518,7 +506,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Xogta quudinta lama tirtiri karin. / Feed record could not be deleted.",
+          "Iibka quudinta lama tirtiri karin. / Feed sale could not be deleted.",
       },
       { status: 500 }
     );
