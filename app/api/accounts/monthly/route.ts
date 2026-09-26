@@ -23,8 +23,17 @@ type EntryType =
   | "SALE"
   | "EXPENSE";
 
-type TransactionFilter = "ALL" | "PURCHASE" | "SALE" | "EXPENSE";
-type FeedTypeFilter = "ALL" | "Starter" | "Grower" | "Layer";
+type TransactionFilter =
+  | "ALL"
+  | "PURCHASE"
+  | "SALE"
+  | "EXPENSE";
+
+type FeedTypeFilter =
+  | "ALL"
+  | "Starter"
+  | "Grower"
+  | "Layer";
 
 type AuditUserInfo = {
   id: string;
@@ -106,26 +115,38 @@ const ALL_CATEGORIES: AccountCategory[] = [
   "chicken",
 ];
 
-const CATEGORY_LABELS: Record<AccountCategory, string> = {
-  expenses: "Kharashaadka / Expenses",
+const CATEGORY_LABELS: Record<
+  AccountCategory,
+  string
+> = {
+  expenses:
+    "Kharashka Productiga / Product Expenses",
   eggs: "Ukumaha / Eggs",
   feeds: "Quudinta / Feeds",
   chicken: "Digaag / Chicken",
 };
 
 const ALLOWED_TRANSACTION_FILTERS: TransactionFilter[] = [
-  "ALL", "PURCHASE", "SALE", "EXPENSE",
+  "ALL",
+  "PURCHASE",
+  "SALE",
+  "EXPENSE",
 ];
 
 const ALLOWED_FEED_TYPES: FeedTypeFilter[] = [
-  "ALL", "Starter", "Grower", "Layer",
+  "ALL",
+  "Starter",
+  "Grower",
+  "Layer",
 ];
 
 // =========================================================
 // HELPERS
 // =========================================================
 
-function normalizeCurrency(currency: string | null | undefined) {
+function normalizeCurrency(
+  currency: string | null | undefined
+) {
   const value = String(currency || "ETB")
     .trim()
     .toUpperCase();
@@ -142,33 +163,64 @@ function parseCategories(
 
   const requested = value
     .split(",")
-    .map((item) => item.trim().toLowerCase())
+    .map((item) =>
+      item.trim().toLowerCase()
+    )
     .filter(Boolean);
 
   const categories = requested.filter(
     (item): item is AccountCategory =>
-      ALL_CATEGORIES.includes(item as AccountCategory)
+      ALL_CATEGORIES.includes(
+        item as AccountCategory
+      )
   );
 
   return [...new Set(categories)];
 }
 
-function parseTransactionFilter(value: string | null): TransactionFilter {
-  const v = String(value || "ALL").trim().toUpperCase() as TransactionFilter;
-  return ALLOWED_TRANSACTION_FILTERS.includes(v) ? v : "ALL";
+function parseTransactionFilter(
+  value: string | null
+): TransactionFilter {
+  const v = String(value || "ALL")
+    .trim()
+    .toUpperCase() as TransactionFilter;
+
+  return ALLOWED_TRANSACTION_FILTERS.includes(v)
+    ? v
+    : "ALL";
 }
 
-function parseFeedTypeFilter(value: string | null): FeedTypeFilter {
+function parseFeedTypeFilter(
+  value: string | null
+): FeedTypeFilter {
   const raw = String(value || "ALL").trim();
-  return ALLOWED_FEED_TYPES.find(
-    (item) => item.toLowerCase() === raw.toLowerCase()
-  ) || "ALL";
+
+  return (
+    ALLOWED_FEED_TYPES.find(
+      (item) =>
+        item.toLowerCase() ===
+        raw.toLowerCase()
+    ) || "ALL"
+  );
 }
 
 function auditUser(
-  user: { id: string; name: string; role: string } | null | undefined
+  user:
+    | {
+        id: string;
+        name: string;
+        role: string;
+      }
+    | null
+    | undefined
 ): AuditUserInfo | null {
-  return user ? { id: user.id, name: user.name, role: user.role } : null;
+  return user
+    ? {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      }
+    : null;
 }
 
 function getMonthRange(month: string) {
@@ -176,7 +228,8 @@ function getMonthRange(month: string) {
     return null;
   }
 
-  const [yearText, monthText] = month.split("-");
+  const [yearText, monthText] =
+    month.split("-");
 
   const year = Number(yearText);
   const monthNumber = Number(monthText);
@@ -191,11 +244,27 @@ function getMonthRange(month: string) {
   }
 
   const start = new Date(
-    Date.UTC(year, monthNumber - 1, 1, 0, 0, 0, 0)
+    Date.UTC(
+      year,
+      monthNumber - 1,
+      1,
+      0,
+      0,
+      0,
+      0
+    )
   );
 
   const end = new Date(
-    Date.UTC(year, monthNumber, 1, 0, 0, 0, 0)
+    Date.UTC(
+      year,
+      monthNumber,
+      1,
+      0,
+      0,
+      0,
+      0
+    )
   );
 
   return {
@@ -204,7 +273,9 @@ function getMonthRange(month: string) {
   };
 }
 
-function safeNumber(value: number | null | undefined) {
+function safeNumber(
+  value: number | null | undefined
+) {
   const number = Number(value);
 
   if (!Number.isFinite(number)) {
@@ -217,20 +288,29 @@ function safeNumber(value: number | null | undefined) {
 function nullableNumber(
   value: number | null | undefined
 ): number | null {
-  if (value === null || value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return null;
   }
 
   const number = Number(value);
 
-  return Number.isFinite(number) ? number : null;
+  return Number.isFinite(number)
+    ? number
+    : null;
 }
 
 function addCurrencySummary(
-  summaries: Map<string, CurrencySummary>,
+  summaries: Map<
+    string,
+    CurrencySummary
+  >,
   entry: AccountEntry
 ) {
-  const currency = normalizeCurrency(entry.currency);
+  const currency =
+    normalizeCurrency(entry.currency);
 
   const current =
     summaries.get(currency) || {
@@ -256,28 +336,41 @@ function addCurrencySummary(
   }
 
   current.outgoing =
-    current.purchases + current.expenses;
+    current.purchases +
+    current.expenses;
 
   current.netResult =
-    current.sales - current.outgoing;
+    current.sales -
+    current.outgoing;
 
   current.records += 1;
 
-  summaries.set(currency, current);
+  summaries.set(
+    currency,
+    current
+  );
 }
 
 function addCategorySummary(
-  summaries: Map<string, CategorySummary>,
+  summaries: Map<
+    string,
+    CategorySummary
+  >,
   entry: AccountEntry
 ) {
-  const currency = normalizeCurrency(entry.currency);
+  const currency =
+    normalizeCurrency(entry.currency);
 
-  const key = `${entry.category}:${currency}`;
+  const key =
+    `${entry.category}:${currency}`;
 
   const current =
     summaries.get(key) || {
       category: entry.category,
-      label: CATEGORY_LABELS[entry.category],
+      label:
+        CATEGORY_LABELS[
+          entry.category
+        ],
       currency,
       sales: 0,
       purchases: 0,
@@ -292,40 +385,51 @@ function addCategorySummary(
   }
 
   if (entry.type === "PURCHASE") {
-    current.purchases += entry.total;
+    current.purchases +=
+      entry.total;
   }
 
   if (entry.type === "EXPENSE") {
-    current.expenses += entry.total;
+    current.expenses +=
+      entry.total;
   }
 
   current.outgoing =
-    current.purchases + current.expenses;
+    current.purchases +
+    current.expenses;
 
   current.netResult =
-    current.sales - current.outgoing;
+    current.sales -
+    current.outgoing;
 
   current.records += 1;
 
-  summaries.set(key, current);
+  summaries.set(
+    key,
+    current
+  );
 }
 
 // =========================================================
 // GET MONTHLY ACCOUNTS
 // =========================================================
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request
+) {
   try {
     // =====================================================
     // AUTHORIZATION
     // =====================================================
 
-    const currentUser = await getCurrentUser();
+    const currentUser =
+      await getCurrentUser();
 
     if (!currentUser) {
       return NextResponse.json(
         {
-          error: "You are not logged in.",
+          error:
+            "You are not logged in.",
         },
         {
           status: 401,
@@ -333,7 +437,12 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!hasPermission(currentUser, "accountsView")) {
+    if (
+      !hasPermission(
+        currentUser,
+        "accountsView"
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -349,9 +458,11 @@ export async function GET(request: Request) {
     // QUERY PARAMETERS
     // =====================================================
 
-    const url = new URL(request.url);
+    const url =
+      new URL(request.url);
 
-    const month = url.searchParams.get("month");
+    const month =
+      url.searchParams.get("month");
 
     if (!month) {
       return NextResponse.json(
@@ -365,7 +476,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const monthRange = getMonthRange(month);
+    const monthRange =
+      getMonthRange(month);
 
     if (!monthRange) {
       return NextResponse.json(
@@ -379,11 +491,16 @@ export async function GET(request: Request) {
       );
     }
 
-    const categories = parseCategories(
-      url.searchParams.get("categories")
-    );
+    const categories =
+      parseCategories(
+        url.searchParams.get(
+          "categories"
+        )
+      );
 
-    if (categories.length === 0) {
+    if (
+      categories.length === 0
+    ) {
       return NextResponse.json(
         {
           error:
@@ -395,143 +512,119 @@ export async function GET(request: Request) {
       );
     }
 
-    const transaction = parseTransactionFilter(
-      url.searchParams.get("transaction")
-    );
-    const company = String(url.searchParams.get("company") || "").trim();
-    const feedType = parseFeedTypeFilter(
-      url.searchParams.get("feedType")
-    );
+    const transaction =
+      parseTransactionFilter(
+        url.searchParams.get(
+          "transaction"
+        )
+      );
+
+    const company = String(
+      url.searchParams.get(
+        "company"
+      ) || ""
+    ).trim();
+
+    const feedType =
+      parseFeedTypeFilter(
+        url.searchParams.get(
+          "feedType"
+        )
+      );
 
     const dateFilter = {
       gte: monthRange.start,
       lt: monthRange.end,
     };
 
-    const rawEntries: AccountEntry[] = [];
+    const rawEntries:
+      AccountEntry[] = [];
 
     // =====================================================
-    // EXPENSES
+    // PRODUCT EXPENSES ONLY
+    // =====================================================
+    //
+    // General expenses and construction expenses are
+    // intentionally NOT included in Monthly Accounts.
+    //
+    // They remain in the database and Expenses section.
+    // Only Product Expenses are used in Xisaab Xir.
     // =====================================================
 
-    if (categories.includes("expenses")) {
-      const [
-        generalExpenses,
-        constructionExpenses,
-        productExpenses,
-      ] = await Promise.all([
-        prisma.expense.findMany({
-          include: auditUserInclude,
-          where: {
-            date: dateFilter,
-          },
-          orderBy: {
-            date: "asc",
-          },
-        }),
+    if (
+      categories.includes(
+        "expenses"
+      )
+    ) {
+      const productExpenses =
+        await prisma.productExpense.findMany(
+          {
+            include:
+              auditUserInclude,
+            where: {
+              date: dateFilter,
+            },
+            orderBy: {
+              date: "asc",
+            },
+          }
+        );
 
-        prisma.constructionExpense.findMany({
-          include: auditUserInclude,
-          where: {
-            date: dateFilter,
-          },
-          orderBy: {
-            date: "asc",
-          },
-        }),
-
-        prisma.productExpense.findMany({
-          include: auditUserInclude,
-          where: {
-            date: dateFilter,
-          },
-          orderBy: {
-            date: "asc",
-          },
-        }),
-      ]);
-
-      for (const item of generalExpenses) {
+      for (
+        const item of
+        productExpenses
+      ) {
         rawEntries.push({
           id: item.id,
-          date: item.date.toISOString(),
+
+          date:
+            item.date.toISOString(),
+
           category: "expenses",
+
           categoryLabel:
             CATEGORY_LABELS.expenses,
+
           type: "EXPENSE",
-          source: "General Expense",
+
+          source:
+            "Product Expense",
+
           description:
-            item.name ||
-            item.category ||
-            "General Expense",
-          location: item.purchasePlace || null,
-          party: item.supplier || null,
-          quantity: nullableNumber(item.quantity),
-          unitPrice: nullableNumber(item.unitPrice),
-          total: safeNumber(item.amount),
-          currency: normalizeCurrency(item.currency),
-          createdAt: item.createdAt.toISOString(),
-          createdBy: item.createdBy
-            ? {
-                id: item.createdBy.id,
-                name: item.createdBy.name,
-                role: item.createdBy.role,
-              }
-            : null,
-        });
-      }
+            `${item.name} - ${item.type}`,
 
-      for (const item of constructionExpenses) {
-        rawEntries.push({
-          id: item.id,
-          date: item.date.toISOString(),
-          category: "expenses",
-          categoryLabel:
-            CATEGORY_LABELS.expenses,
-          type: "EXPENSE",
-          source: "Construction Expense",
-          description: `${item.name} - ${item.type}`,
-          location: item.location || null,
-          party: null,
-          quantity: nullableNumber(item.quantity),
-          unitPrice: nullableNumber(item.price),
-          total: safeNumber(item.total),
-          currency: normalizeCurrency(item.currency),
-          createdAt: item.createdAt.toISOString(),
-          createdBy: item.createdBy
-            ? {
-                id: item.createdBy.id,
-                name: item.createdBy.name,
-                role: item.createdBy.role,
-              }
-            : null,
-        });
-      }
+          location:
+            item.location || null,
 
-      for (const item of productExpenses) {
-        rawEntries.push({
-          id: item.id,
-          date: item.date.toISOString(),
-          category: "expenses",
-          categoryLabel:
-            CATEGORY_LABELS.expenses,
-          type: "EXPENSE",
-          source: "Product Expense",
-          description: `${item.name} - ${item.type}`,
-          location: item.location || null,
           party: null,
-          quantity: nullableNumber(item.quantity),
-          unitPrice: nullableNumber(item.price),
-          total: safeNumber(item.total),
-          currency: normalizeCurrency(item.currency),
-          createdAt: item.createdAt.toISOString(),
-          createdBy: item.createdBy
-            ? {
-                id: item.createdBy.id,
-                name: item.createdBy.name,
-                role: item.createdBy.role,
-              }
-            : null,
+
+          quantity:
+            nullableNumber(
+              item.quantity
+            ),
+
+          unitPrice:
+            nullableNumber(
+              item.price
+            ),
+
+          total:
+            safeNumber(
+              item.total
+            ),
+
+          currency:
+            normalizeCurrency(
+              item.currency
+            ),
+
+          createdAt:
+            item.createdAt.toISOString(),
+
+          createdBy:
+            auditUser(
+              item.createdBy
+            ),
         });
       }
     }
@@ -540,13 +633,18 @@ export async function GET(request: Request) {
     // EGGS
     // =====================================================
 
-    if (categories.includes("eggs")) {
+    if (
+      categories.includes(
+        "eggs"
+      )
+    ) {
       const [
         purchasedEggs,
         eggSales,
       ] = await Promise.all([
         prisma.purchasedEgg.findMany({
-          include: auditUserInclude,
+          include:
+            auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -556,7 +654,8 @@ export async function GET(request: Request) {
         }),
 
         prisma.eggSale.findMany({
-          include: auditUserInclude,
+          include:
+            auditUserInclude,
           where: {
             date: dateFilter,
           },
@@ -566,58 +665,92 @@ export async function GET(request: Request) {
         }),
       ]);
 
-      for (const item of purchasedEggs) {
+      for (
+        const item of
+        purchasedEggs
+      ) {
         rawEntries.push({
           id: item.id,
-          date: item.date.toISOString(),
+          date:
+            item.date.toISOString(),
           category: "eggs",
-          categoryLabel: CATEGORY_LABELS.eggs,
+          categoryLabel:
+            CATEGORY_LABELS.eggs,
           type: "PURCHASE",
           source: "Egg Purchase",
-          description: "Purchased Eggs",
-          location: item.location || null,
-          party: item.companyName || null,
-          quantity: nullableNumber(item.quantity),
-          unitPrice: nullableNumber(item.price),
-          total: safeNumber(item.total),
-          currency: normalizeCurrency(item.currency),
-          createdAt: item.createdAt.toISOString(),
-          createdBy: item.createdBy
-            ? {
-                id: item.createdBy.id,
-                name: item.createdBy.name,
-                role: item.createdBy.role,
-              }
-            : null,
+          description:
+            "Purchased Eggs",
+          location:
+            item.location || null,
+          party:
+            item.companyName || null,
+          quantity:
+            nullableNumber(
+              item.quantity
+            ),
+          unitPrice:
+            nullableNumber(
+              item.price
+            ),
+          total:
+            safeNumber(
+              item.total
+            ),
+          currency:
+            normalizeCurrency(
+              item.currency
+            ),
+          createdAt:
+            item.createdAt.toISOString(),
+          createdBy:
+            auditUser(
+              item.createdBy
+            ),
         });
       }
 
-      for (const item of eggSales) {
+      for (
+        const item of eggSales
+      ) {
         rawEntries.push({
           id: item.id,
-          date: item.date.toISOString(),
+          date:
+            item.date.toISOString(),
           category: "eggs",
-          categoryLabel: CATEGORY_LABELS.eggs,
+          categoryLabel:
+            CATEGORY_LABELS.eggs,
           type: "SALE",
           source: "Egg Sale",
           description:
             item.customerType
               ? `Egg Sale - ${item.customerType}`
               : "Egg Sale",
-          location: item.location || null,
-          party: item.companyName || null,
-          quantity: nullableNumber(item.quantity),
-          unitPrice: nullableNumber(item.price),
-          total: safeNumber(item.total),
-          currency: normalizeCurrency(item.currency),
-          createdAt: item.createdAt.toISOString(),
-          createdBy: item.createdBy
-            ? {
-                id: item.createdBy.id,
-                name: item.createdBy.name,
-                role: item.createdBy.role,
-              }
-            : null,
+          location:
+            item.location || null,
+          party:
+            item.companyName || null,
+          quantity:
+            nullableNumber(
+              item.quantity
+            ),
+          unitPrice:
+            nullableNumber(
+              item.price
+            ),
+          total:
+            safeNumber(
+              item.total
+            ),
+          currency:
+            normalizeCurrency(
+              item.currency
+            ),
+          createdAt:
+            item.createdAt.toISOString(),
+          createdBy:
+            auditUser(
+              item.createdBy
+            ),
         });
       }
     }
@@ -626,41 +759,87 @@ export async function GET(request: Request) {
     // FEEDS - PURCHASE + SALE
     // =====================================================
 
-    if (categories.includes("feeds")) {
-      const feeds = await prisma.feed.findMany({
-        include: auditUserInclude,
-        where: { date: dateFilter },
-        orderBy: { date: "asc" },
-      });
+    if (
+      categories.includes(
+        "feeds"
+      )
+    ) {
+      const feeds =
+        await prisma.feed.findMany({
+          include:
+            auditUserInclude,
+          where: {
+            date: dateFilter,
+          },
+          orderBy: {
+            date: "asc",
+          },
+        });
 
-      for (const item of feeds) {
-        const feedTransaction: "PURCHASE" | "SALE" =
-          item.transactionType === "SALE" ? "SALE" : "PURCHASE";
+      for (
+        const item of feeds
+      ) {
+        const feedTransaction:
+          | "PURCHASE"
+          | "SALE" =
+          item.transactionType ===
+          "SALE"
+            ? "SALE"
+            : "PURCHASE";
 
         rawEntries.push({
           id: item.id,
-          date: item.date.toISOString(),
+          date:
+            item.date.toISOString(),
           category: "feeds",
-          categoryLabel: CATEGORY_LABELS.feeds,
-          type: feedTransaction,
-          source: feedTransaction === "SALE" ? "Feed Sale" : "Feed Purchase",
-          description: item.feedType,
-          feedType: item.feedType,
-          location: item.location || null,
-          party: item.companyName || item.suppliedBy || null,
-          quantity: nullableNumber(item.quantity),
-          unitPrice: nullableNumber(item.price),
-          total: safeNumber(item.total),
-          currency: normalizeCurrency(item.currency),
-          createdAt: item.createdAt.toISOString(),
-          createdBy: auditUser(item.createdBy),
+          categoryLabel:
+            CATEGORY_LABELS.feeds,
+          type:
+            feedTransaction,
+          source:
+            feedTransaction ===
+            "SALE"
+              ? "Feed Sale"
+              : "Feed Purchase",
+          description:
+            item.feedType,
+          feedType:
+            item.feedType,
+          location:
+            item.location || null,
+          party:
+            item.companyName ||
+            item.suppliedBy ||
+            null,
+          quantity:
+            nullableNumber(
+              item.quantity
+            ),
+          unitPrice:
+            nullableNumber(
+              item.price
+            ),
+          total:
+            safeNumber(
+              item.total
+            ),
+          currency:
+            normalizeCurrency(
+              item.currency
+            ),
+          createdAt:
+            item.createdAt.toISOString(),
+          createdBy:
+            auditUser(
+              item.createdBy
+            ),
         });
       }
     }
 
-/* =====================================================
-       CHICKEN
-    ===================================================== */
+    // =====================================================
+    // CHICKEN
+    // =====================================================
 
     if (
       categories.includes(
@@ -726,8 +905,6 @@ export async function GET(request: Request) {
         ),
       ]);
 
-      /* LIVE CHICKEN PURCHASES */
-
       for (
         const item of
         livePurchases
@@ -736,117 +913,84 @@ export async function GET(request: Request) {
           id: item.id,
           date:
             item.date.toISOString(),
-
           category: "chicken",
-
           categoryLabel:
             CATEGORY_LABELS.chicken,
-
           type: "PURCHASE",
-
           source:
             "Live Chicken Purchase",
-
           description:
-            `${item.chickenType} - ` +
-            `${item.ageNumber} ${item.ageUnit}`,
-
+            `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
           location:
             item.location || null,
-
           party: null,
-
           quantity:
             nullableNumber(
               item.quantity
             ),
-
           unitPrice:
             nullableNumber(
               item.price
             ),
-
           total:
             safeNumber(
               item.total
             ),
-
           currency:
             normalizeCurrency(
               item.currency
             ),
-
           createdAt:
             item.createdAt.toISOString(),
-
           createdBy:
             auditUser(
               item.createdBy
             ),
         });
       }
-
-      /* LIVE CHICKEN SALES */
 
       for (
         const item of liveSales
       ) {
         rawEntries.push({
           id: item.id,
-
           date:
             item.date.toISOString(),
-
           category: "chicken",
-
           categoryLabel:
             CATEGORY_LABELS.chicken,
-
           type: "SALE",
-
           source:
             "Live Chicken Sale",
-
           description:
-            `${item.chickenType} - ` +
-            `${item.ageNumber} ${item.ageUnit}`,
-
+            `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
           location:
             item.location || null,
-
           party: null,
-
           quantity:
             nullableNumber(
               item.quantity
             ),
-
           unitPrice:
             nullableNumber(
               item.price
             ),
-
           total:
             safeNumber(
               item.total
             ),
-
           currency:
             normalizeCurrency(
               item.currency
             ),
-
           createdAt:
             item.createdAt.toISOString(),
-
           createdBy:
             auditUser(
               item.createdBy
             ),
         });
       }
-
-      /* CHICKEN MEAT PURCHASES */
 
       for (
         const item of
@@ -854,53 +998,38 @@ export async function GET(request: Request) {
       ) {
         rawEntries.push({
           id: item.id,
-
           date:
             item.date.toISOString(),
-
           category: "chicken",
-
           categoryLabel:
             CATEGORY_LABELS.chicken,
-
           type: "PURCHASE",
-
           source:
             "Chicken Meat Purchase",
-
           description:
             "Chicken Meat",
-
           location:
             item.location || null,
-
           party:
-            item.companyName ||
-            null,
-
+            item.companyName || null,
           quantity:
             nullableNumber(
               item.quantity
             ),
-
           unitPrice:
             nullableNumber(
               item.price
             ),
-
           total:
             safeNumber(
               item.total
             ),
-
           currency:
             normalizeCurrency(
               item.currency
             ),
-
           createdAt:
             item.createdAt.toISOString(),
-
           createdBy:
             auditUser(
               item.createdBy
@@ -908,60 +1037,44 @@ export async function GET(request: Request) {
         });
       }
 
-      /* CHICKEN MEAT SALES */
-
       for (
         const item of
         meatSales
       ) {
         rawEntries.push({
           id: item.id,
-
           date:
             item.date.toISOString(),
-
           category: "chicken",
-
           categoryLabel:
             CATEGORY_LABELS.chicken,
-
           type: "SALE",
-
           source:
             "Chicken Meat Sale",
-
           description:
             `Chicken Meat - ${item.customerType}`,
-
           location:
             item.location || null,
-
           party:
             item.branch || null,
-
           quantity:
             nullableNumber(
               item.quantity
             ),
-
           unitPrice:
             nullableNumber(
               item.price
             ),
-
           total:
             safeNumber(
               item.total
             ),
-
           currency:
             normalizeCurrency(
               item.currency
             ),
-
           createdAt:
             item.createdAt.toISOString(),
-
           createdBy:
             auditUser(
               item.createdBy
@@ -970,14 +1083,9 @@ export async function GET(request: Request) {
       }
     }
 
-    /* =====================================================
-       AVAILABLE COMPANIES / PARTIES
-
-       This is calculated BEFORE company filtering.
-
-       That means the frontend can show the complete
-       dropdown for the selected month/categories.
-    ===================================================== */
+        // =====================================================
+    // AVAILABLE COMPANIES / PARTIES
+    // =====================================================
 
     const availableParties =
       Array.from(
@@ -994,9 +1102,9 @@ export async function GET(request: Request) {
         a.localeCompare(b)
       );
 
-    /* =====================================================
-       APPLY TRANSACTION FILTER
-    ===================================================== */
+    // =====================================================
+    // APPLY TRANSACTION FILTER
+    // =====================================================
 
     let entries = [
       ...rawEntries,
@@ -1011,9 +1119,9 @@ export async function GET(request: Request) {
       );
     }
 
-    /* =====================================================
-       APPLY COMPANY / PARTY FILTER
-    ===================================================== */
+    // =====================================================
+    // APPLY COMPANY / PARTY FILTER
+    // =====================================================
 
     if (company) {
       const normalizedCompany =
@@ -1030,14 +1138,9 @@ export async function GET(request: Request) {
       );
     }
 
-    /* =====================================================
-       APPLY FEED TYPE FILTER
-
-       Feed Type applies ONLY to Feed records.
-
-       Non-feed categories remain available when
-       Category = All.
-    ===================================================== */
+    // =====================================================
+    // APPLY FEED TYPE FILTER
+    // =====================================================
 
     if (feedType !== "ALL") {
       entries = entries.filter(
@@ -1057,9 +1160,9 @@ export async function GET(request: Request) {
       );
     }
 
-    /* =====================================================
-       SORT FILTERED MONETARY RECORDS
-    ===================================================== */
+    // =====================================================
+    // SORT FILTERED MONETARY RECORDS
+    // =====================================================
 
     entries.sort(
       (a, b) =>
@@ -1071,16 +1174,9 @@ export async function GET(request: Request) {
         ).getTime()
     );
 
-    /* =====================================================
-       FINANCIAL SUMMARIES
-
-       IMPORTANT:
-       Production is NOT included here.
-
-       Production has KG/Bags but no price.
-       Therefore production must never be
-       subtracted as money.
-    ===================================================== */
+    // =====================================================
+    // FINANCIAL SUMMARIES
+    // =====================================================
 
     const currencySummaryMap =
       new Map<
@@ -1135,33 +1231,20 @@ export async function GET(request: Request) {
         );
       });
 
-    /* =====================================================
-       FEED PRODUCTION
-
-       Production is loaded separately because it is
-       operational data, NOT monetary accounting data.
-
-       It has:
-       - Starter / Grower / Layer
-       - Location
-       - Bag size
-       - Number of bags
-       - Total KG
-       - Entered by
-       - Entered at
-
-       It does NOT affect:
-       - Sales
-       - Purchases
-       - Expenses
-       - Net Result
-    ===================================================== */
+    // =====================================================
+    // FEED PRODUCTION
+    //
+    // Production remains operational data only.
+    // It is NOT included in the financial calculation.
+    // =====================================================
 
     const productionEntries:
       ProductionEntry[] = [];
 
     if (
-      categories.includes("feeds")
+      categories.includes(
+        "feeds"
+      )
     ) {
       const productionBatches =
         await prisma.productionBatch.findMany(
@@ -1173,7 +1256,8 @@ export async function GET(request: Request) {
             include: {
               items: {
                 orderBy: {
-                  createdAt: "asc",
+                  createdAt:
+                    "asc",
                 },
               },
 
@@ -1185,7 +1269,8 @@ export async function GET(request: Request) {
                 date: "desc",
               },
               {
-                createdAt: "desc",
+                createdAt:
+                  "desc",
               },
             ],
           }
@@ -1199,11 +1284,6 @@ export async function GET(request: Request) {
           const item of
           batch.items
         ) {
-          /*
-           * Feed Type filter also applies
-           * to Production.
-           */
-
           if (
             feedType !== "ALL" &&
             item.feedType !==
@@ -1260,9 +1340,9 @@ export async function GET(request: Request) {
       }
     }
 
-    /* =====================================================
-       PRODUCTION TOTALS
-    ===================================================== */
+    // =====================================================
+    // PRODUCTION TOTALS
+    // =====================================================
 
     const productionFeedMap =
       new Map<
@@ -1324,10 +1404,9 @@ export async function GET(request: Request) {
       );
     }
 
-    /*
-     * Count unique batches for each
-     * Feed Type.
-     */
+    // =====================================================
+    // UNIQUE BATCH COUNT PER FEED TYPE
+    // =====================================================
 
     for (
       const summary of
@@ -1371,9 +1450,9 @@ export async function GET(request: Request) {
         );
       });
 
-    /* =====================================================
-       RESPONSE
-    ===================================================== */
+    // =====================================================
+    // RESPONSE
+    // =====================================================
 
     return NextResponse.json({
       success: true,
@@ -1388,7 +1467,9 @@ export async function GET(request: Request) {
           monthRange.end.toISOString(),
       },
 
-      /* FILTERS CURRENTLY APPLIED */
+      // ===================================================
+      // FILTERS CURRENTLY APPLIED
+      // ===================================================
 
       filters: {
         categories,
@@ -1401,12 +1482,15 @@ export async function GET(request: Request) {
       selectedCategories:
         categories,
 
-      /* AVAILABLE FILTER OPTIONS */
+      // ===================================================
+      // AVAILABLE FILTER OPTIONS
+      // ===================================================
 
       availableCategories:
         ALL_CATEGORIES.map(
           (category) => ({
             value: category,
+
             label:
               CATEGORY_LABELS[
                 category
@@ -1433,7 +1517,7 @@ export async function GET(request: Request) {
         {
           value: "EXPENSE",
           label:
-            "Expenses / Kharashaadka",
+            "Product Expenses / Kharashka Productiga",
         },
       ],
 
@@ -1447,19 +1531,24 @@ export async function GET(request: Request) {
         },
         {
           value: "Starter",
-          label: "Starter Feed",
+          label:
+            "Starter Feed",
         },
         {
           value: "Grower",
-          label: "Grower Feed",
+          label:
+            "Grower Feed",
         },
         {
           value: "Layer",
-          label: "Layer Feed",
+          label:
+            "Layer Feed",
         },
       ],
 
-      /* FINANCIAL ACCOUNTING */
+      // ===================================================
+      // FINANCIAL ACCOUNTING
+      // ===================================================
 
       summary: {
         totalRecords:
@@ -1474,7 +1563,9 @@ export async function GET(request: Request) {
 
       entries,
 
-      /* FEED PRODUCTION - NON-MONETARY */
+      // ===================================================
+      // FEED PRODUCTION - NON-MONETARY
+      // ===================================================
 
       production: {
         totalBatches:

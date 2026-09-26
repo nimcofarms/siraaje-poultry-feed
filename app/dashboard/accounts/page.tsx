@@ -229,9 +229,9 @@ const CATEGORY_OPTIONS: {
   },
   {
     value: "expenses",
-    label: "Expenses / Kharashaadka",
+    label: "Product Expenses / Kharashka Productiga",
     description:
-      "General, construction and product expenses. / Kharashaadka guud, dhismaha iyo alaabta.",
+      "Product expenses only. General and construction expenses are not included in Monthly Accounts. / Kharashka productiga oo keliya. Kharashaadka guud iyo dhismaha laguma daro Xisaab Xirka.",
   },
 ];
 
@@ -354,7 +354,7 @@ function typeLabel(type: EntryType) {
     return "Purchase / Soo Iibsi";
   }
 
-  return "Expense / Kharash";
+  return "Product Expense / Kharashka Productiga";
 }
 
 function typeClass(type: EntryType) {
@@ -653,7 +653,7 @@ export default function MonthlyAccountsPage() {
           <div className="flex items-center gap-4">
             <div className="relative h-14 w-16 overflow-hidden rounded-xl bg-white">
               <Image
-                src="/siraaje-logo.jpg"
+                src="/siraaje-logo.png"
                 alt="Siraaje Poultry & Feeds Company"
                 fill
                 sizes="64px"
@@ -773,9 +773,9 @@ export default function MonthlyAccountsPage() {
               </h2>
 
               <p className="mt-2 max-w-3xl text-slate-500">
-                View sales, purchases and expenses recorded for the selected
+                View sales, purchases and product expenses recorded for the selected
                 month and automatically see the account result. / Eeg iibka,
-                wax iibsiga iyo kharashaadka la diiwaangeliyay bisha aad
+                wax iibsiga iyo kharashka productiga la diiwaangeliyay bisha aad
                 doorato, kadibna si otomaatig ah u arag natiijada xisaabta.
               </p>
             </div>
@@ -798,10 +798,10 @@ export default function MonthlyAccountsPage() {
 
             <p className="mt-1 text-sm leading-6 text-[#806d3f]">
               The account result is the recorded sales minus recorded
-              purchases and expenses for the selected month and categories.
+              purchases and product expenses for the selected month and categories.
               It is a summary of the data stored in this system. /
               Natiijada xisaabtu waxay ka dhigan tahay iibka la
-              diiwaangeliyay oo laga jaray wax iibsiga iyo kharashaadka
+              diiwaangeliyay oo laga jaray wax iibsiga iyo kharashka productiga
               la diiwaangeliyay bisha iyo qaybaha aad dooratay.
             </p>
           </div>
@@ -859,7 +859,7 @@ export default function MonthlyAccountsPage() {
                   </option>
 
                   <option value="EXPENSE">
-                    Expense / Kharash
+                    Product Expense / Kharashka Productiga
                   </option>
                 </select>
               </div>
@@ -1152,12 +1152,12 @@ export default function MonthlyAccountsPage() {
                           />
 
                           <SummaryCard
-                            label="Other Expenses / Kharashaadka Kale"
+                            label="Product Expenses / Kharashka Productiga"
                             value={formatMoney(
                               summary.expenses,
                               summary.currency
                             )}
-                            description="General and other expenses / Kharashaadka guud iyo kuwa kale"
+                            description="Product expenses only / Kharashka productiga oo keliya"
                             variant="negative"
                           />
 
@@ -1313,10 +1313,10 @@ export default function MonthlyAccountsPage() {
 
                         <p className="mt-1 max-w-3xl text-sm text-slate-500">
                           Production is measured in KG and bags. It is not
-                          included in sales, purchases, expenses or the
+                          included in sales, purchases, product expenses or the
                           financial result. / Production-ku waa xog KG iyo
                           bags ah. Laguma daro iibka, wax iibsiga,
-                          kharashaadka ama natiijada lacagta.
+                          kharashka productiga ama natiijada lacagta.
                         </p>
                       </div>
 
@@ -1746,11 +1746,11 @@ export default function MonthlyAccountsPage() {
                       This table shows the records used for the account
                       result above. To change a record, edit it in the
                       original section where it was entered, such as
-                      Expenses, Eggs, Feeds or Chicken. / Jadwalkan wuxuu
+                      Product Expenses, Eggs, Feeds or Chicken. / Jadwalkan wuxuu
                       muujinayaa diiwaannada loo isticmaalay xisaabinta
                       natiijada kore. Haddii aad rabto inaad wax ka
                       beddesho diiwaan, ka beddel qaybtii markii hore
-                      lagu geliyay sida Kharashaadka, Ukumaha, Quudinta
+                      lagu geliyay sida Kharashka Productiga, Ukumaha, Quudinta
                       ama Digaagga.
                     </p>
                   </div>
