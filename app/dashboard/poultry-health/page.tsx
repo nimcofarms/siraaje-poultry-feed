@@ -17,37 +17,55 @@ type AuditFields = {
   updatedBy: AuditUser | null;
 };
 
-type Vaccination = AuditFields & {
-  id: string;
-  date: string;
-  stage: string;
-  vaccineName: string;
-  disease: string;
-  application: string;
-  givenBy: string;
-  numberOfChickens: number;
-  notes: string | null;
+type FinancialFields = {
+  quantity: number | null;
+  unit: string | null;
+  price: number | null;
+  total: number | null;
+  currency: string;
 };
 
-type Vitamin = AuditFields & {
-  id: string;
-  date: string;
-  vitaminName: string;
-  givenBy: string;
-  numberOfChickens: number;
-  notes: string | null;
+type Vaccination = AuditFields &
+  FinancialFields & {
+    id: string;
+    date: string;
+    stage: string;
+    vaccineName: string;
+    disease: string;
+    application: string;
+    givenBy: string;
+    numberOfChickens: number;
+    notes: string | null;
+  };
+
+type Vitamin = AuditFields &
+  FinancialFields & {
+    id: string;
+    date: string;
+    vitaminName: string;
+    givenBy: string;
+    numberOfChickens: number;
+    notes: string | null;
+  };
+
+type Calcium = AuditFields &
+  FinancialFields & {
+    id: string;
+    date: string;
+    calciumName: string;
+    givenBy: string;
+    numberOfChickens: number;
+    notes: string | null;
+  };
+
+type FinancialFormFields = {
+  quantity: string;
+  unit: string;
+  price: string;
+  currency: string;
 };
 
-type Calcium = AuditFields & {
-  id: string;
-  date: string;
-  calciumName: string;
-  givenBy: string;
-  numberOfChickens: number;
-  notes: string | null;
-};
-
-type VaccinationForm = {
+type VaccinationForm = FinancialFormFields & {
   date: string;
   stage: string;
   vaccineName: string;
@@ -58,7 +76,7 @@ type VaccinationForm = {
   notes: string;
 };
 
-type VitaminForm = {
+type VitaminForm = FinancialFormFields & {
   date: string;
   vitaminName: string;
   givenBy: string;
@@ -66,7 +84,7 @@ type VitaminForm = {
   notes: string;
 };
 
-type CalciumForm = {
+type CalciumForm = FinancialFormFields & {
   date: string;
   calciumName: string;
   givenBy: string;
@@ -113,6 +131,87 @@ function formatDateTime(date: string) {
   }).format(value);
 }
 
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatMoney(
+  value: number | null,
+  currency: string
+) {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+
+  return `${formatNumber(value)} ${currency || "ETB"}`;
+}
+
+function calculateTotal(quantity: string, price: string) {
+  const quantityNumber = Number(quantity);
+  const priceNumber = Number(price);
+
+  if (
+    !Number.isFinite(quantityNumber) ||
+    !Number.isFinite(priceNumber) ||
+    quantityNumber <= 0 ||
+    priceNumber <= 0
+  ) {
+    return 0;
+  }
+
+  return (
+    Math.round(quantityNumber * priceNumber * 100) / 100
+  );
+}
+
+function validateFinancialFields(
+  quantityValue: string,
+  unitValue: string,
+  priceValue: string
+) {
+  const hasAnyFinancialValue =
+    quantityValue.trim() !== "" ||
+    unitValue.trim() !== "" ||
+    priceValue.trim() !== "";
+
+  if (!hasAnyFinancialValue) {
+    return {
+      valid: true,
+      quantity: null as number | null,
+      price: null as number | null,
+      unit: null as string | null,
+    };
+  }
+
+  const quantity = Number(quantityValue);
+  const price = Number(priceValue);
+  const unit = unitValue.trim();
+
+  if (
+    !Number.isFinite(quantity) ||
+    quantity <= 0 ||
+    !Number.isFinite(price) ||
+    price <= 0 ||
+    !unit
+  ) {
+    return {
+      valid: false,
+      quantity: null as number | null,
+      price: null as number | null,
+      unit: null as string | null,
+    };
+  }
+
+  return {
+    valid: true,
+    quantity,
+    price,
+    unit,
+  };
+}
+
 function emptyVaccinationForm(): VaccinationForm {
   return {
     date: today(),
@@ -122,6 +221,10 @@ function emptyVaccinationForm(): VaccinationForm {
     application: "",
     givenBy: "",
     numberOfChickens: "",
+    quantity: "",
+    unit: "",
+    price: "",
+    currency: "ETB",
     notes: "",
   };
 }
@@ -132,6 +235,10 @@ function emptyVitaminForm(): VitaminForm {
     vitaminName: "",
     givenBy: "",
     numberOfChickens: "",
+    quantity: "",
+    unit: "",
+    price: "",
+    currency: "ETB",
     notes: "",
   };
 }
@@ -142,6 +249,10 @@ function emptyCalciumForm(): CalciumForm {
     calciumName: "",
     givenBy: "",
     numberOfChickens: "",
+    quantity: "",
+    unit: "",
+    price: "",
+    currency: "ETB",
     notes: "",
   };
 }
@@ -183,20 +294,95 @@ type VaccineScheduleItem = {
 };
 
 const vaccineSchedule: VaccineScheduleItem[] = [
-  { stage: "Day 1", vaccineName: "Innovax ND/IBD", disease: "Marek's + NCD + IBD", application: "S/C injection", note: "Done in hatchery" },
-  { stage: "Day 1", vaccineName: "Rismavac", disease: "Marek's", application: "S/C injection", note: "Done in hatchery" },
-  { stage: "Day 1", vaccineName: "NCD+IB Live (Vitabron)", disease: "NCD + IB", application: "Coarse spray", note: "Done in hatchery" },
-  { stage: "Day 12-14", vaccineName: "NCD+IB Live (Ceva BIL)", disease: "NCD + IB", application: "Eye drop / Drinking water" },
-  { stage: "Day 16-18", vaccineName: "IBD intermediate", disease: "Gumboro", application: "Drinking water" },
-  { stage: "Week 6-8", vaccineName: "Salmonella E&T", disease: "Salmonella E&T", application: "Intramuscular injection" },
-  { stage: "Week 6-8", vaccineName: "Coryza (ABC) Killed", disease: "Coryza", application: "S/C injection" },
-  { stage: "Week 6-8", vaccineName: "NCD+IB Live (Ceva BIL)", disease: "NCD + IB", application: "Drinking water" },
-  { stage: "Week 8-10", vaccineName: "Fowl pox", disease: "Pox", application: "Wing stab" },
-  { stage: "Week 8-10", vaccineName: "Fowl cholera", disease: "Fowl cholera", application: "S/C injection", note: "If there is disease history; otherwise optional" },
-  { stage: "Week 12-14", vaccineName: "Salmonella E&T (killed)", disease: "Salmonella E&T", application: "Intramuscular injection" },
-  { stage: "Week 12-14", vaccineName: "Coryza (ABC) (killed)", disease: "Coryza", application: "S/C injection" },
-  { stage: "Week 16-18", vaccineName: "NCD+IB (Killed)", disease: "NCD + IB", application: "Intramuscular injection" },
-  { stage: "Week 16-18", vaccineName: "Fowl cholera", disease: "Fowl cholera", application: "Subcutaneous injection", note: "If there is disease history; otherwise optional" },
+  {
+    stage: "Day 1",
+    vaccineName: "Innovax ND/IBD",
+    disease: "Marek's + NCD + IBD",
+    application: "S/C injection",
+    note: "Done in hatchery",
+  },
+  {
+    stage: "Day 1",
+    vaccineName: "Rismavac",
+    disease: "Marek's",
+    application: "S/C injection",
+    note: "Done in hatchery",
+  },
+  {
+    stage: "Day 1",
+    vaccineName: "NCD+IB Live (Vitabron)",
+    disease: "NCD + IB",
+    application: "Coarse spray",
+    note: "Done in hatchery",
+  },
+  {
+    stage: "Day 12-14",
+    vaccineName: "NCD+IB Live (Ceva BIL)",
+    disease: "NCD + IB",
+    application: "Eye drop / Drinking water",
+  },
+  {
+    stage: "Day 16-18",
+    vaccineName: "IBD intermediate",
+    disease: "Gumboro",
+    application: "Drinking water",
+  },
+  {
+    stage: "Week 6-8",
+    vaccineName: "Salmonella E&T",
+    disease: "Salmonella E&T",
+    application: "Intramuscular injection",
+  },
+  {
+    stage: "Week 6-8",
+    vaccineName: "Coryza (ABC) Killed",
+    disease: "Coryza",
+    application: "S/C injection",
+  },
+  {
+    stage: "Week 6-8",
+    vaccineName: "NCD+IB Live (Ceva BIL)",
+    disease: "NCD + IB",
+    application: "Drinking water",
+  },
+  {
+    stage: "Week 8-10",
+    vaccineName: "Fowl pox",
+    disease: "Pox",
+    application: "Wing stab",
+  },
+  {
+    stage: "Week 8-10",
+    vaccineName: "Fowl cholera",
+    disease: "Fowl cholera",
+    application: "S/C injection",
+    note: "If there is disease history; otherwise optional",
+  },
+  {
+    stage: "Week 12-14",
+    vaccineName: "Salmonella E&T (killed)",
+    disease: "Salmonella E&T",
+    application: "Intramuscular injection",
+  },
+  {
+    stage: "Week 12-14",
+    vaccineName: "Coryza (ABC) (killed)",
+    disease: "Coryza",
+    application: "S/C injection",
+  },
+  {
+    stage: "Week 16-18",
+    vaccineName: "NCD+IB (Killed)",
+    disease: "NCD + IB",
+    application: "Intramuscular injection",
+  },
+  {
+    stage: "Week 16-18",
+    vaccineName: "Fowl cholera",
+    disease: "Fowl cholera",
+    application: "Subcutaneous injection",
+    note: "If there is disease history; otherwise optional",
+  },
 ];
 
 const stages = [
@@ -212,9 +398,14 @@ const stages = [
 export default function PoultryHealthPage() {
   const pathname = usePathname();
 
-  const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
-  const [vitamins, setVitamins] = useState<Vitamin[]>([]);
-  const [calciumRecords, setCalciumRecords] = useState<Calcium[]>([]);
+  const [vaccinations, setVaccinations] =
+    useState<Vaccination[]>([]);
+
+  const [vitamins, setVitamins] =
+    useState<Vitamin[]>([]);
+
+  const [calciumRecords, setCalciumRecords] =
+    useState<Calcium[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -222,26 +413,51 @@ export default function PoultryHealthPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [modalType, setModalType] = useState<ModalType>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [modalType, setModalType] =
+    useState<ModalType>(null);
+
+  const [editingId, setEditingId] =
+    useState<string | null>(null);
 
   const [vaccinationForm, setVaccinationForm] =
-    useState<VaccinationForm>(emptyVaccinationForm());
+    useState<VaccinationForm>(
+      emptyVaccinationForm()
+    );
 
   const [vitaminForm, setVitaminForm] =
-    useState<VitaminForm>(emptyVitaminForm());
+    useState<VitaminForm>(
+      emptyVitaminForm()
+    );
 
   const [calciumForm, setCalciumForm] =
-    useState<CalciumForm>(emptyCalciumForm());
+    useState<CalciumForm>(
+      emptyCalciumForm()
+    );
 
   const availableVaccines = vaccineSchedule.filter(
-    (item) => item.stage === vaccinationForm.stage
+    (item) =>
+      item.stage === vaccinationForm.stage
   );
 
   const selectedVaccine = vaccineSchedule.find(
     (item) =>
       item.stage === vaccinationForm.stage &&
       item.vaccineName === vaccinationForm.vaccineName
+  );
+
+  const vaccinationTotal = calculateTotal(
+    vaccinationForm.quantity,
+    vaccinationForm.price
+  );
+
+  const vitaminTotal = calculateTotal(
+    vitaminForm.quantity,
+    vitaminForm.price
+  );
+
+  const calciumTotal = calculateTotal(
+    calciumForm.quantity,
+    calciumForm.price
   );
 
   async function loadData() {
@@ -265,9 +481,14 @@ export default function PoultryHealthPage() {
         }),
       ]);
 
-      const vaccinationData = await vaccinationResponse.json();
-      const vitaminData = await vitaminResponse.json();
-      const calciumData = await calciumResponse.json();
+      const vaccinationData =
+        await vaccinationResponse.json();
+
+      const vitaminData =
+        await vitaminResponse.json();
+
+      const calciumData =
+        await calciumResponse.json();
 
       if (!vaccinationResponse.ok) {
         throw new Error(
@@ -291,15 +512,21 @@ export default function PoultryHealthPage() {
       }
 
       setVaccinations(
-        Array.isArray(vaccinationData) ? vaccinationData : []
+        Array.isArray(vaccinationData)
+          ? vaccinationData
+          : []
       );
 
       setVitamins(
-        Array.isArray(vitaminData) ? vitaminData : []
+        Array.isArray(vitaminData)
+          ? vitaminData
+          : []
       );
 
       setCalciumRecords(
-        Array.isArray(calciumData) ? calciumData : []
+        Array.isArray(calciumData)
+          ? calciumData
+          : []
       );
     } catch (err) {
       console.error(err);
@@ -366,7 +593,19 @@ export default function PoultryHealthPage() {
       disease: record.disease,
       application: record.application,
       givenBy: record.givenBy,
-      numberOfChickens: String(record.numberOfChickens),
+      numberOfChickens: String(
+        record.numberOfChickens
+      ),
+      quantity:
+        record.quantity === null
+          ? ""
+          : String(record.quantity),
+      unit: record.unit ?? "",
+      price:
+        record.price === null
+          ? ""
+          : String(record.price),
+      currency: record.currency || "ETB",
       notes: record.notes ?? "",
     });
 
@@ -382,7 +621,19 @@ export default function PoultryHealthPage() {
       date: record.date.slice(0, 10),
       vitaminName: record.vitaminName,
       givenBy: record.givenBy,
-      numberOfChickens: String(record.numberOfChickens),
+      numberOfChickens: String(
+        record.numberOfChickens
+      ),
+      quantity:
+        record.quantity === null
+          ? ""
+          : String(record.quantity),
+      unit: record.unit ?? "",
+      price:
+        record.price === null
+          ? ""
+          : String(record.price),
+      currency: record.currency || "ETB",
       notes: record.notes ?? "",
     });
 
@@ -398,7 +649,19 @@ export default function PoultryHealthPage() {
       date: record.date.slice(0, 10),
       calciumName: record.calciumName,
       givenBy: record.givenBy,
-      numberOfChickens: String(record.numberOfChickens),
+      numberOfChickens: String(
+        record.numberOfChickens
+      ),
+      quantity:
+        record.quantity === null
+          ? ""
+          : String(record.quantity),
+      unit: record.unit ?? "",
+      price:
+        record.price === null
+          ? ""
+          : String(record.price),
+      currency: record.currency || "ETB",
       notes: record.notes ?? "",
     });
 
@@ -443,6 +706,19 @@ export default function PoultryHealthPage() {
       return;
     }
 
+    const financial = validateFinancialFields(
+      vaccinationForm.quantity,
+      vaccinationForm.unit,
+      vaccinationForm.price
+    );
+
+    if (!financial.valid) {
+      setError(
+        "Haddii aad gelinayso kharashka, Quantity, Unit iyo Unit Price dhammaantood si sax ah u buuxi. / If entering an expense, complete Quantity, Unit and Unit Price correctly."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -457,12 +733,23 @@ export default function PoultryHealthPage() {
             ...(editingId ? { id: editingId } : {}),
             date: vaccinationForm.date,
             stage: vaccinationForm.stage,
-            vaccineName: vaccinationForm.vaccineName.trim(),
-            disease: vaccinationForm.disease.trim(),
-            application: vaccinationForm.application,
-            givenBy: vaccinationForm.givenBy.trim(),
+            vaccineName:
+              vaccinationForm.vaccineName.trim(),
+            disease:
+              vaccinationForm.disease.trim(),
+            application:
+              vaccinationForm.application,
+            givenBy:
+              vaccinationForm.givenBy.trim(),
             numberOfChickens,
-            notes: vaccinationForm.notes.trim(),
+            notes:
+              vaccinationForm.notes.trim(),
+
+            quantity: financial.quantity,
+            unit: financial.unit,
+            price: financial.price,
+            currency:
+              vaccinationForm.currency || "ETB",
           }),
         }
       );
@@ -480,7 +767,9 @@ export default function PoultryHealthPage() {
 
       setModalType(null);
       setEditingId(null);
-      setVaccinationForm(emptyVaccinationForm());
+      setVaccinationForm(
+        emptyVaccinationForm()
+      );
 
       setSuccess(
         editingId
@@ -533,23 +822,48 @@ export default function PoultryHealthPage() {
       return;
     }
 
+    const financial = validateFinancialFields(
+      vitaminForm.quantity,
+      vitaminForm.unit,
+      vitaminForm.price
+    );
+
+    if (!financial.valid) {
+      setError(
+        "Haddii aad gelinayso kharashka, Quantity, Unit iyo Unit Price dhammaantood si sax ah u buuxi. / If entering an expense, complete Quantity, Unit and Unit Price correctly."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
 
-      const response = await fetch("/api/chicken-vitamins", {
-        method: editingId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...(editingId ? { id: editingId } : {}),
-          date: vitaminForm.date,
-          vitaminName: vitaminForm.vitaminName.trim(),
-          givenBy: vitaminForm.givenBy.trim(),
-          numberOfChickens,
-          notes: vitaminForm.notes.trim(),
-        }),
-      });
+      const response = await fetch(
+        "/api/chicken-vitamins",
+        {
+          method: editingId ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...(editingId ? { id: editingId } : {}),
+            date: vitaminForm.date,
+            vitaminName:
+              vitaminForm.vitaminName.trim(),
+            givenBy:
+              vitaminForm.givenBy.trim(),
+            numberOfChickens,
+            notes:
+              vitaminForm.notes.trim(),
+
+            quantity: financial.quantity,
+            unit: financial.unit,
+            price: financial.price,
+            currency:
+              vitaminForm.currency || "ETB",
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -617,23 +931,48 @@ export default function PoultryHealthPage() {
       return;
     }
 
+    const financial = validateFinancialFields(
+      calciumForm.quantity,
+      calciumForm.unit,
+      calciumForm.price
+    );
+
+    if (!financial.valid) {
+      setError(
+        "Haddii aad gelinayso kharashka, Quantity, Unit iyo Unit Price dhammaantood si sax ah u buuxi. / If entering an expense, complete Quantity, Unit and Unit Price correctly."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
 
-      const response = await fetch("/api/chicken-calcium", {
-        method: editingId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...(editingId ? { id: editingId } : {}),
-          date: calciumForm.date,
-          calciumName: calciumForm.calciumName.trim(),
-          givenBy: calciumForm.givenBy.trim(),
-          numberOfChickens,
-          notes: calciumForm.notes.trim(),
-        }),
-      });
+      const response = await fetch(
+        "/api/chicken-calcium",
+        {
+          method: editingId ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...(editingId ? { id: editingId } : {}),
+            date: calciumForm.date,
+            calciumName:
+              calciumForm.calciumName.trim(),
+            givenBy:
+              calciumForm.givenBy.trim(),
+            numberOfChickens,
+            notes:
+              calciumForm.notes.trim(),
+
+            quantity: financial.quantity,
+            unit: financial.unit,
+            price: financial.price,
+            currency:
+              calciumForm.currency || "ETB",
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -727,6 +1066,7 @@ export default function PoultryHealthPage() {
       );
     }
   }
+
     return (
     <div className="min-h-screen bg-slate-100">
       <div className="flex min-h-screen">
@@ -849,7 +1189,7 @@ export default function PoultryHealthPage() {
                     </p>
                   </div>
 
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-xl font-bold text-emerald-700">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-xl font-bold text-slate-700">
                     ✚
                   </div>
                 </div>
@@ -867,7 +1207,7 @@ export default function PoultryHealthPage() {
                     </p>
                   </div>
 
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-xl font-bold text-amber-700">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-xl font-bold text-slate-700">
                     V
                   </div>
                 </div>
@@ -885,7 +1225,7 @@ export default function PoultryHealthPage() {
                     </p>
                   </div>
 
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-lg font-bold text-blue-700">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-lg font-bold text-slate-700">
                     Ca
                   </div>
                 </div>
@@ -893,9 +1233,11 @@ export default function PoultryHealthPage() {
             </div>
 
             <div className="space-y-7">
-              {/* VACCINATION TABLE */}
+              {/* =====================================================
+                  VACCINATION TABLE
+              ===================================================== */}
               <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-xl font-extrabold text-slate-900">
                       Tallaalka / Vaccination
@@ -916,9 +1258,9 @@ export default function PoultryHealthPage() {
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-[1770px] w-full">
-                    <thead className="bg-slate-50">
+                <div className="overflow-x-auto bg-white">
+                  <table className="w-full min-w-[2200px] bg-white">
+                    <thead className="bg-white">
                       <tr className="border-b border-slate-200">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
                           Taariikhda / Date
@@ -948,6 +1290,18 @@ export default function PoultryHealthPage() {
                           Digaagga / Chickens
                         </th>
 
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Tirada / Quantity
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Qiimaha Halkii / Unit Price
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Wadarta / Total
+                        </th>
+
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
                           Faahfaahin / Notes
                         </th>
@@ -966,12 +1320,12 @@ export default function PoultryHealthPage() {
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {loading ? (
                         <tr>
                           <td
-                            colSpan={11}
-                            className="px-4 py-10 text-center text-sm text-slate-500"
+                            colSpan={14}
+                            className="bg-white px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Xogta waa la soo qaadayaa... / Loading...
                           </td>
@@ -979,8 +1333,8 @@ export default function PoultryHealthPage() {
                       ) : vaccinations.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={11}
-                            className="px-4 py-10 text-center text-sm text-slate-500"
+                            colSpan={14}
+                            className="bg-white px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Weli tallaal lama diiwaangelin. / No vaccination
                             records yet.
@@ -990,7 +1344,7 @@ export default function PoultryHealthPage() {
                         vaccinations.map((record) => (
                           <tr
                             key={record.id}
-                            className="transition hover:bg-slate-50"
+                            className="bg-white transition hover:bg-slate-50"
                           >
                             <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
                               {formatDate(record.date)}
@@ -1020,6 +1374,28 @@ export default function PoultryHealthPage() {
                               {record.numberOfChickens}
                             </td>
 
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {record.quantity !== null
+                                ? `${formatNumber(record.quantity)} ${
+                                    record.unit ?? ""
+                                  }`
+                                : "—"}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {formatMoney(
+                                record.price,
+                                record.currency
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-extrabold text-slate-900">
+                              {formatMoney(
+                                record.total,
+                                record.currency
+                              )}
+                            </td>
+
                             <td className="max-w-[260px] px-4 py-4 text-sm text-slate-500">
                               {record.notes || "—"}
                             </td>
@@ -1030,6 +1406,7 @@ export default function PoultryHealthPage() {
                                   <p className="font-bold text-slate-800">
                                     {record.createdBy.name}
                                   </p>
+
                                   <p className="mt-0.5 text-xs text-slate-400">
                                     {record.createdBy.role}
                                   </p>
@@ -1049,7 +1426,9 @@ export default function PoultryHealthPage() {
                               <div className="flex justify-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => editVaccination(record)}
+                                  onClick={() =>
+                                    editVaccination(record)
+                                  }
                                   className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
                                 >
                                   Beddel / Edit
@@ -1077,9 +1456,11 @@ export default function PoultryHealthPage() {
                 </div>
               </section>
 
-              {/* VITAMIN TABLE */}
+              {/* =====================================================
+                  VITAMIN TABLE
+              ===================================================== */}
               <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-xl font-extrabold text-slate-900">
                       Vitamin
@@ -1100,9 +1481,9 @@ export default function PoultryHealthPage() {
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-[1270px] w-full">
-                    <thead className="bg-slate-50">
+                <div className="overflow-x-auto bg-white">
+                  <table className="w-full min-w-[1700px] bg-white">
+                    <thead className="bg-white">
                       <tr className="border-b border-slate-200">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
                           Taariikhda / Date
@@ -1118,6 +1499,18 @@ export default function PoultryHealthPage() {
 
                         <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
                           Digaagga / Chickens
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Tirada / Quantity
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Qiimaha Halkii / Unit Price
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Wadarta / Total
                         </th>
 
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
@@ -1138,12 +1531,12 @@ export default function PoultryHealthPage() {
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {loading ? (
                         <tr>
                           <td
-                            colSpan={8}
-                            className="px-4 py-10 text-center text-sm text-slate-500"
+                            colSpan={11}
+                            className="bg-white px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Xogta waa la soo qaadayaa... / Loading...
                           </td>
@@ -1151,8 +1544,8 @@ export default function PoultryHealthPage() {
                       ) : vitamins.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={8}
-                            className="px-4 py-10 text-center text-sm text-slate-500"
+                            colSpan={11}
+                            className="bg-white px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Weli vitamin lama diiwaangelin. / No vitamin
                             records yet.
@@ -1162,7 +1555,7 @@ export default function PoultryHealthPage() {
                         vitamins.map((record) => (
                           <tr
                             key={record.id}
-                            className="transition hover:bg-slate-50"
+                            className="bg-white transition hover:bg-slate-50"
                           >
                             <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
                               {formatDate(record.date)}
@@ -1180,6 +1573,28 @@ export default function PoultryHealthPage() {
                               {record.numberOfChickens}
                             </td>
 
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {record.quantity !== null
+                                ? `${formatNumber(record.quantity)} ${
+                                    record.unit ?? ""
+                                  }`
+                                : "—"}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {formatMoney(
+                                record.price,
+                                record.currency
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-extrabold text-slate-900">
+                              {formatMoney(
+                                record.total,
+                                record.currency
+                              )}
+                            </td>
+
                             <td className="max-w-[300px] px-4 py-4 text-sm text-slate-500">
                               {record.notes || "—"}
                             </td>
@@ -1190,6 +1605,7 @@ export default function PoultryHealthPage() {
                                   <p className="font-bold text-slate-800">
                                     {record.createdBy.name}
                                   </p>
+
                                   <p className="mt-0.5 text-xs text-slate-400">
                                     {record.createdBy.role}
                                   </p>
@@ -1209,7 +1625,9 @@ export default function PoultryHealthPage() {
                               <div className="flex justify-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => editVitamin(record)}
+                                  onClick={() =>
+                                    editVitamin(record)
+                                  }
                                   className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
                                 >
                                   Beddel / Edit
@@ -1218,7 +1636,10 @@ export default function PoultryHealthPage() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    deleteRecord("vitamin", record.id)
+                                    deleteRecord(
+                                      "vitamin",
+                                      record.id
+                                    )
                                   }
                                   className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50"
                                 >
@@ -1234,9 +1655,11 @@ export default function PoultryHealthPage() {
                 </div>
               </section>
 
-              {/* CALCIUM TABLE */}
+              {/* =====================================================
+                  CALCIUM TABLE
+              ===================================================== */}
               <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-xl font-extrabold text-slate-900">
                       Calcium
@@ -1257,9 +1680,9 @@ export default function PoultryHealthPage() {
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-[1270px] w-full">
-                    <thead className="bg-slate-50">
+                <div className="overflow-x-auto bg-white">
+                  <table className="w-full min-w-[1700px] bg-white">
+                    <thead className="bg-white">
                       <tr className="border-b border-slate-200">
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
                           Taariikhda / Date
@@ -1275,6 +1698,18 @@ export default function PoultryHealthPage() {
 
                         <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
                           Digaagga / Chickens
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Tirada / Quantity
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Qiimaha Halkii / Unit Price
+                        </th>
+
+                        <th className="px-4 py-3 text-right text-xs font-bold uppercase text-slate-600">
+                          Wadarta / Total
                         </th>
 
                         <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-600">
@@ -1295,12 +1730,12 @@ export default function PoultryHealthPage() {
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {loading ? (
                         <tr>
                           <td
-                            colSpan={8}
-                            className="px-4 py-10 text-center text-sm text-slate-500"
+                            colSpan={11}
+                            className="bg-white px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Xogta waa la soo qaadayaa... / Loading...
                           </td>
@@ -1308,8 +1743,8 @@ export default function PoultryHealthPage() {
                       ) : calciumRecords.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={8}
-                            className="px-4 py-10 text-center text-sm text-slate-500"
+                            colSpan={11}
+                            className="bg-white px-4 py-10 text-center text-sm text-slate-500"
                           >
                             Weli calcium lama diiwaangelin. / No calcium
                             records yet.
@@ -1319,7 +1754,7 @@ export default function PoultryHealthPage() {
                         calciumRecords.map((record) => (
                           <tr
                             key={record.id}
-                            className="transition hover:bg-slate-50"
+                            className="bg-white transition hover:bg-slate-50"
                           >
                             <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
                               {formatDate(record.date)}
@@ -1337,6 +1772,28 @@ export default function PoultryHealthPage() {
                               {record.numberOfChickens}
                             </td>
 
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {record.quantity !== null
+                                ? `${formatNumber(record.quantity)} ${
+                                    record.unit ?? ""
+                                  }`
+                                : "—"}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm text-slate-700">
+                              {formatMoney(
+                                record.price,
+                                record.currency
+                              )}
+                            </td>
+
+                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-extrabold text-slate-900">
+                              {formatMoney(
+                                record.total,
+                                record.currency
+                              )}
+                            </td>
+
                             <td className="max-w-[300px] px-4 py-4 text-sm text-slate-500">
                               {record.notes || "—"}
                             </td>
@@ -1347,6 +1804,7 @@ export default function PoultryHealthPage() {
                                   <p className="font-bold text-slate-800">
                                     {record.createdBy.name}
                                   </p>
+
                                   <p className="mt-0.5 text-xs text-slate-400">
                                     {record.createdBy.role}
                                   </p>
@@ -1366,7 +1824,9 @@ export default function PoultryHealthPage() {
                               <div className="flex justify-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => editCalcium(record)}
+                                  onClick={() =>
+                                    editCalcium(record)
+                                  }
                                   className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
                                 >
                                   Beddel / Edit
@@ -1375,7 +1835,10 @@ export default function PoultryHealthPage() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    deleteRecord("calcium", record.id)
+                                    deleteRecord(
+                                      "calcium",
+                                      record.id
+                                    )
                                   }
                                   className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50"
                                 >
@@ -1394,8 +1857,7 @@ export default function PoultryHealthPage() {
           </div>
         </main>
       </div>
-
-      {/* VACCINATION MODAL */}
+            {/* VACCINATION MODAL */}
       {modalType === "vaccination" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[95vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
@@ -1447,71 +1909,186 @@ export default function PoultryHealthPage() {
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Marxaladda / Stage-Age
                   </label>
+
                   <select
                     required
                     value={vaccinationForm.stage}
                     onChange={(event) => {
                       const newStage = event.target.value;
+
                       setVaccinationForm((current) => ({
-                        ...current, stage: newStage, vaccineName: "", disease: "", application: "",
+                        ...current,
+                        stage: newStage,
+                        vaccineName: "",
+                        disease: "",
+                        application: "",
                       }));
                     }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   >
-                    <option value="">Dooro marxaladda / Select stage</option>
-                    {stages.map((stage) => (<option key={stage} value={stage}>{stage}</option>))}
+                    <option value="">
+                      Dooro marxaladda / Select stage
+                    </option>
+
+                    {stages.map((stage) => (
+                      <option key={stage} value={stage}>
+                        {stage}
+                      </option>
+                    ))}
                   </select>
+
                   {vaccinationForm.stage === "Day 1" && (
-                    <p className="mt-2 text-xs font-semibold text-amber-700">Day 1 vaccines are marked as done in the hatchery in the vaccination schedule.</p>
+                    <p className="mt-2 text-xs font-semibold text-amber-700">
+                      Day 1 vaccines are marked as done in the hatchery in
+                      the vaccination schedule.
+                    </p>
                   )}
                 </div>
 
                 {/* VACCINE */}
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Nooca Tallaalka / Vaccine</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                    Nooca Tallaalka / Vaccine
+                  </label>
+
                   <select
                     required
                     disabled={!vaccinationForm.stage}
                     value={vaccinationForm.vaccineName}
                     onChange={(event) => {
                       const vaccineName = event.target.value;
-                      const scheduleItem = vaccineSchedule.find((item) => item.stage === vaccinationForm.stage && item.vaccineName === vaccineName);
-                      setVaccinationForm((current) => ({ ...current, vaccineName, disease: scheduleItem?.disease ?? "", application: scheduleItem?.application ?? "" }));
+
+                      const scheduleItem = vaccineSchedule.find(
+                        (item) =>
+                          item.stage === vaccinationForm.stage &&
+                          item.vaccineName === vaccineName
+                      );
+
+                      setVaccinationForm((current) => ({
+                        ...current,
+                        vaccineName,
+                        disease: scheduleItem?.disease ?? "",
+                        application:
+                          scheduleItem?.application ?? "",
+                      }));
                     }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   >
-                    <option value="">{vaccinationForm.stage ? "Dooro tallaalka / Select vaccine" : "Marka hore dooro marxaladda / Select stage first"}</option>
+                    <option value="">
+                      {vaccinationForm.stage
+                        ? "Dooro tallaalka / Select vaccine"
+                        : "Marka hore dooro marxaladda / Select stage first"}
+                    </option>
+
                     {availableVaccines.map((item) => (
-                      <option key={`${item.stage}-${item.vaccineName}`} value={item.vaccineName}>{item.vaccineName}{item.note ? " — Optional/Note" : ""}</option>
+                      <option
+                        key={`${item.stage}-${item.vaccineName}`}
+                        value={item.vaccineName}
+                      >
+                        {item.vaccineName}
+                        {item.note ? " — Optional/Note" : ""}
+                      </option>
                     ))}
                   </select>
                 </div>
 
-                {/* DISEASE - AUTO FILLED */}
+                {/* DISEASE */}
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Cudurka / Disease</label>
-                  <input type="text" required readOnly value={vaccinationForm.disease} placeholder="Si otomaatig ah ayuu u soo baxayaa / Auto-filled" className="w-full cursor-not-allowed rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400" />
-                  <p className="mt-1.5 text-xs text-slate-500">Waxaa laga soo buuxinayaa jadwalka tallaalka. / Filled automatically from the vaccination schedule.</p>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                    Cudurka / Disease
+                  </label>
+
+                  <input
+                    type="text"
+                    required
+                    readOnly
+                    value={vaccinationForm.disease}
+                    placeholder="Si otomaatig ah ayuu u soo baxayaa / Auto-filled"
+                    className="w-full cursor-not-allowed rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+                  />
+
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Waxaa laga soo buuxinayaa jadwalka tallaalka. / Filled
+                    automatically from the vaccination schedule.
+                  </p>
                 </div>
 
-                {/* APPLICATION - AUTO FILLED */}
+                {/* APPLICATION */}
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Habka Loo Siiyay / Application</label>
-                  <input type="text" required readOnly value={vaccinationForm.application} placeholder="Si otomaatig ah ayuu u soo baxayaa / Auto-filled" className="w-full cursor-not-allowed rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400" />
-                  <p className="mt-1.5 text-xs text-slate-500">Habka saxda ah wuxuu ku xiran yahay tallaalka la doortay. / Correct application is selected automatically.</p>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                    Habka Loo Siiyay / Application
+                  </label>
+
+                  <input
+                    type="text"
+                    required
+                    readOnly
+                    value={vaccinationForm.application}
+                    placeholder="Si otomaatig ah ayuu u soo baxayaa / Auto-filled"
+                    className="w-full cursor-not-allowed rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+                  />
+
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Habka saxda ah wuxuu ku xiran yahay tallaalka la
+                    doortay. / Correct application is selected
+                    automatically.
+                  </p>
                 </div>
 
                 {/* SCHEDULE INFORMATION */}
                 {selectedVaccine && (
                   <div className="sm:col-span-2">
-                    <div className={`rounded-xl border px-4 py-4 ${selectedVaccine.note ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
-                      <p className={`text-sm font-extrabold ${selectedVaccine.note ? "text-amber-800" : "text-emerald-800"}`}>Xogta Jadwalka / Vaccination Schedule</p>
+                    <div
+                      className={`rounded-xl border px-4 py-4 ${
+                        selectedVaccine.note
+                          ? "border-amber-200 bg-amber-50"
+                          : "border-emerald-200 bg-emerald-50"
+                      }`}
+                    >
+                      <p
+                        className={`text-sm font-extrabold ${
+                          selectedVaccine.note
+                            ? "text-amber-800"
+                            : "text-emerald-800"
+                        }`}
+                      >
+                        Xogta Jadwalka / Vaccination Schedule
+                      </p>
+
                       <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                        <div><span className="font-bold text-slate-700">Vaccine:</span>{" "}<span className="text-slate-600">{selectedVaccine.vaccineName}</span></div>
-                        <div><span className="font-bold text-slate-700">Disease:</span>{" "}<span className="text-slate-600">{selectedVaccine.disease}</span></div>
-                        <div><span className="font-bold text-slate-700">Application:</span>{" "}<span className="text-slate-600">{selectedVaccine.application}</span></div>
+                        <div>
+                          <span className="font-bold text-slate-700">
+                            Vaccine:
+                          </span>{" "}
+                          <span className="text-slate-600">
+                            {selectedVaccine.vaccineName}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="font-bold text-slate-700">
+                            Disease:
+                          </span>{" "}
+                          <span className="text-slate-600">
+                            {selectedVaccine.disease}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="font-bold text-slate-700">
+                            Application:
+                          </span>{" "}
+                          <span className="text-slate-600">
+                            {selectedVaccine.application}
+                          </span>
+                        </div>
                       </div>
-                      {selectedVaccine.note && (<div className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-sm font-semibold text-amber-800">Fiiro gaar ah / Note: {selectedVaccine.note}</div>)}
+
+                      {selectedVaccine.note && (
+                        <div className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-sm font-semibold text-amber-800">
+                          Fiiro gaar ah / Note: {selectedVaccine.note}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1556,6 +2133,125 @@ export default function PoultryHealthPage() {
                     placeholder="0"
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   />
+                </div>
+
+                {/* FINANCIAL INFORMATION */}
+                <div className="sm:col-span-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                    <div>
+                      <h3 className="text-base font-extrabold text-slate-900">
+                        Xogta Lacagta / Financial Information
+                      </h3>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Haddii kharash jiro, buuxi Quantity, Unit iyo Unit
+                        Price. / If there is an expense, complete Quantity,
+                        Unit and Unit Price.
+                      </p>
+                    </div>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Tirada / Quantity
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={vaccinationForm.quantity}
+                          onChange={(event) =>
+                            setVaccinationForm((current) => ({
+                              ...current,
+                              quantity: event.target.value,
+                            }))
+                          }
+                          placeholder="Tusaale: 3"
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Halbeegga / Unit
+                        </label>
+
+                        <input
+                          type="text"
+                          value={vaccinationForm.unit}
+                          onChange={(event) =>
+                            setVaccinationForm((current) => ({
+                              ...current,
+                              unit: event.target.value,
+                            }))
+                          }
+                          placeholder="Bottle, dose, pack..."
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Qiimaha Halkii / Unit Price
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={vaccinationForm.price}
+                          onChange={(event) =>
+                            setVaccinationForm((current) => ({
+                              ...current,
+                              price: event.target.value,
+                            }))
+                          }
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Lacagta / Currency
+                        </label>
+
+                        <select
+                          value={vaccinationForm.currency}
+                          onChange={(event) =>
+                            setVaccinationForm((current) => ({
+                              ...current,
+                              currency: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        >
+                          <option value="ETB">ETB</option>
+                          <option value="USD">USD</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Wadarta / Total
+                        </label>
+
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <p className="text-lg font-extrabold text-slate-900">
+                            {formatNumber(vaccinationTotal)}{" "}
+                            {vaccinationForm.currency || "ETB"}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-500">
+                            Quantity × Unit Price. Server-ka ayaa xaqiijinaya
+                            wadarta marka la kaydinayo. / Quantity × Unit
+                            Price. The server verifies the total when saving.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -1614,7 +2310,7 @@ export default function PoultryHealthPage() {
       {/* VITAMIN MODAL */}
       {modalType === "vitamin" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="max-h-[95vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
               <div>
                 <h2 className="text-xl font-extrabold text-slate-900">
@@ -1716,6 +2412,117 @@ export default function PoultryHealthPage() {
                   />
                 </div>
 
+                {/* VITAMIN FINANCIAL INFORMATION */}
+                <div className="sm:col-span-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                    <h3 className="text-base font-extrabold text-slate-900">
+                      Xogta Lacagta / Financial Information
+                    </h3>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Haddii kharash jiro, buuxi Quantity, Unit iyo Unit
+                      Price. / If there is an expense, complete Quantity,
+                      Unit and Unit Price.
+                    </p>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Tirada / Quantity
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={vitaminForm.quantity}
+                          onChange={(event) =>
+                            setVitaminForm((current) => ({
+                              ...current,
+                              quantity: event.target.value,
+                            }))
+                          }
+                          placeholder="Tusaale: 3"
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Halbeegga / Unit
+                        </label>
+
+                        <input
+                          type="text"
+                          value={vitaminForm.unit}
+                          onChange={(event) =>
+                            setVitaminForm((current) => ({
+                              ...current,
+                              unit: event.target.value,
+                            }))
+                          }
+                          placeholder="Bottle, litre, ml, pack..."
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Qiimaha Halkii / Unit Price
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={vitaminForm.price}
+                          onChange={(event) =>
+                            setVitaminForm((current) => ({
+                              ...current,
+                              price: event.target.value,
+                            }))
+                          }
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Lacagta / Currency
+                        </label>
+
+                        <select
+                          value={vitaminForm.currency}
+                          onChange={(event) =>
+                            setVitaminForm((current) => ({
+                              ...current,
+                              currency: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                        >
+                          <option value="ETB">ETB</option>
+                          <option value="USD">USD</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Wadarta / Total
+                        </label>
+
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <p className="text-lg font-extrabold text-slate-900">
+                            {formatNumber(vitaminTotal)}{" "}
+                            {vitaminForm.currency || "ETB"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="sm:col-span-2">
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Faahfaahin / Notes
@@ -1771,7 +2578,7 @@ export default function PoultryHealthPage() {
       {/* CALCIUM MODAL */}
       {modalType === "calcium" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="max-h-[95vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
               <div>
                 <h2 className="text-xl font-extrabold text-slate-900">
@@ -1871,6 +2678,117 @@ export default function PoultryHealthPage() {
                     placeholder="0"
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
+                </div>
+
+                {/* CALCIUM FINANCIAL INFORMATION */}
+                <div className="sm:col-span-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                    <h3 className="text-base font-extrabold text-slate-900">
+                      Xogta Lacagta / Financial Information
+                    </h3>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Haddii kharash jiro, buuxi Quantity, Unit iyo Unit
+                      Price. / If there is an expense, complete Quantity,
+                      Unit and Unit Price.
+                    </p>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Tirada / Quantity
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={calciumForm.quantity}
+                          onChange={(event) =>
+                            setCalciumForm((current) => ({
+                              ...current,
+                              quantity: event.target.value,
+                            }))
+                          }
+                          placeholder="Tusaale: 3"
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Halbeegga / Unit
+                        </label>
+
+                        <input
+                          type="text"
+                          value={calciumForm.unit}
+                          onChange={(event) =>
+                            setCalciumForm((current) => ({
+                              ...current,
+                              unit: event.target.value,
+                            }))
+                          }
+                          placeholder="Bottle, litre, ml, pack..."
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Qiimaha Halkii / Unit Price
+                        </label>
+
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={calciumForm.price}
+                          onChange={(event) =>
+                            setCalciumForm((current) => ({
+                              ...current,
+                              price: event.target.value,
+                            }))
+                          }
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Lacagta / Currency
+                        </label>
+
+                        <select
+                          value={calciumForm.currency}
+                          onChange={(event) =>
+                            setCalciumForm((current) => ({
+                              ...current,
+                              currency: event.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        >
+                          <option value="ETB">ETB</option>
+                          <option value="USD">USD</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Wadarta / Total
+                        </label>
+
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <p className="text-lg font-extrabold text-slate-900">
+                            {formatNumber(calciumTotal)}{" "}
+                            {calciumForm.currency || "ETB"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">

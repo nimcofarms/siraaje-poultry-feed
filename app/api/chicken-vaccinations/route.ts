@@ -30,35 +30,155 @@ const ALLOWED_STAGES = [
 ];
 
 /* =========================================================
-   AUTHORIZE
+   FINANCIAL HELPERS
 ========================================================= */
 
-async function authorize(permission: PermissionKey) {
-  const user = await getCurrentUser();
+function parseOptionalPositiveNumber(value: unknown) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return null;
+  }
 
-  if (!user) {
+  const number = Number(value);
+
+  if (
+    !Number.isFinite(number) ||
+    number <= 0
+  ) {
+    return null;
+  }
+
+  return number;
+}
+
+function getFinancialData(body: Record<string, unknown>) {
+  const hasAnyFinancialValue =
+    body.quantity !== undefined &&
+      body.quantity !== null &&
+      body.quantity !== "" ||
+    body.price !== undefined &&
+      body.price !== null &&
+      body.price !== "" ||
+    body.unit !== undefined &&
+      body.unit !== null &&
+      String(body.unit).trim() !== "";
+
+  /*
+   * Financial information is optional so old-style
+   * health records can still exist without becoming
+   * financial expenses.
+   */
+  if (!hasAnyFinancialValue) {
     return {
-      user: null,
+      success: true as const,
+      data: {
+        quantity: null,
+        unit: null,
+        price: null,
+        total: null,
+        currency: "ETB",
+      },
+    };
+  }
+
+  const quantity =
+    parseOptionalPositiveNumber(
+      body.quantity
+    );
+
+  const price =
+    parseOptionalPositiveNumber(
+      body.price
+    );
+
+  const unit = String(
+    body.unit || ""
+  ).trim();
+
+  const currency =
+    String(
+      body.currency || "ETB"
+    )
+      .trim()
+      .toUpperCase() || "ETB";
+
+  if (
+    quantity === null ||
+    price === null ||
+    !unit
+  ) {
+    return {
+      success: false as const,
       response: NextResponse.json(
         {
           error:
-            "Fadlan marka hore gal. / Please log in first.",
+            "Marka xogta lacagta la gelinayo, Quantity, Unit iyo Unit Price dhammaantood waa loo baahan yahay. / When financial information is entered, Quantity, Unit and Unit Price are all required.",
         },
-        { status: 401 }
+        { status: 400 }
       ),
     };
   }
 
-  if (!hasPermission(user, permission)) {
+  const total =
+    Math.round(
+      quantity *
+        price *
+        100
+    ) / 100;
+
+  return {
+    success: true as const,
+    data: {
+      quantity,
+      unit,
+      price,
+      total,
+      currency,
+    },
+  };
+}
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
+
+async function authorize(permission: PermissionKey) {
+  const user =
+    await getCurrentUser();
+
+  if (!user) {
+    return {
+      user: null,
+      response:
+        NextResponse.json(
+          {
+            error:
+              "Fadlan marka hore gal. / Please log in first.",
+          },
+          { status: 401 }
+        ),
+    };
+  }
+
+  if (
+    !hasPermission(
+      user,
+      permission
+    )
+  ) {
     return {
       user,
-      response: NextResponse.json(
-        {
-          error:
-            "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
-        },
-        { status: 403 }
-      ),
+      response:
+        NextResponse.json(
+          {
+            error:
+              "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
+          },
+          { status: 403 }
+        ),
     };
   }
 
@@ -77,29 +197,36 @@ async function authorize(permission: PermissionKey) {
 
 export async function GET() {
   try {
-    const auth = await authorize(
-      "poultryHealthView"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthView"
+      );
 
     if (auth.response) {
       return auth.response;
     }
 
     const vaccinations =
-      await prisma.chickenVaccination.findMany({
-        include: auditUserInclude,
+      await prisma.chickenVaccination.findMany(
+        {
+          include:
+            auditUserInclude,
 
-        orderBy: [
-          {
-            date: "desc",
-          },
-          {
-            createdAt: "desc",
-          },
-        ],
-      });
+          orderBy: [
+            {
+              date: "desc",
+            },
+            {
+              createdAt:
+                "desc",
+            },
+          ],
+        }
+      );
 
-    return NextResponse.json(vaccinations);
+    return NextResponse.json(
+      vaccinations
+    );
   } catch (error) {
     console.error(
       "CHICKEN VACCINATION GET ERROR:",
@@ -123,11 +250,14 @@ export async function GET() {
    Permission: poultryHealthAdd
 ========================================================= */
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    const auth = await authorize(
-      "poultryHealthAdd"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthAdd"
+      );
 
     if (auth.response) {
       return auth.response;
@@ -143,23 +273,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const stage = String(
       body.stage || ""
     ).trim();
 
-    const vaccineName = String(
-      body.vaccineName || ""
-    ).trim();
+    const vaccineName =
+      String(
+        body.vaccineName ||
+          ""
+      ).trim();
 
     const disease = String(
       body.disease || ""
     ).trim();
 
-    const application = String(
-      body.application || ""
-    ).trim();
+    const application =
+      String(
+        body.application ||
+          ""
+      ).trim();
 
     const givenBy = String(
       body.givenBy || ""
@@ -169,9 +304,10 @@ export async function POST(request: Request) {
       body.notes || ""
     ).trim();
 
-    const numberOfChickens = Number(
-      body.numberOfChickens
-    );
+    const numberOfChickens =
+      Number(
+        body.numberOfChickens
+      );
 
     /* =====================================================
        REQUIRED FIELDS
@@ -198,7 +334,11 @@ export async function POST(request: Request) {
        STAGE VALIDATION
     ===================================================== */
 
-    if (!ALLOWED_STAGES.includes(stage)) {
+    if (
+      !ALLOWED_STAGES.includes(
+        stage
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -213,7 +353,9 @@ export async function POST(request: Request) {
     ===================================================== */
 
     if (
-      !Number.isInteger(numberOfChickens) ||
+      !Number.isInteger(
+        numberOfChickens
+      ) ||
       numberOfChickens <= 0
     ) {
       return NextResponse.json(
@@ -226,51 +368,86 @@ export async function POST(request: Request) {
     }
 
     /* =====================================================
+       FINANCIAL VALIDATION
+    ===================================================== */
+
+    const financial =
+      getFinancialData(body);
+
+    if (!financial.success) {
+      return financial.response;
+    }
+
+    /* =====================================================
        CREATE VACCINATION
     ===================================================== */
 
     const vaccination =
-      await prisma.chickenVaccination.create({
-        data: {
-          date: new Date(
-            `${body.date}T12:00:00`
-          ),
+      await prisma.chickenVaccination.create(
+        {
+          data: {
+            date: new Date(
+              `${body.date}T12:00:00`
+            ),
 
-          stage,
+            stage,
 
-          vaccineName,
+            vaccineName,
 
-          disease,
+            disease,
 
-          application,
+            application,
 
-          givenBy,
+            givenBy,
 
-          numberOfChickens,
+            numberOfChickens,
 
-          notes: notes || null,
+            notes:
+              notes || null,
 
-          /*
-           * AUDIT TRAIL
-           *
-           * createdById:
-           * account-ka website-ka ku login ahaa
-           * markii xogtan la geliyay.
-           *
-           * updatedById:
-           * marka la abuurayo wuxuu noqonayaa
-           * isla account-kaas.
-           *
-           * Tani way ka duwan tahay "givenBy".
-           *
-           * givenBy = qofka tallaalka bixiyay.
-           * createdBy = qofka website-ka xogta geliyay.
-           */
-          ...createAuditData(auth.user),
-        },
+            /*
+             * FINANCIAL INFORMATION
+             *
+             * total is NEVER trusted from the browser.
+             * Server calculates:
+             *
+             * quantity × price = total
+             */
+            quantity:
+              financial.data
+                .quantity,
 
-        include: auditUserInclude,
-      });
+            unit:
+              financial.data
+                .unit,
+
+            price:
+              financial.data
+                .price,
+
+            total:
+              financial.data
+                .total,
+
+            currency:
+              financial.data
+                .currency,
+
+            /*
+             * AUDIT TRAIL
+             *
+             * givenBy = qofka tallaalka bixiyay.
+             * createdBy = qofka website-ka xogta geliyay.
+             */
+            ...createAuditData(
+              auth.user
+            ),
+          },
+
+          include:
+            auditUserInclude,
+        }
+      );
 
     return NextResponse.json(
       vaccination,
@@ -301,11 +478,14 @@ export async function POST(request: Request) {
    Permission: poultryHealthEdit
 ========================================================= */
 
-export async function PUT(request: Request) {
+export async function PUT(
+  request: Request
+) {
   try {
-    const auth = await authorize(
-      "poultryHealthEdit"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthEdit"
+      );
 
     if (auth.response) {
       return auth.response;
@@ -321,7 +501,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const id = String(
       body.id || ""
@@ -331,17 +512,21 @@ export async function PUT(request: Request) {
       body.stage || ""
     ).trim();
 
-    const vaccineName = String(
-      body.vaccineName || ""
-    ).trim();
+    const vaccineName =
+      String(
+        body.vaccineName ||
+          ""
+      ).trim();
 
     const disease = String(
       body.disease || ""
     ).trim();
 
-    const application = String(
-      body.application || ""
-    ).trim();
+    const application =
+      String(
+        body.application ||
+          ""
+      ).trim();
 
     const givenBy = String(
       body.givenBy || ""
@@ -351,9 +536,10 @@ export async function PUT(request: Request) {
       body.notes || ""
     ).trim();
 
-    const numberOfChickens = Number(
-      body.numberOfChickens
-    );
+    const numberOfChickens =
+      Number(
+        body.numberOfChickens
+      );
 
     /* =====================================================
        ID VALIDATION
@@ -394,7 +580,11 @@ export async function PUT(request: Request) {
        STAGE VALIDATION
     ===================================================== */
 
-    if (!ALLOWED_STAGES.includes(stage)) {
+    if (
+      !ALLOWED_STAGES.includes(
+        stage
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -409,7 +599,9 @@ export async function PUT(request: Request) {
     ===================================================== */
 
     if (
-      !Number.isInteger(numberOfChickens) ||
+      !Number.isInteger(
+        numberOfChickens
+      ) ||
       numberOfChickens <= 0
     ) {
       return NextResponse.json(
@@ -422,47 +614,84 @@ export async function PUT(request: Request) {
     }
 
     /* =====================================================
+       FINANCIAL VALIDATION
+    ===================================================== */
+
+    const financial =
+      getFinancialData(body);
+
+    if (!financial.success) {
+      return financial.response;
+    }
+
+    /* =====================================================
        UPDATE VACCINATION
     ===================================================== */
 
     const vaccination =
-      await prisma.chickenVaccination.update({
-        where: {
-          id,
-        },
+      await prisma.chickenVaccination.update(
+        {
+          where: {
+            id,
+          },
 
-        data: {
-          date: new Date(
-            `${body.date}T12:00:00`
-          ),
+          data: {
+            date: new Date(
+              `${body.date}T12:00:00`
+            ),
 
-          stage,
+            stage,
 
-          vaccineName,
+            vaccineName,
 
-          disease,
+            disease,
 
-          application,
+            application,
 
-          givenBy,
+            givenBy,
 
-          numberOfChickens,
+            numberOfChickens,
 
-          notes: notes || null,
+            notes:
+              notes || null,
 
-          /*
-           * createdById lama beddelayo.
-           *
-           * updatedById = account-ka website-ka
-           * hadda xogtan wax ka beddelay.
-           */
-          ...updateAuditData(auth.user),
-        },
+            quantity:
+              financial.data
+                .quantity,
 
-        include: auditUserInclude,
-      });
+            unit:
+              financial.data
+                .unit,
 
-    return NextResponse.json(vaccination);
+            price:
+              financial.data
+                .price,
+
+            total:
+              financial.data
+                .total,
+
+            currency:
+              financial.data
+                .currency,
+
+            /*
+             * createdById lama beddelayo.
+             * updatedById = account-ka hadda wax ka beddelay.
+             */
+            ...updateAuditData(
+              auth.user
+            ),
+          },
+
+          include:
+            auditUserInclude,
+        }
+      );
+
+    return NextResponse.json(
+      vaccination
+    );
   } catch (error) {
     console.error(
       "CHICKEN VACCINATION UPDATE ERROR:",
@@ -486,21 +715,24 @@ export async function PUT(request: Request) {
    Permission: poultryHealthDelete
 ========================================================= */
 
-export async function DELETE(request: Request) {
+export async function DELETE(
+  request: Request
+) {
   try {
-    const auth = await authorize(
-      "poultryHealthDelete"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthDelete"
+      );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(
-      request.url
-    );
+    const { searchParams } =
+      new URL(request.url);
 
-    const id = searchParams.get("id");
+    const id =
+      searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
@@ -512,11 +744,13 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.chickenVaccination.delete({
-      where: {
-        id,
-      },
-    });
+    await prisma.chickenVaccination.delete(
+      {
+        where: {
+          id,
+        },
+      }
+    );
 
     return NextResponse.json({
       success: true,

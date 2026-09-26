@@ -16,6 +16,111 @@ import {
 export const runtime = "nodejs";
 
 /* =========================================================
+   FINANCIAL HELPERS
+========================================================= */
+
+function parseOptionalPositiveNumber(value: unknown) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return null;
+  }
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) {
+    return null;
+  }
+
+  return number;
+}
+
+function getFinancialData(body: Record<string, unknown>) {
+  const hasAnyFinancialValue =
+    (body.quantity !== undefined &&
+      body.quantity !== null &&
+      body.quantity !== "") ||
+    (body.price !== undefined &&
+      body.price !== null &&
+      body.price !== "") ||
+    (body.unit !== undefined &&
+      body.unit !== null &&
+      String(body.unit).trim() !== "");
+
+  /*
+   * Financial information is optional.
+   *
+   * Old/non-financial health records remain valid.
+   * If financial information is entered, Quantity,
+   * Unit and Unit Price must all be supplied.
+   */
+  if (!hasAnyFinancialValue) {
+    return {
+      success: true as const,
+      data: {
+        quantity: null,
+        unit: null,
+        price: null,
+        total: null,
+        currency: "ETB",
+      },
+    };
+  }
+
+  const quantity =
+    parseOptionalPositiveNumber(body.quantity);
+
+  const price =
+    parseOptionalPositiveNumber(body.price);
+
+  const unit = String(
+    body.unit || ""
+  ).trim();
+
+  const currency =
+    String(body.currency || "ETB")
+      .trim()
+      .toUpperCase() || "ETB";
+
+  if (
+    quantity === null ||
+    price === null ||
+    !unit
+  ) {
+    return {
+      success: false as const,
+      response: NextResponse.json(
+        {
+          error:
+            "Marka xogta lacagta la gelinayo, Quantity, Unit iyo Unit Price dhammaantood waa loo baahan yahay. / When financial information is entered, Quantity, Unit and Unit Price are all required.",
+        },
+        { status: 400 }
+      ),
+    };
+  }
+
+  /*
+   * The server calculates the total.
+   * body.total from the browser is not trusted.
+   */
+  const total =
+    Math.round(quantity * price * 100) / 100;
+
+  return {
+    success: true as const,
+    data: {
+      quantity,
+      unit,
+      price,
+      total,
+      currency,
+    },
+  };
+}
+
+/* =========================================================
    AUTHORIZE
 ========================================================= */
 
@@ -183,6 +288,16 @@ export async function POST(request: Request) {
     }
 
     /* =====================================================
+       FINANCIAL VALIDATION
+    ===================================================== */
+
+    const financial = getFinancialData(body);
+
+    if (!financial.success) {
+      return financial.response;
+    }
+
+    /* =====================================================
        CREATE CALCIUM RECORD
     ===================================================== */
 
@@ -202,17 +317,25 @@ export async function POST(request: Request) {
           notes: notes || null,
 
           /*
+           * FINANCIAL INFORMATION
+           *
+           * quantity = quantity purchased/used
+           * unit     = bottle, litre, ml, pack, etc.
+           * price    = price per unit
+           * total    = quantity × price
+           */
+          quantity: financial.data.quantity,
+
+          unit: financial.data.unit,
+
+          price: financial.data.price,
+
+          total: financial.data.total,
+
+          currency: financial.data.currency,
+
+          /*
            * AUDIT TRAIL
-           *
-           * createdById:
-           * account-ka website-ka ku login ahaa
-           * markii record-kan la geliyay.
-           *
-           * updatedById:
-           * marka record-ka la abuurayo wuxuu
-           * noqonayaa isla account-kaas.
-           *
-           * givenBy iyo createdBy waa kala duwan yihiin:
            *
            * givenBy = qofka calcium-ka bixiyay.
            * createdBy = qofka website-ka xogta geliyay.
@@ -344,6 +467,16 @@ export async function PUT(request: Request) {
     }
 
     /* =====================================================
+       FINANCIAL VALIDATION
+    ===================================================== */
+
+    const financial = getFinancialData(body);
+
+    if (!financial.success) {
+      return financial.response;
+    }
+
+    /* =====================================================
        UPDATE CALCIUM RECORD
     ===================================================== */
 
@@ -367,10 +500,23 @@ export async function PUT(request: Request) {
           notes: notes || null,
 
           /*
-           * createdById lama beddelayo.
+           * FINANCIAL INFORMATION
            *
-           * updatedById = account-ka website-ka
-           * hadda record-kan wax ka beddelay.
+           * Browser-supplied total is ignored.
+           */
+          quantity: financial.data.quantity,
+
+          unit: financial.data.unit,
+
+          price: financial.data.price,
+
+          total: financial.data.total,
+
+          currency: financial.data.currency,
+
+          /*
+           * createdById is preserved.
+           * updatedById = account currently editing.
            */
           ...updateAuditData(auth.user),
         },

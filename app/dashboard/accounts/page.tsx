@@ -18,7 +18,8 @@ type AccountCategory =
   | "expenses"
   | "eggs"
   | "feeds"
-  | "chicken";
+  | "chicken"
+  | "treatment";
 
 type EntryType =
   | "PURCHASE"
@@ -215,6 +216,10 @@ type AccountsResponse = {
   };
 };
 
+// =========================================================
+// ACCOUNT CATEGORIES
+// =========================================================
+
 const CATEGORY_OPTIONS: {
   value: AccountCategory;
   label: string;
@@ -236,13 +241,21 @@ const CATEGORY_OPTIONS: {
     value: "feeds",
     label: "Feeds / Quudinta",
     description:
-      "Feed records and this month's production. / Diiwaanka quudinta iyo wax-soo-saarka bishan.",
+      "Feed sales and this month's production. / Iibka quudinta iyo wax-soo-saarka bishan.",
   },
   {
     value: "expenses",
-    label: "Product Expenses / Kharashka Productiga",
+    label:
+      "Product Expenses / Kharashka Productiga",
     description:
       "Product expenses only. General and construction expenses are not included in Monthly Accounts. / Kharashka productiga oo keliya. Kharashaadka guud iyo dhismaha laguma daro Xisaab Xirka.",
+  },
+  {
+    value: "treatment",
+    label:
+      "Poultry Health / Daaweynta",
+    description:
+      "Vaccination, vitamins and calcium expenses. / Kharashaadka tallaalka, fiitamiinnada iyo calcium-ka digaagga.",
   },
 ];
 
@@ -271,59 +284,92 @@ function formatMoney(
       new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(amount) + ` ${currency}`
+      }).format(amount) +
+      ` ${currency}`
     );
   } catch {
-    return `${amount.toFixed(2)} ${currency}`;
+    return `${amount.toFixed(
+      2
+    )} ${currency}`;
   }
 }
 
-function formatNumber(value: number | null) {
+function formatNumber(
+  value: number | null
+) {
   if (value === null) {
     return "—";
   }
 
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
-  }).format(value);
+  return new Intl.NumberFormat(
+    "en-US",
+    {
+      maximumFractionDigits: 2,
+    }
+  ).format(value);
 }
 
 function formatDate(value: string) {
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
     return value;
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  ).format(date);
 }
 
-function formatDateTime(value: string) {
+function formatDateTime(
+  value: string
+) {
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  ).format(date);
 }
 
-function formatMonthLabel(month: string) {
-  if (!/^\d{4}-\d{2}$/.test(month)) {
+function formatMonthLabel(
+  month: string
+) {
+  if (
+    !/^\d{4}-\d{2}$/.test(
+      month
+    )
+  ) {
     return month;
   }
 
-  const [year, monthNumber] = month
+  const [
+    year,
+    monthNumber,
+  ] = month
     .split("-")
     .map(Number);
 
@@ -342,10 +388,16 @@ function formatMonthLabel(month: string) {
     "December / Diseembar",
   ];
 
-  return `${monthNames[monthNumber - 1]} ${year}`;
+  return `${
+    monthNames[
+      monthNumber - 1
+    ]
+  } ${year}`;
 }
 
-function isOwnerOrAdmin(user: CurrentUser | null) {
+function isOwnerOrAdmin(
+  user: CurrentUser | null
+) {
   if (!user) {
     return false;
   }
@@ -356,24 +408,32 @@ function isOwnerOrAdmin(user: CurrentUser | null) {
   );
 }
 
-function typeLabel(type: EntryType) {
+function typeLabel(
+  type: EntryType
+) {
   if (type === "SALE") {
     return "Sale / Iib";
   }
 
-  if (type === "PURCHASE") {
+  if (
+    type === "PURCHASE"
+  ) {
     return "Purchase / Soo Iibsi";
   }
 
-  return "Product Expense / Kharashka Productiga";
+  return "Expense / Kharash";
 }
 
-function typeClass(type: EntryType) {
+function typeClass(
+  type: EntryType
+) {
   if (type === "SALE") {
     return "bg-green-50 text-green-700 border-green-200";
   }
 
-  if (type === "PURCHASE") {
+  if (
+    type === "PURCHASE"
+  ) {
     return "bg-amber-50 text-amber-700 border-amber-200";
   }
 
@@ -385,43 +445,92 @@ function typeClass(type: EntryType) {
 // =========================================================
 
 export default function MonthlyAccountsPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [currentUser, setCurrentUser] =
-    useState<CurrentUser | null>(null);
+  const [
+    currentUser,
+    setCurrentUser,
+  ] =
+    useState<CurrentUser | null>(
+      null
+    );
 
-  const [authLoading, setAuthLoading] =
+  const [
+    authLoading,
+    setAuthLoading,
+  ] =
     useState(true);
 
-  const [month, setMonth] =
-    useState(getCurrentMonth());
+  const [
+    month,
+    setMonth,
+  ] =
+    useState(
+      getCurrentMonth()
+    );
 
-  const [transaction, setTransaction] =
-    useState<TransactionFilter>("ALL");
+  const [
+    transaction,
+    setTransaction,
+  ] =
+    useState<TransactionFilter>(
+      "ALL"
+    );
 
-  const [company, setCompany] =
+  const [
+    company,
+    setCompany,
+  ] =
     useState("ALL");
 
-  const [feedType, setFeedType] =
-    useState<FeedTypeFilter>("ALL");
+  const [
+    feedType,
+    setFeedType,
+  ] =
+    useState<FeedTypeFilter>(
+      "ALL"
+    );
 
-  const [chickenType, setChickenType] =
-    useState<ChickenTypeFilter>("ALL");
+  const [
+    chickenType,
+    setChickenType,
+  ] =
+    useState<ChickenTypeFilter>(
+      "ALL"
+    );
 
-  const [selectedCategories, setSelectedCategories] =
-    useState<AccountCategory[]>(
+  const [
+    selectedCategories,
+    setSelectedCategories,
+  ] =
+    useState<
+      AccountCategory[]
+    >(
       CATEGORY_OPTIONS.map(
-        (category) => category.value
+        (category) =>
+          category.value
       )
     );
 
-  const [data, setData] =
-    useState<AccountsResponse | null>(null);
+  const [
+    data,
+    setData,
+  ] =
+    useState<AccountsResponse | null>(
+      null
+    );
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(false);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
   // =======================================================
@@ -433,19 +542,34 @@ export default function MonthlyAccountsPage() {
 
     async function loadCurrentUser() {
       try {
-        setAuthLoading(true);
+        setAuthLoading(
+          true
+        );
+
         setError("");
 
-        const response = await fetch("/api/me", {
-          cache: "no-store",
-        });
+        const response =
+          await fetch(
+            "/api/me",
+            {
+              cache:
+                "no-store",
+            }
+          );
 
-        if (response.status === 401) {
-          router.replace("/");
+        if (
+          response.status ===
+          401
+        ) {
+          router.replace(
+            "/"
+          );
+
           return;
         }
 
-        const result = await response.json();
+        const result =
+          await response.json();
 
         if (!response.ok) {
           throw new Error(
@@ -458,31 +582,44 @@ export default function MonthlyAccountsPage() {
           return;
         }
 
-        const user = result.user as CurrentUser;
+        const user =
+          result.user as CurrentUser;
 
         const allowed =
-          isOwnerOrAdmin(user) ||
-          user.permissions?.accountsView === true;
+          isOwnerOrAdmin(
+            user
+          ) ||
+          user.permissions
+            ?.accountsView ===
+            true;
 
         if (!allowed) {
-          router.replace("/dashboard");
+          router.replace(
+            "/dashboard"
+          );
+
           return;
         }
 
-        setCurrentUser(user);
+        setCurrentUser(
+          user
+        );
       } catch (error) {
         if (!active) {
           return;
         }
 
         setError(
-          error instanceof Error
+          error instanceof
+            Error
             ? error.message
             : "Your account could not be loaded. / Akoonkaaga lama soo gelin karin."
         );
       } finally {
         if (active) {
-          setAuthLoading(false);
+          setAuthLoading(
+            false
+          );
         }
       }
     }
@@ -498,79 +635,119 @@ export default function MonthlyAccountsPage() {
   // LOAD MONTHLY ACCOUNTS
   // =======================================================
 
-  const loadAccounts = useCallback(async () => {
-    if (selectedCategories.length === 0) {
-      setData(null);
-      setError(
-        "Please select at least one category. / Fadlan dooro ugu yaraan hal qayb."
-      );
-      return;
-    }
+  const loadAccounts =
+    useCallback(
+      async () => {
+        if (
+          selectedCategories.length ===
+          0
+        ) {
+          setData(null);
 
-    try {
-      setLoading(true);
-      setError("");
+          setError(
+            "Please select at least one category. / Fadlan dooro ugu yaraan hal qayb."
+          );
 
-      const categories =
-        selectedCategories.join(",");
-
-      const query =
-        new URLSearchParams({
-          month,
-          categories,
-          transaction,
-          company: company === "ALL" ? "" : company,
-          feedType,
-          chickenType,
-        });
-
-      const response = await fetch(
-        `/api/accounts/monthly?${query.toString()}`,
-        {
-          cache: "no-store",
+          return;
         }
-      );
 
-      const result = await response.json();
+        try {
+          setLoading(
+            true
+          );
 
-      if (response.status === 401) {
-        router.replace("/");
-        return;
-      }
+          setError("");
 
-      if (response.status === 403) {
-        router.replace("/dashboard");
-        return;
-      }
+          const categories =
+            selectedCategories.join(
+              ","
+            );
 
-      if (!response.ok) {
-        throw new Error(
-          result.error ||
-            "This month's accounts could not be loaded. / Xisaabta bishan lama soo gelin karin."
-        );
-      }
+          const query =
+            new URLSearchParams(
+              {
+                month,
+                categories,
+                transaction,
+                company:
+                  company ===
+                  "ALL"
+                    ? ""
+                    : company,
+                feedType,
+                chickenType,
+              }
+            );
 
-      setData(result);
-    } catch (error) {
-      setData(null);
+          const response =
+            await fetch(
+              `/api/accounts/monthly?${query.toString()}`,
+              {
+                cache:
+                  "no-store",
+              }
+            );
 
-      setError(
-        error instanceof Error
-          ? error.message
-          : "This month's accounts could not be loaded. / Xisaabta bishan lama soo gelin karin."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    month,
-    router,
-    selectedCategories,
-    transaction,
-    company,
-    feedType,
-    chickenType,
-  ]);
+          const result =
+            await response.json();
+
+          if (
+            response.status ===
+            401
+          ) {
+            router.replace(
+              "/"
+            );
+
+            return;
+          }
+
+          if (
+            response.status ===
+            403
+          ) {
+            router.replace(
+              "/dashboard"
+            );
+
+            return;
+          }
+
+          if (
+            !response.ok
+          ) {
+            throw new Error(
+              result.error ||
+                "This month's accounts could not be loaded. / Xisaabta bishan lama soo gelin karin."
+            );
+          }
+
+          setData(result);
+        } catch (error) {
+          setData(null);
+
+          setError(
+            error instanceof
+              Error
+              ? error.message
+              : "This month's accounts could not be loaded. / Xisaabta bishan lama soo gelin karin."
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      [
+        month,
+        router,
+        selectedCategories,
+        transaction,
+        company,
+        feedType,
+        chickenType,
+      ]
+    );
 
   useEffect(() => {
     if (
@@ -594,27 +771,42 @@ export default function MonthlyAccountsPage() {
   function toggleCategory(
     category: AccountCategory
   ) {
-    setSelectedCategories((current) => {
-      if (current.includes(category)) {
-        return current.filter(
-          (item) => item !== category
-        );
-      }
+    setSelectedCategories(
+      (current) => {
+        if (
+          current.includes(
+            category
+          )
+        ) {
+          return current.filter(
+            (item) =>
+              item !==
+              category
+          );
+        }
 
-      return [...current, category];
-    });
+        return [
+          ...current,
+          category,
+        ];
+      }
+    );
   }
 
   function selectAllCategories() {
     setSelectedCategories(
       CATEGORY_OPTIONS.map(
-        (category) => category.value
+        (category) =>
+          category.value
       )
     );
   }
 
   function clearCategories() {
-    setSelectedCategories([]);
+    setSelectedCategories(
+      []
+    );
+
     setData(null);
   }
 
@@ -623,11 +815,16 @@ export default function MonthlyAccountsPage() {
     CATEGORY_OPTIONS.length;
 
   const currencyCount =
-    data?.summary.currencies.length || 0;
+    data?.summary
+      .currencies.length ||
+    0;
 
   const monthLabel =
     useMemo(
-      () => formatMonthLabel(month),
+      () =>
+        formatMonthLabel(
+          month
+        ),
       [month]
     );
 
@@ -646,7 +843,7 @@ export default function MonthlyAccountsPage() {
   if (authLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f7f5ed] px-5">
-        <div className="rounded-3xl border border-[#e7e1d4] bg-white px-8 py-10 text-center shadow-sm">
+        <div className="rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] px-8 py-10 text-center shadow-sm">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d9eadf] border-t-[#075b35]" />
 
           <p className="font-extrabold text-[#064b2c]">
@@ -667,7 +864,7 @@ export default function MonthlyAccountsPage() {
       <header className="print:hidden border-b border-[#e5dfd0] bg-[#075b35] text-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <div className="flex items-center gap-4">
-            <div className="relative h-14 w-16 overflow-hidden rounded-xl bg-white">
+            <div className="relative h-14 w-16 overflow-hidden rounded-xl bg-[#f7f5ed]">
               <Image
                 src="/siraaje-logo.png"
                 alt="Siraaje Poultry & Feeds Company"
@@ -699,7 +896,7 @@ export default function MonthlyAccountsPage() {
 
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-7 sm:px-8 lg:grid-cols-[250px_1fr] print:block print:max-w-none print:px-0 print:py-0">
         {/* SIDEBAR */}
-        <aside className="print:hidden h-fit rounded-3xl border border-[#e7e1d4] bg-white p-4 shadow-sm">
+        <aside className="print:hidden h-fit rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] p-4 shadow-sm">
           <nav className="space-y-2">
             <SidebarLink
               href="/dashboard"
@@ -736,7 +933,9 @@ export default function MonthlyAccountsPage() {
               text="Poultry Health / Caafimaadka Digaagga"
             />
 
-            {isOwnerOrAdmin(currentUser) && (
+            {isOwnerOrAdmin(
+              currentUser
+            ) && (
               <SidebarLink
                 href="/dashboard/workers"
                 text="Workers & Permissions / Shaqaalaha & Ogolaanshaha"
@@ -789,9 +988,9 @@ export default function MonthlyAccountsPage() {
               </h2>
 
               <p className="mt-2 max-w-3xl text-slate-500">
-                View sales, purchases and product expenses recorded for the selected
+                View sales, purchases and expenses recorded for the selected
                 month and automatically see the account result. / Eeg iibka,
-                wax iibsiga iyo kharashka productiga la diiwaangeliyay bisha aad
+                wax iibsiga iyo kharashaadka la diiwaangeliyay bisha aad
                 doorato, kadibna si otomaatig ah u arag natiijada xisaabta.
               </p>
             </div>
@@ -800,7 +999,7 @@ export default function MonthlyAccountsPage() {
               type="button"
               onClick={printAccounts}
               disabled={!data || loading}
-              className="print:hidden min-h-11 rounded-2xl border border-[#075b35] bg-white px-5 font-extrabold text-[#075b35] transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="print:hidden min-h-11 rounded-2xl border border-[#075b35] bg-[#f7f5ed] px-5 font-extrabold text-[#075b35] transition hover:bg-[#edf6ef] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Print Accounts / Daabac Xisaabta
             </button>
@@ -814,15 +1013,16 @@ export default function MonthlyAccountsPage() {
 
             <p className="mt-1 text-sm leading-6 text-[#806d3f]">
               The account result is the recorded sales minus recorded
-              purchases and product expenses for the selected month and categories.
+              purchases and expenses for the selected month and categories.
               It is a summary of the data stored in this system. /
               Natiijada xisaabtu waxay ka dhigan tahay iibka la
-              diiwaangeliyay oo laga jaray wax iibsiga iyo kharashka productiga
+              diiwaangeliyay oo laga jaray wax iibsiga iyo kharashaadka
               la diiwaangeliyay bisha iyo qaybaha aad dooratay.
             </p>
           </div>
-                    {/* MONTH + ADVANCED FILTERS */}
-          <div className="print:hidden rounded-3xl border border-[#e7e1d4] bg-white p-6 shadow-sm sm:p-7">
+
+          {/* MONTH + ADVANCED FILTERS */}
+          <div className="print:hidden rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] p-6 shadow-sm sm:p-7">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
                 Account Filters / Shaandhaynta Xisaabta
@@ -842,10 +1042,15 @@ export default function MonthlyAccountsPage() {
                 <input
                   type="month"
                   value={month}
-                  onChange={(event) =>
-                    setMonth(event.target.value)
+                  onChange={(
+                    event
+                  ) =>
+                    setMonth(
+                      event.target
+                        .value
+                    )
                   }
-                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-[#f7f5ed] px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
                 />
               </div>
 
@@ -855,13 +1060,18 @@ export default function MonthlyAccountsPage() {
                 </label>
 
                 <select
-                  value={transaction}
-                  onChange={(event) =>
+                  value={
+                    transaction
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setTransaction(
-                      event.target.value as TransactionFilter
+                      event.target
+                        .value as TransactionFilter
                     )
                   }
-                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-[#f7f5ed] px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
                 >
                   <option value="ALL">
                     All / Dhammaan
@@ -876,7 +1086,7 @@ export default function MonthlyAccountsPage() {
                   </option>
 
                   <option value="EXPENSE">
-                    Product Expense / Kharashka Productiga
+                    Expenses / Kharashaadka
                   </option>
                 </select>
               </div>
@@ -888,20 +1098,32 @@ export default function MonthlyAccountsPage() {
 
                 <select
                   value={company}
-                  onChange={(event) =>
-                    setCompany(event.target.value)
+                  onChange={(
+                    event
+                  ) =>
+                    setCompany(
+                      event.target
+                        .value
+                    )
                   }
-                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-[#f7f5ed] px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100"
                 >
                   <option value="ALL">
                     All / Dhammaan
                   </option>
 
-                  {(data?.availableParties || []).map(
+                  {(
+                    data?.availableParties ||
+                    []
+                  ).map(
                     (party) => (
                       <option
-                        key={party}
-                        value={party}
+                        key={
+                          party
+                        }
+                        value={
+                          party
+                        }
                       >
                         {party}
                       </option>
@@ -917,15 +1139,20 @@ export default function MonthlyAccountsPage() {
 
                 <select
                   value={feedType}
-                  onChange={(event) =>
+                  onChange={(
+                    event
+                  ) =>
                     setFeedType(
-                      event.target.value as FeedTypeFilter
+                      event.target
+                        .value as FeedTypeFilter
                     )
                   }
                   disabled={
-                    !selectedCategories.includes("feeds")
+                    !selectedCategories.includes(
+                      "feeds"
+                    )
                   }
-                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-[#f7f5ed] px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-[#ece9df] disabled:text-slate-400"
                 >
                   <option value="ALL">
                     All / Dhammaan
@@ -952,10 +1179,15 @@ export default function MonthlyAccountsPage() {
                 </label>
 
                 <select
-                  value={chickenType}
-                  onChange={(event) =>
+                  value={
+                    chickenType
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setChickenType(
-                      event.target.value as ChickenTypeFilter
+                      event.target
+                        .value as ChickenTypeFilter
                     )
                   }
                   disabled={
@@ -963,7 +1195,7 @@ export default function MonthlyAccountsPage() {
                       "chicken"
                     )
                   }
-                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-white px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-[#f7f5ed] px-4 font-bold text-slate-700 outline-none transition focus:border-[#075b35] focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-[#ece9df] disabled:text-slate-400"
                 >
                   <option value="ALL">
                     All Chicken / Dhammaan Digaagga
@@ -983,12 +1215,20 @@ export default function MonthlyAccountsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setTransaction("ALL");
-                    setCompany("ALL");
-                    setFeedType("ALL");
-                    setChickenType("ALL");
+                    setTransaction(
+                      "ALL"
+                    );
+                    setCompany(
+                      "ALL"
+                    );
+                    setFeedType(
+                      "ALL"
+                    );
+                    setChickenType(
+                      "ALL"
+                    );
                   }}
-                  className="min-h-12 w-full rounded-2xl border border-slate-200 px-4 font-extrabold text-slate-600 transition hover:bg-slate-50"
+                  className="min-h-12 w-full rounded-2xl border border-[#d9d5ca] bg-[#f7f5ed] px-4 font-extrabold text-slate-600 transition hover:bg-[#edf6ef]"
                 >
                   Reset Filters / Dib u celi
                 </button>
@@ -1003,27 +1243,34 @@ export default function MonthlyAccountsPage() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={selectAllCategories}
-                  disabled={allSelected}
-                  className="rounded-xl border border-[#075b35] px-4 py-2 text-sm font-extrabold text-[#075b35] hover:bg-green-50 disabled:opacity-40"
+                  onClick={
+                    selectAllCategories
+                  }
+                  disabled={
+                    allSelected
+                  }
+                  className="rounded-xl border border-[#075b35] px-4 py-2 text-sm font-extrabold text-[#075b35] hover:bg-[#edf6ef] disabled:opacity-40"
                 >
                   Select All / Dooro Dhammaan
                 </button>
 
                 <button
                   type="button"
-                  onClick={clearCategories}
-                  disabled={
-                    selectedCategories.length === 0
+                  onClick={
+                    clearCategories
                   }
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-extrabold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  disabled={
+                    selectedCategories.length ===
+                    0
+                  }
+                  className="rounded-xl border border-[#d9d5ca] px-4 py-2 text-sm font-extrabold text-slate-600 hover:bg-[#f7f5ed] disabled:opacity-40"
                 >
                   Clear All / Ka Saar Dhammaan
                 </button>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               {CATEGORY_OPTIONS.map(
                 (category) => {
                   const selected =
@@ -1033,7 +1280,9 @@ export default function MonthlyAccountsPage() {
 
                   return (
                     <button
-                      key={category.value}
+                      key={
+                        category.value
+                      }
                       type="button"
                       onClick={() =>
                         toggleCategory(
@@ -1043,17 +1292,21 @@ export default function MonthlyAccountsPage() {
                       className={`rounded-2xl border p-4 text-left transition ${
                         selected
                           ? "border-[#075b35] bg-[#edf6ef] shadow-sm"
-                          : "border-[#e7e1d4] bg-[#faf9f5] hover:border-[#b7cbbd]"
+                          : "border-[#e7e1d4] bg-[#f7f5ed] hover:border-[#b7cbbd]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-extrabold text-[#064b2c]">
-                            {category.label}
+                            {
+                              category.label
+                            }
                           </p>
 
                           <p className="mt-1 text-xs leading-5 text-slate-500">
-                            {category.description}
+                            {
+                              category.description
+                            }
                           </p>
                         </div>
 
@@ -1061,7 +1314,7 @@ export default function MonthlyAccountsPage() {
                           className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
                             selected
                               ? "border-[#075b35] bg-[#075b35] text-white"
-                              : "border-slate-300 bg-white text-transparent"
+                              : "border-slate-300 bg-[#f7f5ed] text-transparent"
                           }`}
                         >
                           ✓
@@ -1076,15 +1329,30 @@ export default function MonthlyAccountsPage() {
             <div className="mt-5 flex flex-col justify-between gap-3 border-t border-[#ece7dc] pt-5 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm text-slate-500">
-                  {selectedCategories.length} of{" "}
-                  {CATEGORY_OPTIONS.length} categories selected /
-                  {" "}
-                  {selectedCategories.length} ka mid ah{" "}
-                  {CATEGORY_OPTIONS.length} qaybood ayaa la doortay
+                  {
+                    selectedCategories.length
+                  }{" "}
+                  of{" "}
+                  {
+                    CATEGORY_OPTIONS.length
+                  }{" "}
+                  categories selected /{" "}
+                  {
+                    selectedCategories.length
+                  }{" "}
+                  ka mid ah{" "}
+                  {
+                    CATEGORY_OPTIONS.length
+                  }{" "}
+                  qaybood ayaa la doortay
                 </p>
 
                 <p className="mt-1 text-xs font-semibold text-slate-400">
-                  Transaction: {transaction} · Company: {company} · Feed: {feedType}
+                  Transaction:{" "}
+                  {transaction} ·
+                  Company:{" "}
+                  {company} · Feed:{" "}
+                  {feedType}
                   {selectedCategories.includes(
                     "chicken"
                   ) &&
@@ -1099,7 +1367,8 @@ export default function MonthlyAccountsPage() {
                 }
                 disabled={
                   loading ||
-                  selectedCategories.length === 0 ||
+                  selectedCategories.length ===
+                    0 ||
                   !month
                 }
                 className="min-h-11 rounded-2xl bg-[#075b35] px-6 font-extrabold text-white transition hover:bg-[#064b2c] disabled:cursor-not-allowed disabled:opacity-50"
@@ -1110,8 +1379,7 @@ export default function MonthlyAccountsPage() {
               </button>
             </div>
           </div>
-
-          {/* ERROR */}
+                    {/* ERROR */}
           {error && (
             <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 font-semibold text-red-700">
               {error}
@@ -1120,7 +1388,7 @@ export default function MonthlyAccountsPage() {
 
           {/* LOADING */}
           {loading && (
-            <div className="mt-6 rounded-3xl border border-[#e7e1d4] bg-white px-6 py-12 text-center shadow-sm">
+            <div className="mt-6 rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] px-6 py-12 text-center shadow-sm">
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d9eadf] border-t-[#075b35]" />
 
               <p className="font-extrabold text-[#064b2c]">
@@ -1139,7 +1407,9 @@ export default function MonthlyAccountsPage() {
                   </p>
 
                   <h3 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
-                    {formatMonthLabel(data.month)}
+                    {formatMonthLabel(
+                      data.month
+                    )}
                   </h3>
 
                   {selectedCategories.includes(
@@ -1147,7 +1417,8 @@ export default function MonthlyAccountsPage() {
                   ) && (
                     <p className="mt-2 text-sm font-bold text-[#075b35]">
                       Chicken:{" "}
-                      {data.filters.chickenType ===
+                      {data.filters
+                        .chickenType ===
                       "LIVE"
                         ? "Live Chicken / Digaag Nool"
                         : data.filters
@@ -1157,23 +1428,37 @@ export default function MonthlyAccountsPage() {
                           : "All Chicken / Dhammaan Digaagga"}
                     </p>
                   )}
+
+                  {selectedCategories.includes(
+                    "treatment"
+                  ) && (
+                    <p className="mt-1 text-sm font-bold text-[#075b35]">
+                      Poultry Health / Daaweynta: Vaccination, Vitamins & Calcium
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
-                    {data.summary.totalRecords} records / diiwaan
+                  <span className="rounded-full bg-[#faf9f5] px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
+                    {
+                      data.summary
+                        .totalRecords
+                    }{" "}
+                    records / diiwaan
                   </span>
 
-                  <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
-                    {currencyCount} currencies / nooc lacag ah
+                  <span className="rounded-full bg-[#faf9f5] px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
+                    {currencyCount}{" "}
+                    currencies / nooc lacag ah
                   </span>
                 </div>
               </div>
 
               {/* CURRENCY SUMMARIES */}
-              {data.summary.currencies.length ===
+              {data.summary
+                .currencies.length ===
               0 ? (
-                <div className="mt-5 rounded-3xl border border-[#e7e1d4] bg-white px-6 py-12 text-center shadow-sm">
+                <div className="mt-5 rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] px-6 py-12 text-center shadow-sm">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#edf6ef] text-[#075b35]">
                     <AccountsIcon />
                   </div>
@@ -1183,9 +1468,9 @@ export default function MonthlyAccountsPage() {
                   </h4>
 
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                    No financial records were found for the selected
-                    categories in {monthLabel}. / Wax diiwaan maaliyadeed
-                    ah lagama helin qaybaha aad dooratay bisha {monthLabel}.
+                    No financial records were found for the selected categories in{" "}
+                    {monthLabel}. / Wax diiwaan maaliyadeed ah lagama helin qaybaha aad
+                    dooratay bisha {monthLabel}.
                   </p>
                 </div>
               ) : (
@@ -1193,8 +1478,10 @@ export default function MonthlyAccountsPage() {
                   {data.summary.currencies.map(
                     (summary) => (
                       <div
-                        key={summary.currency}
-                        className="rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-6"
+                        key={
+                          summary.currency
+                        }
+                        className="rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] p-5 shadow-sm sm:p-6"
                       >
                         <div className="mb-5 flex items-center justify-between gap-3">
                           <div>
@@ -1203,12 +1490,17 @@ export default function MonthlyAccountsPage() {
                             </p>
 
                             <h4 className="mt-1 text-2xl font-extrabold text-[#064b2c]">
-                              {summary.currency}
+                              {
+                                summary.currency
+                              }
                             </h4>
                           </div>
 
                           <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
-                            {summary.records} records / diiwaan
+                            {
+                              summary.records
+                            }{" "}
+                            records / diiwaan
                           </span>
                         </div>
 
@@ -1229,17 +1521,17 @@ export default function MonthlyAccountsPage() {
                               summary.purchases,
                               summary.currency
                             )}
-                            description="Purchased chicken, eggs and feed / Digaag, ukumo iyo quudin la soo iibsaday"
+                            description="Recorded purchases / Wax iibsiga la diiwaangeliyay"
                             variant="warning"
                           />
 
                           <SummaryCard
-                            label="Product Expenses / Kharashka Productiga"
+                            label="Expenses / Kharashaadka"
                             value={formatMoney(
                               summary.expenses,
                               summary.currency
                             )}
-                            description="Product expenses only / Kharashka productiga oo keliya"
+                            description="Product and poultry health expenses / Kharashaadka productiga iyo daaweynta digaagga"
                             variant="negative"
                           />
 
@@ -1254,7 +1546,8 @@ export default function MonthlyAccountsPage() {
                               summary.currency
                             )} outgoing / Iibka laga jaray lacagta baxday`}
                             variant={
-                              summary.netResult >= 0
+                              summary.netResult >=
+                              0
                                 ? "positive"
                                 : "negative"
                             }
@@ -1267,9 +1560,9 @@ export default function MonthlyAccountsPage() {
               )}
 
               {/* CATEGORY BREAKDOWN */}
-              {data.summary.categories.length >
-                0 && (
-                <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-7">
+              {data.summary.categories
+                .length > 0 && (
+                <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] p-5 shadow-sm sm:p-7">
                   <div>
                     <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
                       Details / Faahfaahinta
@@ -1280,9 +1573,8 @@ export default function MonthlyAccountsPage() {
                     </h3>
 
                     <p className="mt-1 text-sm text-slate-500">
-                      See how each category contributed to the monthly
-                      accounts. / Eeg qayb kasta sida ay uga qayb
-                      qaadatay xisaabta bisha.
+                      See how each category contributed to the monthly accounts. /
+                      Eeg qayb kasta sida ay uga qayb qaadatay xisaabta bisha.
                     </p>
                   </div>
 
@@ -1322,17 +1614,23 @@ export default function MonthlyAccountsPage() {
 
                       <tbody>
                         {data.summary.categories.map(
-                          (summary) => (
+                          (
+                            summary
+                          ) => (
                             <tr
                               key={`${summary.category}-${summary.currency}`}
                               className="border-b border-[#ece7dc]"
                             >
                               <td className="px-4 py-4 font-extrabold text-[#17452f]">
-                                {summary.label}
+                                {
+                                  summary.label
+                                }
                               </td>
 
                               <td className="px-4 py-4 font-bold text-slate-600">
-                                {summary.currency}
+                                {
+                                  summary.currency
+                                }
                               </td>
 
                               <td className="px-4 py-4 text-right font-bold text-green-700">
@@ -1358,7 +1656,8 @@ export default function MonthlyAccountsPage() {
 
                               <td
                                 className={`px-4 py-4 text-right font-extrabold ${
-                                  summary.netResult >= 0
+                                  summary.netResult >=
+                                  0
                                     ? "text-green-700"
                                     : "text-red-700"
                                 }`}
@@ -1370,7 +1669,9 @@ export default function MonthlyAccountsPage() {
                               </td>
 
                               <td className="px-4 py-4 text-right font-bold text-slate-600">
-                                {summary.records}
+                                {
+                                  summary.records
+                                }
                               </td>
                             </tr>
                           )
@@ -1380,10 +1681,35 @@ export default function MonthlyAccountsPage() {
                   </div>
                 </div>
               )}
-                            {/* FEED PRODUCTION - NON-MONETARY */}
-              {selectedCategories.includes("feeds") &&
+
+              {/* POULTRY HEALTH EXPLANATION */}
+              {selectedCategories.includes(
+                "treatment"
+              ) && (
+                <div className="mt-7 rounded-3xl border border-[#cfe3d5] bg-[#edf6ef] p-5 shadow-sm sm:p-6">
+                  <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
+                    Poultry Health / Daaweynta
+                  </p>
+
+                  <h3 className="mt-1 text-xl font-extrabold text-[#064b2c]">
+                    Vaccination, Vitamins & Calcium
+                  </h3>
+
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                    Financial records entered for vaccinations, vitamins and calcium
+                    are counted as poultry health expenses in the monthly account. /
+                    Diiwaannada lacagta ee tallaalka, fiitamiinnada iyo calcium-ka
+                    waxaa Xisaab Xirka loogu daraa kharashaadka daaweynta digaagga.
+                  </p>
+                </div>
+              )}
+
+              {/* FEED PRODUCTION - NON-MONETARY */}
+              {selectedCategories.includes(
+                "feeds"
+              ) &&
                 data.production && (
-                  <div className="mt-7 rounded-3xl border border-[#cfe3d5] bg-white p-5 shadow-sm sm:p-7">
+                  <div className="mt-7 rounded-3xl border border-[#cfe3d5] bg-[#faf9f5] p-5 shadow-sm sm:p-7">
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                       <div>
                         <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
@@ -1395,16 +1721,19 @@ export default function MonthlyAccountsPage() {
                         </h3>
 
                         <p className="mt-1 max-w-3xl text-sm text-slate-500">
-                          Production is measured in KG and bags. It is not
-                          included in sales, purchases, product expenses or the
-                          financial result. / Production-ku waa xog KG iyo
-                          bags ah. Laguma daro iibka, wax iibsiga,
-                          kharashka productiga ama natiijada lacagta.
+                          Production is measured in KG and bags. It is not included
+                          in sales, purchases, expenses or the financial result. /
+                          Production-ku waa xog KG iyo bags ah. Laguma daro iibka,
+                          wax iibsiga, kharashaadka ama natiijada lacagta.
                         </p>
                       </div>
 
                       <span className="rounded-full bg-[#edf6ef] px-4 py-2 text-sm font-extrabold text-[#075b35]">
-                        {data.production.totalRecords} records / diiwaan
+                        {
+                          data.production
+                            .totalRecords
+                        }{" "}
+                        records / diiwaan
                       </span>
                     </div>
 
@@ -1412,7 +1741,8 @@ export default function MonthlyAccountsPage() {
                       <SummaryCard
                         label="Production Batches"
                         value={formatNumber(
-                          data.production.totalBatches
+                          data.production
+                            .totalBatches
                         )}
                         description="Number of batches this month / Tirada batches-ka bishan"
                         variant="positive"
@@ -1421,7 +1751,8 @@ export default function MonthlyAccountsPage() {
                       <SummaryCard
                         label="Total Bags / Wadarta Bacaha"
                         value={formatNumber(
-                          data.production.totalBags
+                          data.production
+                            .totalBags
                         )}
                         description="All bags produced / Dhammaan bacaha la soo saaray"
                         variant="positive"
@@ -1430,7 +1761,8 @@ export default function MonthlyAccountsPage() {
                       <SummaryCard
                         label="Total Weight / Miisaanka Guud"
                         value={`${formatNumber(
-                          data.production.totalKg
+                          data.production
+                            .totalKg
                         )} KG`}
                         description="Total production weight / Miisaanka guud ee production-ka"
                         variant="positive"
@@ -1439,31 +1771,42 @@ export default function MonthlyAccountsPage() {
                       <SummaryCard
                         label="Feed Types / Noocyada Quudinta"
                         value={formatNumber(
-                          data.production.byFeedType.length
+                          data.production
+                            .byFeedType
+                            .length
                         )}
                         description="Starter, Grower and Layer / Starter, Grower iyo Layer"
                         variant="positive"
                       />
                     </div>
 
-                    {data.production.byFeedType.length >
-                      0 && (
+                    {data.production
+                      .byFeedType
+                      .length > 0 && (
                       <div className="mt-6 grid gap-4 md:grid-cols-3">
                         {data.production.byFeedType.map(
-                          (item) => (
+                          (
+                            item
+                          ) => (
                             <div
-                              key={item.feedType}
-                              className="rounded-2xl border border-[#e7e1d4] bg-[#faf9f5] p-5"
+                              key={
+                                item.feedType
+                              }
+                              className="rounded-2xl border border-[#e7e1d4] bg-[#f7f5ed] p-5"
                             >
                               <p className="text-lg font-extrabold text-[#064b2c]">
-                                {item.feedType}
+                                {
+                                  item.feedType
+                                }
                               </p>
 
                               <div className="mt-3 space-y-2 text-sm text-slate-600">
                                 <p>
                                   Batches:{" "}
                                   <span className="font-extrabold text-slate-800">
-                                    {item.batches}
+                                    {
+                                      item.batches
+                                    }
                                   </span>
                                 </p>
 
@@ -1492,7 +1835,8 @@ export default function MonthlyAccountsPage() {
                       </div>
                     )}
 
-                    {data.production.entries.length >
+                    {data.production
+                      .entries.length >
                     0 ? (
                       <div className="mt-6 overflow-x-auto">
                         <table className="w-full min-w-[1100px] text-left">
@@ -1534,9 +1878,13 @@ export default function MonthlyAccountsPage() {
 
                           <tbody>
                             {data.production.entries.map(
-                              (entry) => (
+                              (
+                                entry
+                              ) => (
                                 <tr
-                                  key={entry.id}
+                                  key={
+                                    entry.id
+                                  }
                                   className="border-b border-[#ece7dc]"
                                 >
                                   <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-slate-600">
@@ -1546,7 +1894,9 @@ export default function MonthlyAccountsPage() {
                                   </td>
 
                                   <td className="px-3 py-4 font-extrabold text-[#17452f]">
-                                    {entry.feedType}
+                                    {
+                                      entry.feedType
+                                    }
                                   </td>
 
                                   <td className="px-3 py-4 text-sm text-slate-600">
@@ -1612,18 +1962,17 @@ export default function MonthlyAccountsPage() {
                         </table>
                       </div>
                     ) : (
-                      <div className="mt-6 rounded-2xl bg-[#faf9f5] px-5 py-8 text-center text-sm font-semibold text-slate-500">
-                        No production records were found for the selected
-                        month and filters. / Production lama helin bisha
-                        iyo filters-ka la doortay.
+                      <div className="mt-6 rounded-2xl bg-[#f7f5ed] px-5 py-8 text-center text-sm font-semibold text-slate-500">
+                        No production records were found for the selected month
+                        and filters. / Production lama helin bisha iyo filters-ka
+                        la doortay.
                       </div>
                     )}
                   </div>
                 )}
-
-              {/* DETAILED MONTHLY RECORDS */}
+                              {/* DETAILED MONTHLY RECORDS */}
               {data.entries.length > 0 && (
-                <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-white p-5 shadow-sm sm:p-7">
+                <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] p-5 shadow-sm sm:p-7">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                     <div>
                       <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#b38420]">
@@ -1675,7 +2024,7 @@ export default function MonthlyAccountsPage() {
                           </th>
 
                           <th className="px-3 py-3">
-                            Company / Customer / Shirkad / Macmiil
+                            Company / Customer / Supplier / Shirkad / Macmiil
                           </th>
 
                           <th className="px-3 py-3 text-right">
@@ -1824,17 +2173,17 @@ export default function MonthlyAccountsPage() {
                     </table>
                   </div>
 
-                  <div className="mt-5 rounded-2xl bg-[#faf9f5] px-5 py-4">
+                  <div className="mt-5 rounded-2xl border border-[#ece7dc] bg-[#f7f5ed] px-5 py-4">
                     <p className="text-xs leading-5 text-slate-500">
                       This table shows the records used for the account
                       result above. To change a record, edit it in the
                       original section where it was entered, such as
-                      Product Expenses, Eggs, Feeds or Chicken. / Jadwalkan wuxuu
-                      muujinayaa diiwaannada loo isticmaalay xisaabinta
-                      natiijada kore. Haddii aad rabto inaad wax ka
-                      beddesho diiwaan, ka beddel qaybtii markii hore
-                      lagu geliyay sida Kharashka Productiga, Ukumaha, Quudinta
-                      ama Digaagga.
+                      Product Expenses, Eggs, Feeds, Chicken or Poultry Health. /
+                      Jadwalkan wuxuu muujinayaa diiwaannada loo isticmaalay
+                      xisaabinta natiijada kore. Haddii aad rabto inaad wax ka
+                      beddesho diiwaan, ka beddel qaybtii markii hore lagu
+                      geliyay sida Kharashka Productiga, Ukumaha, Quudinta,
+                      Digaagga ama Daaweynta.
                     </p>
                   </div>
                 </div>
@@ -1929,8 +2278,10 @@ function SummaryCard({
   const styles = {
     positive:
       "border-green-200 bg-green-50 text-green-800",
+
     warning:
       "border-amber-200 bg-amber-50 text-amber-800",
+
     negative:
       "border-red-200 bg-red-50 text-red-800",
   };

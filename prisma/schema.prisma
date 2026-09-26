@@ -316,6 +316,13 @@ model ChickenVaccination {
   numberOfChickens Int
   notes            String?
 
+  // Financial information
+  quantity Float?
+  unit     String?
+  price    Float?
+  total    Float?
+  currency String  @default("ETB")
+
   createdById String?
   updatedById String?
 
@@ -337,6 +344,13 @@ model ChickenVitamin {
   numberOfChickens Int
   notes            String?
 
+  // Financial information
+  quantity Float?
+  unit     String?
+  price    Float?
+  total    Float?
+  currency String  @default("ETB")
+
   createdById String?
   updatedById String?
 
@@ -357,6 +371,13 @@ model ChickenCalcium {
   givenBy          String
   numberOfChickens Int
   notes            String?
+
+  // Financial information
+  quantity Float?
+  unit     String?
+  price    Float?
+  total    Float?
+  currency String  @default("ETB")
 
   createdById String?
   updatedById String?

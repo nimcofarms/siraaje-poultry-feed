@@ -16,35 +16,164 @@ import {
 export const runtime = "nodejs";
 
 /* =========================================================
-   AUTHORIZE
+   FINANCIAL HELPERS
 ========================================================= */
 
-async function authorize(permission: PermissionKey) {
-  const user = await getCurrentUser();
+function parseOptionalPositiveNumber(value: unknown) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return null;
+  }
 
-  if (!user) {
+  const number = Number(value);
+
+  if (
+    !Number.isFinite(number) ||
+    number <= 0
+  ) {
+    return null;
+  }
+
+  return number;
+}
+
+function getFinancialData(body: Record<string, unknown>) {
+  const hasAnyFinancialValue =
+    (body.quantity !== undefined &&
+      body.quantity !== null &&
+      body.quantity !== "") ||
+    (body.price !== undefined &&
+      body.price !== null &&
+      body.price !== "") ||
+    (body.unit !== undefined &&
+      body.unit !== null &&
+      String(body.unit).trim() !== "");
+
+  /*
+   * Financial information is optional.
+   *
+   * This means an old-style health record can still
+   * exist without automatically becoming an expense.
+   *
+   * If financial information is entered, Quantity,
+   * Unit and Unit Price must all be provided.
+   */
+  if (!hasAnyFinancialValue) {
     return {
-      user: null,
+      success: true as const,
+      data: {
+        quantity: null,
+        unit: null,
+        price: null,
+        total: null,
+        currency: "ETB",
+      },
+    };
+  }
+
+  const quantity =
+    parseOptionalPositiveNumber(
+      body.quantity
+    );
+
+  const price =
+    parseOptionalPositiveNumber(
+      body.price
+    );
+
+  const unit = String(
+    body.unit || ""
+  ).trim();
+
+  const currency =
+    String(
+      body.currency || "ETB"
+    )
+      .trim()
+      .toUpperCase() || "ETB";
+
+  if (
+    quantity === null ||
+    price === null ||
+    !unit
+  ) {
+    return {
+      success: false as const,
       response: NextResponse.json(
         {
           error:
-            "Fadlan marka hore gal. / Please log in first.",
+            "Marka xogta lacagta la gelinayo, Quantity, Unit iyo Unit Price dhammaantood waa loo baahan yahay. / When financial information is entered, Quantity, Unit and Unit Price are all required.",
         },
-        { status: 401 }
+        { status: 400 }
       ),
     };
   }
 
-  if (!hasPermission(user, permission)) {
+  /*
+   * TOTAL IS CALCULATED ON THE SERVER.
+   *
+   * We do not trust body.total from the browser.
+   */
+  const total =
+    Math.round(
+      quantity *
+        price *
+        100
+    ) / 100;
+
+  return {
+    success: true as const,
+    data: {
+      quantity,
+      unit,
+      price,
+      total,
+      currency,
+    },
+  };
+}
+
+/* =========================================================
+   AUTHORIZE
+========================================================= */
+
+async function authorize(permission: PermissionKey) {
+  const user =
+    await getCurrentUser();
+
+  if (!user) {
+    return {
+      user: null,
+      response:
+        NextResponse.json(
+          {
+            error:
+              "Fadlan marka hore gal. / Please log in first.",
+          },
+          { status: 401 }
+        ),
+    };
+  }
+
+  if (
+    !hasPermission(
+      user,
+      permission
+    )
+  ) {
     return {
       user,
-      response: NextResponse.json(
-        {
-          error:
-            "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
-        },
-        { status: 403 }
-      ),
+      response:
+        NextResponse.json(
+          {
+            error:
+              "Ma lihid oggolaanshaha hawshan. / You do not have permission to perform this action.",
+          },
+          { status: 403 }
+        ),
     };
   }
 
@@ -63,29 +192,36 @@ async function authorize(permission: PermissionKey) {
 
 export async function GET() {
   try {
-    const auth = await authorize(
-      "poultryHealthView"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthView"
+      );
 
     if (auth.response) {
       return auth.response;
     }
 
     const vitamins =
-      await prisma.chickenVitamin.findMany({
-        include: auditUserInclude,
+      await prisma.chickenVitamin.findMany(
+        {
+          include:
+            auditUserInclude,
 
-        orderBy: [
-          {
-            date: "desc",
-          },
-          {
-            createdAt: "desc",
-          },
-        ],
-      });
+          orderBy: [
+            {
+              date: "desc",
+            },
+            {
+              createdAt:
+                "desc",
+            },
+          ],
+        }
+      );
 
-    return NextResponse.json(vitamins);
+    return NextResponse.json(
+      vitamins
+    );
   } catch (error) {
     console.error(
       "CHICKEN VITAMIN GET ERROR:",
@@ -109,11 +245,14 @@ export async function GET() {
    Permission: poultryHealthAdd
 ========================================================= */
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    const auth = await authorize(
-      "poultryHealthAdd"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthAdd"
+      );
 
     if (auth.response) {
       return auth.response;
@@ -129,11 +268,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
-    const vitaminName = String(
-      body.vitaminName || ""
-    ).trim();
+    const vitaminName =
+      String(
+        body.vitaminName ||
+          ""
+      ).trim();
 
     const givenBy = String(
       body.givenBy || ""
@@ -143,9 +285,10 @@ export async function POST(request: Request) {
       body.notes || ""
     ).trim();
 
-    const numberOfChickens = Number(
-      body.numberOfChickens
-    );
+    const numberOfChickens =
+      Number(
+        body.numberOfChickens
+      );
 
     /* =====================================================
        REQUIRED FIELDS
@@ -170,7 +313,9 @@ export async function POST(request: Request) {
     ===================================================== */
 
     if (
-      !Number.isInteger(numberOfChickens) ||
+      !Number.isInteger(
+        numberOfChickens
+      ) ||
       numberOfChickens <= 0
     ) {
       return NextResponse.json(
@@ -183,43 +328,85 @@ export async function POST(request: Request) {
     }
 
     /* =====================================================
+       FINANCIAL VALIDATION
+    ===================================================== */
+
+    const financial =
+      getFinancialData(body);
+
+    if (!financial.success) {
+      return financial.response;
+    }
+
+    /* =====================================================
        CREATE VITAMIN RECORD
     ===================================================== */
 
     const vitamin =
-      await prisma.chickenVitamin.create({
-        data: {
-          date: new Date(
-            `${body.date}T12:00:00`
-          ),
+      await prisma.chickenVitamin.create(
+        {
+          data: {
+            date: new Date(
+              `${body.date}T12:00:00`
+            ),
 
-          vitaminName,
+            vitaminName,
 
-          givenBy,
+            givenBy,
 
-          numberOfChickens,
+            numberOfChickens,
 
-          notes: notes || null,
+            notes:
+              notes || null,
 
-          /*
-           * AUDIT TRAIL
-           *
-           * createdById = account-ka website-ka
-           * ku login ahaa markii xogtan la geliyay.
-           *
-           * updatedById = isla account-kaas
-           * markii record-ka la abuurayo.
-           *
-           * givenBy iyo createdBy waa kala duwan yihiin:
-           *
-           * givenBy = qofka vitamin-ka bixiyay.
-           * createdBy = qofka website-ka xogta geliyay.
-           */
-          ...createAuditData(auth.user),
-        },
+            /*
+             * FINANCIAL INFORMATION
+             *
+             * quantity = quantity purchased/used
+             * unit     = bottle, litre, ml, pack, etc.
+             * price    = price per unit
+             * total    = quantity × price
+             *
+             * total is calculated by the server.
+             */
+            quantity:
+              financial.data
+                .quantity,
 
-        include: auditUserInclude,
-      });
+            unit:
+              financial.data
+                .unit,
+
+            price:
+              financial.data
+                .price,
+
+            total:
+              financial.data
+                .total,
+
+            currency:
+              financial.data
+                .currency,
+
+            /*
+             * AUDIT TRAIL
+             *
+             * givenBy:
+             * qofka vitamin-ka bixiyay.
+             *
+             * createdBy:
+             * qofka website-ka xogta geliyay.
+             */
+            ...createAuditData(
+              auth.user
+            ),
+          },
+
+          include:
+            auditUserInclude,
+        }
+      );
 
     return NextResponse.json(
       vitamin,
@@ -250,11 +437,14 @@ export async function POST(request: Request) {
    Permission: poultryHealthEdit
 ========================================================= */
 
-export async function PUT(request: Request) {
+export async function PUT(
+  request: Request
+) {
   try {
-    const auth = await authorize(
-      "poultryHealthEdit"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthEdit"
+      );
 
     if (auth.response) {
       return auth.response;
@@ -270,15 +460,18 @@ export async function PUT(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const id = String(
       body.id || ""
     ).trim();
 
-    const vitaminName = String(
-      body.vitaminName || ""
-    ).trim();
+    const vitaminName =
+      String(
+        body.vitaminName ||
+          ""
+      ).trim();
 
     const givenBy = String(
       body.givenBy || ""
@@ -288,9 +481,10 @@ export async function PUT(request: Request) {
       body.notes || ""
     ).trim();
 
-    const numberOfChickens = Number(
-      body.numberOfChickens
-    );
+    const numberOfChickens =
+      Number(
+        body.numberOfChickens
+      );
 
     /* =====================================================
        ID VALIDATION
@@ -329,7 +523,9 @@ export async function PUT(request: Request) {
     ===================================================== */
 
     if (
-      !Number.isInteger(numberOfChickens) ||
+      !Number.isInteger(
+        numberOfChickens
+      ) ||
       numberOfChickens <= 0
     ) {
       return NextResponse.json(
@@ -342,41 +538,85 @@ export async function PUT(request: Request) {
     }
 
     /* =====================================================
+       FINANCIAL VALIDATION
+    ===================================================== */
+
+    const financial =
+      getFinancialData(body);
+
+    if (!financial.success) {
+      return financial.response;
+    }
+
+    /* =====================================================
        UPDATE VITAMIN RECORD
     ===================================================== */
 
     const vitamin =
-      await prisma.chickenVitamin.update({
-        where: {
-          id,
-        },
+      await prisma.chickenVitamin.update(
+        {
+          where: {
+            id,
+          },
 
-        data: {
-          date: new Date(
-            `${body.date}T12:00:00`
-          ),
+          data: {
+            date: new Date(
+              `${body.date}T12:00:00`
+            ),
 
-          vitaminName,
+            vitaminName,
 
-          givenBy,
+            givenBy,
 
-          numberOfChickens,
+            numberOfChickens,
 
-          notes: notes || null,
+            notes:
+              notes || null,
 
-          /*
-           * createdById lama beddelayo.
-           *
-           * updatedById = account-ka website-ka
-           * hadda record-kan wax ka beddelay.
-           */
-          ...updateAuditData(auth.user),
-        },
+            /*
+             * FINANCIAL INFORMATION
+             *
+             * Browser-supplied total is ignored.
+             */
+            quantity:
+              financial.data
+                .quantity,
 
-        include: auditUserInclude,
-      });
+            unit:
+              financial.data
+                .unit,
 
-    return NextResponse.json(vitamin);
+            price:
+              financial.data
+                .price,
+
+            total:
+              financial.data
+                .total,
+
+            currency:
+              financial.data
+                .currency,
+
+            /*
+             * createdById is preserved.
+             *
+             * updatedById = account currently
+             * editing the record.
+             */
+            ...updateAuditData(
+              auth.user
+            ),
+          },
+
+          include:
+            auditUserInclude,
+        }
+      );
+
+    return NextResponse.json(
+      vitamin
+    );
   } catch (error) {
     console.error(
       "CHICKEN VITAMIN UPDATE ERROR:",
@@ -400,21 +640,24 @@ export async function PUT(request: Request) {
    Permission: poultryHealthDelete
 ========================================================= */
 
-export async function DELETE(request: Request) {
+export async function DELETE(
+  request: Request
+) {
   try {
-    const auth = await authorize(
-      "poultryHealthDelete"
-    );
+    const auth =
+      await authorize(
+        "poultryHealthDelete"
+      );
 
     if (auth.response) {
       return auth.response;
     }
 
-    const { searchParams } = new URL(
-      request.url
-    );
+    const { searchParams } =
+      new URL(request.url);
 
-    const id = searchParams.get("id");
+    const id =
+      searchParams.get("id");
 
     if (!id) {
       return NextResponse.json(
@@ -426,11 +669,13 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.chickenVitamin.delete({
-      where: {
-        id,
-      },
-    });
+    await prisma.chickenVitamin.delete(
+      {
+        where: {
+          id,
+        },
+      }
+    );
 
     return NextResponse.json({
       success: true,

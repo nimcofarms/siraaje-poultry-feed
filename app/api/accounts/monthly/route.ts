@@ -16,7 +16,8 @@ type AccountCategory =
   | "expenses"
   | "eggs"
   | "feeds"
-  | "chicken";
+  | "chicken"
+  | "treatment";
 
 type EntryType =
   | "PURCHASE"
@@ -118,6 +119,7 @@ const ALL_CATEGORIES: AccountCategory[] = [
   "eggs",
   "feeds",
   "chicken",
+  "treatment",
 ];
 
 const CATEGORY_LABELS: Record<
@@ -126,9 +128,14 @@ const CATEGORY_LABELS: Record<
 > = {
   expenses:
     "Kharashka Productiga / Product Expenses",
-  eggs: "Ukumaha / Eggs",
-  feeds: "Quudinta / Feeds",
-  chicken: "Digaag / Chicken",
+  eggs:
+    "Ukumaha / Eggs",
+  feeds:
+    "Quudinta / Feeds",
+  chicken:
+    "Digaag / Chicken",
+  treatment:
+    "Daaweynta / Poultry Health",
 };
 
 const ALLOWED_TRANSACTION_FILTERS: TransactionFilter[] = [
@@ -677,7 +684,8 @@ export async function GET(
           categoryLabel:
             CATEGORY_LABELS.eggs,
           type: "PURCHASE",
-          source: "Egg Purchase",
+          source:
+            "Egg Purchase",
           description:
             "Purchased Eggs",
           location:
@@ -710,7 +718,8 @@ export async function GET(
       }
 
       for (
-        const item of eggSales
+        const item of
+        eggSales
       ) {
         rawEntries.push({
           id: item.id,
@@ -720,7 +729,8 @@ export async function GET(
           categoryLabel:
             CATEGORY_LABELS.eggs,
           type: "SALE",
-          source: "Egg Sale",
+          source:
+            "Egg Sale",
           description:
             item.customerType
               ? `Egg Sale - ${item.customerType}`
@@ -755,17 +765,13 @@ export async function GET(
       }
     }
 
-        // =====================================================
+    // =====================================================
     // FEEDS - SALES ONLY
     // =====================================================
     //
     // Starter, Grower and Layer are finished products.
-    //
-    // They are manufactured in Feed Production.
-    // Records entered in the Starter/Grower/Layer tables
-    // represent actual SALES of those finished products.
-    //
-    // Production itself is NOT financial revenue.
+    // Production itself is not financial revenue.
+    // Every Feed record is treated as a finished-feed sale.
     // =====================================================
 
     if (
@@ -795,49 +801,37 @@ export async function GET(
           category: "feeds",
           categoryLabel:
             CATEGORY_LABELS.feeds,
-
-          // Every Starter/Grower/Layer entry is a sale.
           type: "SALE",
-
-          source: "Feed Sale",
-
+          source:
+            "Feed Sale",
           description:
             item.feedType,
-
           feedType:
             item.feedType,
-
           location:
             item.location || null,
-
           party:
             item.companyName ||
             item.suppliedBy ||
             null,
-
           quantity:
             nullableNumber(
               item.quantity
             ),
-
           unitPrice:
             nullableNumber(
               item.price
             ),
-
           total:
             safeNumber(
               item.total
             ),
-
           currency:
             normalizeCurrency(
               item.currency
             ),
-
           createdAt:
             item.createdAt.toISOString(),
-
           createdBy:
             auditUser(
               item.createdBy
@@ -845,8 +839,7 @@ export async function GET(
         });
       }
     }
-
-    // =====================================================
+        // =====================================================
     // CHICKEN
     // =====================================================
 
@@ -938,7 +931,8 @@ export async function GET(
               `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
             location:
               item.location || null,
-            party: null,
+            party:
+              item.companyName || null,
             quantity:
               nullableNumber(
                 item.quantity
@@ -989,7 +983,8 @@ export async function GET(
               `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
             location:
               item.location || null,
-            party: null,
+            party:
+              item.companyName || null,
             quantity:
               nullableNumber(
                 item.quantity
@@ -1118,6 +1113,275 @@ export async function GET(
               ),
           });
         }
+      }
+    }
+
+    // =====================================================
+    // DAAWEYNTA / POULTRY HEALTH
+    // =====================================================
+    //
+    // One financial category containing:
+    // - Vaccinations
+    // - Vitamins
+    // - Calcium
+    //
+    // These are operating expenses.
+    //
+    // Old health records may not have financial information.
+    // Only records with a real total are included in
+    // Xisaab Xir so historical treatment records do not
+    // become false 0 ETB financial transactions.
+    // =====================================================
+
+    if (
+      categories.includes(
+        "treatment"
+      )
+    ) {
+      const [
+        vaccinations,
+        vitamins,
+        calciums,
+      ] = await Promise.all([
+        prisma.chickenVaccination.findMany(
+          {
+            include:
+              auditUserInclude,
+            where: {
+              date: dateFilter,
+              total: {
+                not: null,
+              },
+            },
+            orderBy: {
+              date: "asc",
+            },
+          }
+        ),
+
+        prisma.chickenVitamin.findMany(
+          {
+            include:
+              auditUserInclude,
+            where: {
+              date: dateFilter,
+              total: {
+                not: null,
+              },
+            },
+            orderBy: {
+              date: "asc",
+            },
+          }
+        ),
+
+        prisma.chickenCalcium.findMany(
+          {
+            include:
+              auditUserInclude,
+            where: {
+              date: dateFilter,
+              total: {
+                not: null,
+              },
+            },
+            orderBy: {
+              date: "asc",
+            },
+          }
+        ),
+      ]);
+
+      // ---------------------------------------------------
+      // VACCINATIONS
+      // ---------------------------------------------------
+
+      for (
+        const item of
+        vaccinations
+      ) {
+        rawEntries.push({
+          id: item.id,
+          date:
+            item.date.toISOString(),
+
+          category:
+            "treatment",
+
+          categoryLabel:
+            CATEGORY_LABELS.treatment,
+
+          type:
+            "EXPENSE",
+
+          source:
+            "Vaccination",
+
+          description:
+            `${item.vaccineName} - ${item.disease}`,
+
+          location:
+            null,
+
+          party:
+            item.givenBy || null,
+
+          quantity:
+            nullableNumber(
+              item.quantity
+            ),
+
+          unitPrice:
+            nullableNumber(
+              item.price
+            ),
+
+          total:
+            safeNumber(
+              item.total
+            ),
+
+          currency:
+            normalizeCurrency(
+              item.currency
+            ),
+
+          createdAt:
+            item.createdAt.toISOString(),
+
+          createdBy:
+            auditUser(
+              item.createdBy
+            ),
+        });
+      }
+
+      // ---------------------------------------------------
+      // VITAMINS
+      // ---------------------------------------------------
+
+      for (
+        const item of
+        vitamins
+      ) {
+        rawEntries.push({
+          id: item.id,
+          date:
+            item.date.toISOString(),
+
+          category:
+            "treatment",
+
+          categoryLabel:
+            CATEGORY_LABELS.treatment,
+
+          type:
+            "EXPENSE",
+
+          source:
+            "Vitamin",
+
+          description:
+            item.vitaminName,
+
+          location:
+            null,
+
+          party:
+            item.givenBy || null,
+
+          quantity:
+            nullableNumber(
+              item.quantity
+            ),
+
+          unitPrice:
+            nullableNumber(
+              item.price
+            ),
+
+          total:
+            safeNumber(
+              item.total
+            ),
+
+          currency:
+            normalizeCurrency(
+              item.currency
+            ),
+
+          createdAt:
+            item.createdAt.toISOString(),
+
+          createdBy:
+            auditUser(
+              item.createdBy
+            ),
+        });
+      }
+
+      // ---------------------------------------------------
+      // CALCIUM
+      // ---------------------------------------------------
+
+      for (
+        const item of
+        calciums
+      ) {
+        rawEntries.push({
+          id: item.id,
+          date:
+            item.date.toISOString(),
+
+          category:
+            "treatment",
+
+          categoryLabel:
+            CATEGORY_LABELS.treatment,
+
+          type:
+            "EXPENSE",
+
+          source:
+            "Calcium",
+
+          description:
+            item.calciumName,
+
+          location:
+            null,
+
+          party:
+            item.givenBy || null,
+
+          quantity:
+            nullableNumber(
+              item.quantity
+            ),
+
+          unitPrice:
+            nullableNumber(
+              item.price
+            ),
+
+          total:
+            safeNumber(
+              item.total
+            ),
+
+          currency:
+            normalizeCurrency(
+              item.currency
+            ),
+
+          createdAt:
+            item.createdAt.toISOString(),
+
+          createdBy:
+            auditUser(
+              item.createdBy
+            ),
+        });
       }
     }
 
@@ -1272,12 +1536,8 @@ export async function GET(
     // =====================================================
     // FEED PRODUCTION
     //
-    // IMPORTANT:
-    // Production records how much Starter/Grower/Layer
-    // was manufactured.
-    //
-    // Production does NOT count as revenue.
-    // Only actual Feed records above count as Feed Sales.
+    // Production is operational/non-monetary.
+    // Only Feed records above count as Feed Sales.
     // =====================================================
 
     const productionEntries:
@@ -1559,7 +1819,7 @@ export async function GET(
         {
           value: "EXPENSE",
           label:
-            "Product Expenses / Kharashka Productiga",
+            "Expenses / Kharashaadka",
         },
       ],
 
