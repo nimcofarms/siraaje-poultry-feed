@@ -35,6 +35,11 @@ type FeedTypeFilter =
   | "Grower"
   | "Layer";
 
+type ChickenTypeFilter =
+  | "ALL"
+  | "LIVE"
+  | "MEAT";
+
 type AuditUserInfo = {
   id: string;
   name: string;
@@ -202,6 +207,23 @@ function parseFeedTypeFilter(
         raw.toLowerCase()
     ) || "ALL"
   );
+}
+
+function parseChickenTypeFilter(
+  value: string | null
+): ChickenTypeFilter {
+  const valueUpper = String(value || "ALL")
+    .trim()
+    .toUpperCase();
+
+  if (
+    valueUpper === "LIVE" ||
+    valueUpper === "MEAT"
+  ) {
+    return valueUpper;
+  }
+
+  return "ALL";
 }
 
 function auditUser(
@@ -532,6 +554,13 @@ export async function GET(
         )
       );
 
+    const chickenType =
+      parseChickenTypeFilter(
+        url.searchParams.get(
+          "chickenType"
+        )
+      );
+
     const dateFilter = {
       gte: monthRange.start,
       lt: monthRange.end,
@@ -755,7 +784,7 @@ export async function GET(
       }
     }
 
-    // =====================================================
+        // =====================================================
     // FEEDS - PURCHASE + SALE
     // =====================================================
 
@@ -840,6 +869,16 @@ export async function GET(
     // =====================================================
     // CHICKEN
     // =====================================================
+    //
+    // ALL:
+    //   Live Chicken + Chicken Meat
+    //
+    // LIVE:
+    //   Live Chicken only
+    //
+    // MEAT:
+    //   Chicken Meat only
+    // =====================================================
 
     if (
       categories.includes(
@@ -905,185 +944,222 @@ export async function GET(
         ),
       ]);
 
-      for (
-        const item of
-        livePurchases
+      // ===================================================
+      // LIVE CHICKEN PURCHASES
+      // ===================================================
+
+      if (
+        chickenType === "ALL" ||
+        chickenType === "LIVE"
       ) {
-        rawEntries.push({
-          id: item.id,
-          date:
-            item.date.toISOString(),
-          category: "chicken",
-          categoryLabel:
-            CATEGORY_LABELS.chicken,
-          type: "PURCHASE",
-          source:
-            "Live Chicken Purchase",
-          description:
-            `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
-          location:
-            item.location || null,
-          party: null,
-          quantity:
-            nullableNumber(
-              item.quantity
-            ),
-          unitPrice:
-            nullableNumber(
-              item.price
-            ),
-          total:
-            safeNumber(
-              item.total
-            ),
-          currency:
-            normalizeCurrency(
-              item.currency
-            ),
-          createdAt:
-            item.createdAt.toISOString(),
-          createdBy:
-            auditUser(
-              item.createdBy
-            ),
-        });
+        for (
+          const item of
+          livePurchases
+        ) {
+          rawEntries.push({
+            id: item.id,
+            date:
+              item.date.toISOString(),
+            category: "chicken",
+            categoryLabel:
+              CATEGORY_LABELS.chicken,
+            type: "PURCHASE",
+            source:
+              "Live Chicken Purchase",
+            description:
+              `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
+            location:
+              item.location || null,
+            party: null,
+            quantity:
+              nullableNumber(
+                item.quantity
+              ),
+            unitPrice:
+              nullableNumber(
+                item.price
+              ),
+            total:
+              safeNumber(
+                item.total
+              ),
+            currency:
+              normalizeCurrency(
+                item.currency
+              ),
+            createdAt:
+              item.createdAt.toISOString(),
+            createdBy:
+              auditUser(
+                item.createdBy
+              ),
+          });
+        }
       }
 
-      for (
-        const item of liveSales
+      // ===================================================
+      // LIVE CHICKEN SALES
+      // ===================================================
+
+      if (
+        chickenType === "ALL" ||
+        chickenType === "LIVE"
       ) {
-        rawEntries.push({
-          id: item.id,
-          date:
-            item.date.toISOString(),
-          category: "chicken",
-          categoryLabel:
-            CATEGORY_LABELS.chicken,
-          type: "SALE",
-          source:
-            "Live Chicken Sale",
-          description:
-            `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
-          location:
-            item.location || null,
-          party: null,
-          quantity:
-            nullableNumber(
-              item.quantity
-            ),
-          unitPrice:
-            nullableNumber(
-              item.price
-            ),
-          total:
-            safeNumber(
-              item.total
-            ),
-          currency:
-            normalizeCurrency(
-              item.currency
-            ),
-          createdAt:
-            item.createdAt.toISOString(),
-          createdBy:
-            auditUser(
-              item.createdBy
-            ),
-        });
+        for (
+          const item of
+          liveSales
+        ) {
+          rawEntries.push({
+            id: item.id,
+            date:
+              item.date.toISOString(),
+            category: "chicken",
+            categoryLabel:
+              CATEGORY_LABELS.chicken,
+            type: "SALE",
+            source:
+              "Live Chicken Sale",
+            description:
+              `${item.chickenType} - ${item.ageNumber} ${item.ageUnit}`,
+            location:
+              item.location || null,
+            party: null,
+            quantity:
+              nullableNumber(
+                item.quantity
+              ),
+            unitPrice:
+              nullableNumber(
+                item.price
+              ),
+            total:
+              safeNumber(
+                item.total
+              ),
+            currency:
+              normalizeCurrency(
+                item.currency
+              ),
+            createdAt:
+              item.createdAt.toISOString(),
+            createdBy:
+              auditUser(
+                item.createdBy
+              ),
+          });
+        }
       }
 
-      for (
-        const item of
-        meatPurchases
+      // ===================================================
+      // CHICKEN MEAT PURCHASES
+      // ===================================================
+
+      if (
+        chickenType === "ALL" ||
+        chickenType === "MEAT"
       ) {
-        rawEntries.push({
-          id: item.id,
-          date:
-            item.date.toISOString(),
-          category: "chicken",
-          categoryLabel:
-            CATEGORY_LABELS.chicken,
-          type: "PURCHASE",
-          source:
-            "Chicken Meat Purchase",
-          description:
-            "Chicken Meat",
-          location:
-            item.location || null,
-          party:
-            item.companyName || null,
-          quantity:
-            nullableNumber(
-              item.quantity
-            ),
-          unitPrice:
-            nullableNumber(
-              item.price
-            ),
-          total:
-            safeNumber(
-              item.total
-            ),
-          currency:
-            normalizeCurrency(
-              item.currency
-            ),
-          createdAt:
-            item.createdAt.toISOString(),
-          createdBy:
-            auditUser(
-              item.createdBy
-            ),
-        });
+        for (
+          const item of
+          meatPurchases
+        ) {
+          rawEntries.push({
+            id: item.id,
+            date:
+              item.date.toISOString(),
+            category: "chicken",
+            categoryLabel:
+              CATEGORY_LABELS.chicken,
+            type: "PURCHASE",
+            source:
+              "Chicken Meat Purchase",
+            description:
+              "Chicken Meat",
+            location:
+              item.location || null,
+            party:
+              item.companyName || null,
+            quantity:
+              nullableNumber(
+                item.quantity
+              ),
+            unitPrice:
+              nullableNumber(
+                item.price
+              ),
+            total:
+              safeNumber(
+                item.total
+              ),
+            currency:
+              normalizeCurrency(
+                item.currency
+              ),
+            createdAt:
+              item.createdAt.toISOString(),
+            createdBy:
+              auditUser(
+                item.createdBy
+              ),
+          });
+        }
       }
 
-      for (
-        const item of
-        meatSales
+      // ===================================================
+      // CHICKEN MEAT SALES
+      // ===================================================
+
+      if (
+        chickenType === "ALL" ||
+        chickenType === "MEAT"
       ) {
-        rawEntries.push({
-          id: item.id,
-          date:
-            item.date.toISOString(),
-          category: "chicken",
-          categoryLabel:
-            CATEGORY_LABELS.chicken,
-          type: "SALE",
-          source:
-            "Chicken Meat Sale",
-          description:
-            `Chicken Meat - ${item.customerType}`,
-          location:
-            item.location || null,
-          party:
-            item.branch || null,
-          quantity:
-            nullableNumber(
-              item.quantity
-            ),
-          unitPrice:
-            nullableNumber(
-              item.price
-            ),
-          total:
-            safeNumber(
-              item.total
-            ),
-          currency:
-            normalizeCurrency(
-              item.currency
-            ),
-          createdAt:
-            item.createdAt.toISOString(),
-          createdBy:
-            auditUser(
-              item.createdBy
-            ),
-        });
+        for (
+          const item of
+          meatSales
+        ) {
+          rawEntries.push({
+            id: item.id,
+            date:
+              item.date.toISOString(),
+            category: "chicken",
+            categoryLabel:
+              CATEGORY_LABELS.chicken,
+            type: "SALE",
+            source:
+              "Chicken Meat Sale",
+            description:
+              `Chicken Meat - ${item.customerType}`,
+            location:
+              item.location || null,
+            party:
+              item.branch || null,
+            quantity:
+              nullableNumber(
+                item.quantity
+              ),
+            unitPrice:
+              nullableNumber(
+                item.price
+              ),
+            total:
+              safeNumber(
+                item.total
+              ),
+            currency:
+              normalizeCurrency(
+                item.currency
+              ),
+            createdAt:
+              item.createdAt.toISOString(),
+            createdBy:
+              auditUser(
+                item.createdBy
+              ),
+          });
+        }
       }
     }
 
-        // =====================================================
+    // =====================================================
     // AVAILABLE COMPANIES / PARTIES
     // =====================================================
 
@@ -1339,8 +1415,7 @@ export async function GET(
         }
       }
     }
-
-    // =====================================================
+        // =====================================================
     // PRODUCTION TOTALS
     // =====================================================
 
@@ -1477,6 +1552,7 @@ export async function GET(
         company:
           company || "ALL",
         feedType,
+        chickenType,
       },
 
       selectedCategories:
@@ -1543,6 +1619,28 @@ export async function GET(
           value: "Layer",
           label:
             "Layer Feed",
+        },
+      ],
+
+      // ===================================================
+      // CHICKEN FILTER OPTIONS
+      // ===================================================
+
+      availableChickenTypes: [
+        {
+          value: "ALL",
+          label:
+            "All Chicken / Dhammaan Digaagga",
+        },
+        {
+          value: "LIVE",
+          label:
+            "Live Chicken / Digaag Nool",
+        },
+        {
+          value: "MEAT",
+          label:
+            "Chicken Meat / Hilib Digaag",
         },
       ],
 
