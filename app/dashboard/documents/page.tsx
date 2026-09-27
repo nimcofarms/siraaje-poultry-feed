@@ -58,6 +58,11 @@ type UploadedDocument = {
   updatedAt: string;
 };
 
+type DocumentsApiResponse = {
+  documents?: UploadedDocument[];
+  error?: string;
+};
+
 const documentSections: DocumentSection[] = [
   {
     title: "Employee Documents / Dukumentiyada Shaqaalaha",
@@ -263,17 +268,26 @@ export default function DocumentsPage() {
   const loadDocuments = useCallback(async () => {
     try {
       setLoadingDocuments(true);
+      setError("");
 
       const response = await fetch("/api/documents", {
         cache: "no-store",
       });
 
+      const result: DocumentsApiResponse =
+        await response.json();
+
       if (!response.ok) {
-        throw new Error("Documents could not be loaded.");
+        throw new Error(
+          result.error ||
+            "Documents could not be loaded."
+        );
       }
 
       const data: UploadedDocument[] =
-        await response.json();
+        Array.isArray(result.documents)
+          ? result.documents
+          : [];
 
       const documentMap: Record<
         string,
@@ -287,8 +301,11 @@ export default function DocumentsPage() {
       setUploadedDocuments(documentMap);
     } catch (loadError) {
       console.error(loadError);
+
       setError(
-        "Uploaded documents could not be loaded."
+        loadError instanceof Error
+          ? loadError.message
+          : "Uploaded documents could not be loaded."
       );
     } finally {
       setLoadingDocuments(false);
@@ -344,7 +361,8 @@ export default function DocumentsPage() {
 
       if (!response.ok) {
         throw new Error(
-          result.error || "The PDF could not be uploaded."
+          result.error ||
+            "The PDF could not be uploaded."
         );
       }
 
@@ -499,7 +517,11 @@ export default function DocumentsPage() {
           </h2>
 
           <p className="mt-3 max-w-3xl leading-7 text-slate-500">
-            Soo geli, habeey, fur, daabac oo soo dejiso dukumentiyada muhiimka ah ee Siraaje Poultry Feed. / Upload, organize, open, print and download important Siraaje Poultry Feed documents.
+            Soo geli, habeey, fur, daabac oo soo dejiso
+            dukumentiyada muhiimka ah ee Siraaje Poultry
+            Feed. / Upload, organize, open, print and
+            download important Siraaje Poultry Feed
+            documents.
           </p>
         </div>
 
@@ -852,7 +874,16 @@ export default function DocumentsPage() {
               </h3>
 
               <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-                Dukumentiyada shirkadda si ammaan ah ayaa loogu soo gelin karaa PDF. Dukumentiyada la soo geliyo si gaar ah ayaa loo kaydiyaa, waxaana la furi karaa, la daabici karaa, la soo dejisan karaa, la beddeli karaa ama la tirtiri karaa marka loo baahdo. / Company documents can be uploaded securely as PDF files. Uploaded documents are stored privately and can be opened, printed, downloaded, replaced or removed when needed.
+                Dukumentiyada shirkadda si ammaan ah ayaa
+                loogu soo gelin karaa PDF. Dukumentiyada la
+                soo geliyo si gaar ah ayaa loo kaydiyaa,
+                waxaana la furi karaa, la daabici karaa, la
+                soo dejisan karaa, la beddeli karaa ama la
+                tirtiri karaa marka loo baahdo. / Company
+                documents can be uploaded securely as PDF
+                files. Uploaded documents are stored
+                privately and can be opened, printed,
+                downloaded, replaced or removed when needed.
               </p>
             </div>
           </div>
