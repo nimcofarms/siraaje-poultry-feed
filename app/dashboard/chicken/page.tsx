@@ -44,8 +44,6 @@ type MeatPurchase = AuditFields & {
   purchasedBy?: string | null;
   quantity: number;
   price: number;
-  meatWeightKg?: number | null;
-  pricePerKg?: number | null;
   total: number;
   currency: string;
 };
@@ -82,8 +80,6 @@ type MeatPurchaseForm = {
   purchasedBy: string;
   quantity: string;
   price: string;
-  meatWeightKg: string;
-  pricePerKg: string;
 };
 
 type MeatSaleForm = {
@@ -252,8 +248,6 @@ export default function ChickenPage() {
       purchasedBy: "",
       quantity: "",
       price: "",
-      meatWeightKg: "",
-      pricePerKg: "",
     });
 
   const [meatSaleForm, setMeatSaleForm] = useState<MeatSaleForm>({
@@ -420,8 +414,6 @@ export default function ChickenPage() {
       purchasedBy: "",
       quantity: "",
       price: "",
-      meatWeightKg: "",
-      pricePerKg: "",
     });
 
     setEditingMeatPurchaseId(null);
@@ -497,10 +489,6 @@ export default function ChickenPage() {
       purchasedBy: record.purchasedBy ?? "",
       quantity: String(record.quantity),
       price: String(record.price),
-      meatWeightKg:
-        record.meatWeightKg == null ? "" : String(record.meatWeightKg),
-      pricePerKg:
-        record.pricePerKg == null ? "" : String(record.pricePerKg),
     });
 
     setFormError("");
@@ -636,8 +624,6 @@ export default function ChickenPage() {
 
       const quantity = Number(meatPurchaseForm.quantity);
       const price = Number(meatPurchaseForm.price);
-      const meatWeightKg = Number(meatPurchaseForm.meatWeightKg);
-      const pricePerKg = Number(meatPurchaseForm.pricePerKg);
 
       if (
         !meatPurchaseForm.date ||
@@ -645,16 +631,9 @@ export default function ChickenPage() {
         !meatPurchaseForm.companyName.trim() ||
         !meatPurchaseForm.purchasedBy.trim() ||
         !Number.isFinite(quantity) ||
-        quantity < 0 ||
+        quantity <= 0 ||
         !Number.isFinite(price) ||
-        price < 0 ||
-        !Number.isFinite(meatWeightKg) ||
-        meatWeightKg < 0 ||
-        !Number.isFinite(pricePerKg) ||
-        pricePerKg < 0 ||
-        (quantity <= 0 && meatWeightKg <= 0) ||
-        (quantity > 0 && price <= 0) ||
-        (meatWeightKg > 0 && pricePerKg <= 0)
+        price <= 0
       ) {
         setFormError(
           "Fadlan xogta oo dhan si sax ah u geli. / Please enter all required information correctly."
@@ -677,8 +656,6 @@ export default function ChickenPage() {
           purchasedBy: meatPurchaseForm.purchasedBy.trim(),
           quantity,
           price,
-          meatWeightKg,
-          pricePerKg,
         }),
       });
 
@@ -858,16 +835,9 @@ export default function ChickenPage() {
   const liveFormTotal =
     Number(liveForm.quantity || 0) * Number(liveForm.price || 0);
 
-  const meatPurchaseChickenTotal =
+  const meatPurchaseFormTotal =
     Number(meatPurchaseForm.quantity || 0) *
     Number(meatPurchaseForm.price || 0);
-
-  const meatPurchaseMeatTotal =
-    Number(meatPurchaseForm.meatWeightKg || 0) *
-    Number(meatPurchaseForm.pricePerKg || 0);
-
-  const meatPurchaseFormTotal =
-    meatPurchaseChickenTotal + meatPurchaseMeatTotal;
 
   const meatSaleFormTotal =
     Number(meatSaleForm.quantity || 0) *
@@ -1013,8 +983,7 @@ export default function ChickenPage() {
           </div>
         </div>
       </header>
-
-      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-7 sm:px-8 lg:grid-cols-[250px_1fr]">
+            <div className="mx-auto grid max-w-7xl gap-6 px-5 py-7 sm:px-8 lg:grid-cols-[250px_1fr]">
         {/* SIDEBAR */}
         <aside className="h-fit rounded-3xl border border-[#e7e1d4] bg-white p-4 shadow-sm">
           <nav className="space-y-2">
@@ -1522,6 +1491,7 @@ export default function ChickenPage() {
                 <Field label="Taariikhda / Date">
                   <input
                     type="date"
+                    required
                     value={meatPurchaseForm.date}
                     onChange={(event) =>
                       setMeatPurchaseForm((current) => ({
@@ -1536,6 +1506,7 @@ export default function ChickenPage() {
                 <Field label="Goobta / Location">
                   <input
                     type="text"
+                    required
                     placeholder="Tusaale: Jigjiga"
                     value={meatPurchaseForm.location}
                     onChange={(event) =>
@@ -1551,6 +1522,7 @@ export default function ChickenPage() {
                 <Field label="Shirkadda Laga Iibsaday / Purchased From">
                   <input
                     type="text"
+                    required
                     placeholder="Tusaale: Supplier / Company"
                     value={meatPurchaseForm.companyName}
                     onChange={(event) =>
@@ -1566,6 +1538,7 @@ export default function ChickenPage() {
                 <Field label="Qofka Iibsaday / Purchased By">
                   <input
                     type="text"
+                    required
                     placeholder="Magaca qofka iibsaday"
                     value={meatPurchaseForm.purchasedBy}
                     onChange={(event) =>
@@ -1583,6 +1556,7 @@ export default function ChickenPage() {
                     type="number"
                     min="0.01"
                     step="any"
+                    required
                     placeholder="Tusaale: 10"
                     value={meatPurchaseForm.quantity}
                     onChange={(event) =>
@@ -1598,8 +1572,9 @@ export default function ChickenPage() {
                 <Field label="Qiimaha / Price (ETB)">
                   <input
                     type="number"
-                    min="0"
+                    min="0.01"
                     step="any"
+                    required
                     placeholder="Tusaale: 500"
                     value={meatPurchaseForm.price}
                     onChange={(event) =>
@@ -1611,60 +1586,6 @@ export default function ChickenPage() {
                     className={inputClass}
                   />
                 </Field>
-
-                <Field label="Miisaanka Hilibka / Quantity (kg)">
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="any"
-                    placeholder="Tusaale: 25.5"
-                    value={meatPurchaseForm.meatWeightKg}
-                    onChange={(event) =>
-                      setMeatPurchaseForm((current) => ({
-                        ...current,
-                        meatWeightKg: event.target.value,
-                      }))
-                    }
-                    className={inputClass}
-                  />
-                </Field>
-
-                <Field label="Qiimaha Halkii kg / Price per kg (ETB)">
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    placeholder="Tusaale: 300"
-                    value={meatPurchaseForm.pricePerKg}
-                    onChange={(event) =>
-                      setMeatPurchaseForm((current) => ({
-                        ...current,
-                        pricePerKg: event.target.value,
-                      }))
-                    }
-                    className={inputClass}
-                  />
-                </Field>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    Wadarta Digaagga / Chicken Total
-                  </p>
-                  <p className="mt-1 text-lg font-extrabold text-slate-900">
-                    {formatMoney(meatPurchaseChickenTotal)} ETB
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    Wadarta Hilibka / Meat Total
-                  </p>
-                  <p className="mt-1 text-lg font-extrabold text-slate-900">
-                    {formatMoney(meatPurchaseMeatTotal)} ETB
-                  </p>
-                </div>
               </div>
 
               <TotalBox value={meatPurchaseFormTotal} />
@@ -1972,7 +1893,6 @@ function ModalButtons({
   );
 }
 
-
 function AuditCells({ record }: { record: AuditFields }) {
   return (
     <>
@@ -1997,7 +1917,6 @@ function AuditCells({ record }: { record: AuditFields }) {
     </>
   );
 }
-
 function LiveTable({
   records,
   isPurchase,
@@ -2020,27 +1939,26 @@ function LiveTable({
 
   return (
     <div className="overflow-x-auto">
-      <table
-        className={`w-full text-left ${
-          "min-w-[1720px]"
-        }`}
-      >
+      <table className="w-full min-w-[1720px] text-left">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
             <th className="px-5 py-4">Nooca / Type</th>
+
             <>
               <th className="px-5 py-4">
                 {isPurchase
                   ? "Laga Iibsaday / Purchased From"
                   : "Loo Iibiyay / Sold To"}
               </th>
+
               <th className="px-5 py-4">
                 {isPurchase
                   ? "Qofka Iibsaday / Purchased By"
                   : "Qofka Iibiyay / Sold By"}
               </th>
             </>
+
             <th className="px-5 py-4">Goobta / Location</th>
             <th className="px-5 py-4">Da&apos;da / Age</th>
             <th className="px-5 py-4">Tirada / Quantity</th>
@@ -2048,7 +1966,6 @@ function LiveTable({
             <th className="px-5 py-4">Wadarta / Total</th>
             <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
             <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
-
 
             {(canEdit || canDelete) && (
               <th className="px-5 py-4 text-right">
@@ -2092,12 +2009,13 @@ function LiveTable({
                   <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
                     {record.companyName || "—"}
                   </td>
+
                   <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
-                    {isPurchase ? record.purchasedBy || "—" : record.soldBy || "—"}
+                    {isPurchase
+                      ? record.purchasedBy || "—"
+                      : record.soldBy || "—"}
                   </td>
                 </>
-
-
 
                 <td className="px-5 py-4 text-sm">
                   {record.location}
@@ -2119,7 +2037,7 @@ function LiveTable({
                   {formatMoney(record.total)} ETB
                 </td>
 
-                  <AuditCells record={record} />
+                <AuditCells record={record} />
 
                 {(canEdit || canDelete) && (
                   <ActionCell
@@ -2153,25 +2071,30 @@ function MeatPurchaseTable({
   onEdit: (record: MeatPurchase) => void;
   onDelete: (id: string) => void;
 }) {
-  const columns = canEdit || canDelete ? 12 : 11;
+  const columns = canEdit || canDelete ? 10 : 9;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1850px] text-left">
+      <table className="w-full min-w-[1500px] text-left">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
             <th className="px-5 py-4">Goobta / Location</th>
-            <th className="px-5 py-4">Laga Iibsaday / Purchased From</th>
-            <th className="px-5 py-4">Qofka Iibsaday / Purchased By</th>
+            <th className="px-5 py-4">
+              Laga Iibsaday / Purchased From
+            </th>
+            <th className="px-5 py-4">
+              Qofka Iibsaday / Purchased By
+            </th>
             <th className="px-5 py-4">Tirada / Quantity</th>
             <th className="px-5 py-4">Qiimaha / Price</th>
-            <th className="px-5 py-4">Miisaanka Hilibka / Quantity (kg)</th>
-            <th className="px-5 py-4">Qiimaha Halkii kg / Price per kg</th>
             <th className="px-5 py-4">Wadarta / Total</th>
-            <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
-            <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
-
+            <th className="px-5 py-4">
+              Waxaa Geliyay / Entered By
+            </th>
+            <th className="px-5 py-4">
+              Waqtiga la Geliyay / Entered At
+            </th>
 
             {(canEdit || canDelete) && (
               <th className="px-5 py-4 text-right">
@@ -2227,23 +2150,11 @@ function MeatPurchaseTable({
                   {formatMoney(record.price)} ETB
                 </td>
 
-                <td className="whitespace-nowrap px-5 py-4 text-sm">
-                  {record.meatWeightKg == null
-                    ? "—"
-                    : `${formatMoney(record.meatWeightKg)} kg`}
-                </td>
-
-                <td className="whitespace-nowrap px-5 py-4 text-sm">
-                  {record.pricePerKg == null
-                    ? "—"
-                    : `${formatMoney(record.pricePerKg)} ETB/kg`}
-                </td>
-
                 <td className="whitespace-nowrap px-5 py-4 text-sm font-extrabold text-[#075b35]">
                   {formatMoney(record.total)} ETB
                 </td>
 
-                  <AuditCells record={record} />
+                <AuditCells record={record} />
 
                 {(canEdit || canDelete) && (
                   <ActionCell
@@ -2292,8 +2203,9 @@ function MeatSaleTable({
             <th className="px-5 py-4">Qiimaha / Price per kg</th>
             <th className="px-5 py-4">Wadarta / Total</th>
             <th className="px-5 py-4">Waxaa Geliyay / Entered By</th>
-            <th className="px-5 py-4">Waqtiga la Geliyay / Entered At</th>
-
+            <th className="px-5 py-4">
+              Waqtiga la Geliyay / Entered At
+            </th>
 
             {(canEdit || canDelete) && (
               <th className="px-5 py-4 text-right">
@@ -2353,7 +2265,7 @@ function MeatSaleTable({
                   {formatMoney(record.total)} ETB
                 </td>
 
-                  <AuditCells record={record} />
+                <AuditCells record={record} />
 
                 {(canEdit || canDelete) && (
                   <ActionCell
