@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -298,7 +298,7 @@ function formatNumber(
   value: number | null
 ) {
   if (value === null) {
-    return "—";
+    return "â€”";
   }
 
   return new Intl.NumberFormat(
@@ -340,7 +340,7 @@ function formatDateTime(
       date.getTime()
     )
   ) {
-    return "—";
+    return "â€”";
   }
 
   return new Intl.DateTimeFormat(
@@ -971,7 +971,7 @@ export default function MonthlyAccountsPage() {
               </h1>
 
               <p className="mt-1 font-semibold">
-                Monthly Accounts / Xisaab Xirka Bisha — {monthLabel}
+                Monthly Accounts / Xisaab Xirka Bisha â€” {monthLabel}
               </p>
             </div>
           </div>
@@ -1317,7 +1317,7 @@ export default function MonthlyAccountsPage() {
                               : "border-slate-300 bg-[#f7f5ed] text-transparent"
                           }`}
                         >
-                          ✓
+                          âœ“
                         </span>
                       </div>
                     </button>
@@ -1349,14 +1349,14 @@ export default function MonthlyAccountsPage() {
 
                 <p className="mt-1 text-xs font-semibold text-slate-400">
                   Transaction:{" "}
-                  {transaction} ·
+                  {transaction} Â·
                   Company:{" "}
-                  {company} · Feed:{" "}
+                  {company} Â· Feed:{" "}
                   {feedType}
                   {selectedCategories.includes(
                     "chicken"
                   ) &&
-                    ` · Chicken: ${chickenType}`}
+                    ` Â· Chicken: ${chickenType}`}
                 </p>
               </div>
 
@@ -1901,7 +1901,7 @@ export default function MonthlyAccountsPage() {
 
                                   <td className="px-3 py-4 text-sm text-slate-600">
                                     {entry.location ||
-                                      "—"}
+                                      "â€”"}
                                   </td>
 
                                   <td className="px-3 py-4 text-right font-bold text-slate-700">
@@ -2094,12 +2094,12 @@ export default function MonthlyAccountsPage() {
 
                               <td className="px-3 py-4 text-sm text-slate-600">
                                 {entry.location ||
-                                  "—"}
+                                  "â€”"}
                               </td>
 
                               <td className="px-3 py-4 text-sm text-slate-600">
                                 {entry.party ||
-                                  "—"}
+                                  "â€”"}
                               </td>
 
                               <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
@@ -2111,7 +2111,7 @@ export default function MonthlyAccountsPage() {
                               <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
                                 {entry.unitPrice ===
                                 null
-                                  ? "—"
+                                  ? "â€”"
                                   : formatMoney(
                                       entry.unitPrice,
                                       entry.currency
@@ -2217,7 +2217,7 @@ export default function MonthlyAccountsPage() {
           )}
 
           <p className="mt-8 text-center text-xs text-slate-400 print:mt-10">
-            © 2026 Siraaje Poultry & Feeds Company
+            Â© 2026 Siraaje Poultry & Feeds Company
           </p>
         </section>
       </div>
@@ -2225,7 +2225,7 @@ export default function MonthlyAccountsPage() {
       <style jsx global>{`
         @media print {
           @page {
-            size: A4 landscape;
+            size: A4 portrait;
             margin: 12mm;
           }
 
