@@ -298,7 +298,7 @@ function formatNumber(
   value: number | null
 ) {
   if (value === null) {
-    return "â€”";
+    return "—";
   }
 
   return new Intl.NumberFormat(
@@ -340,7 +340,7 @@ function formatDateTime(
       date.getTime()
     )
   ) {
-    return "â€”";
+    return "—";
   }
 
   return new Intl.DateTimeFormat(
@@ -971,7 +971,7 @@ export default function MonthlyAccountsPage() {
               </h1>
 
               <p className="mt-1 font-semibold">
-                Monthly Accounts / Xisaab Xirka Bisha â€” {monthLabel}
+                Monthly Accounts / Xisaab Xirka Bisha — {monthLabel}
               </p>
             </div>
           </div>
@@ -1317,7 +1317,7 @@ export default function MonthlyAccountsPage() {
                               : "border-slate-300 bg-[#f7f5ed] text-transparent"
                           }`}
                         >
-                          âœ“
+                          ✓
                         </span>
                       </div>
                     </button>
@@ -1349,14 +1349,14 @@ export default function MonthlyAccountsPage() {
 
                 <p className="mt-1 text-xs font-semibold text-slate-400">
                   Transaction:{" "}
-                  {transaction} Â·
+                  {transaction} ·
                   Company:{" "}
-                  {company} Â· Feed:{" "}
+                  {company} · Feed:{" "}
                   {feedType}
                   {selectedCategories.includes(
                     "chicken"
                   ) &&
-                    ` Â· Chicken: ${chickenType}`}
+                    ` · Chicken: ${chickenType}`}
                 </p>
               </div>
 
@@ -1379,7 +1379,8 @@ export default function MonthlyAccountsPage() {
               </button>
             </div>
           </div>
-                    {/* ERROR */}
+
+          {/* ERROR */}
           {error && (
             <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 font-semibold text-red-700">
               {error}
@@ -1681,8 +1682,7 @@ export default function MonthlyAccountsPage() {
                   </div>
                 </div>
               )}
-
-              {/* POULTRY HEALTH EXPLANATION */}
+                            {/* POULTRY HEALTH EXPLANATION */}
               {selectedCategories.includes(
                 "treatment"
               ) && (
@@ -1901,7 +1901,7 @@ export default function MonthlyAccountsPage() {
 
                                   <td className="px-3 py-4 text-sm text-slate-600">
                                     {entry.location ||
-                                      "â€”"}
+                                      "—"}
                                   </td>
 
                                   <td className="px-3 py-4 text-right font-bold text-slate-700">
@@ -1970,7 +1970,8 @@ export default function MonthlyAccountsPage() {
                     )}
                   </div>
                 )}
-                              {/* DETAILED MONTHLY RECORDS */}
+
+              {/* DETAILED MONTHLY RECORDS */}
               {data.entries.length > 0 && (
                 <div className="mt-7 rounded-3xl border border-[#e7e1d4] bg-[#faf9f5] p-5 shadow-sm sm:p-7">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -2094,12 +2095,12 @@ export default function MonthlyAccountsPage() {
 
                               <td className="px-3 py-4 text-sm text-slate-600">
                                 {entry.location ||
-                                  "â€”"}
+                                  "—"}
                               </td>
 
                               <td className="px-3 py-4 text-sm text-slate-600">
                                 {entry.party ||
-                                  "â€”"}
+                                  "—"}
                               </td>
 
                               <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
@@ -2111,7 +2112,7 @@ export default function MonthlyAccountsPage() {
                               <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-bold text-slate-700">
                                 {entry.unitPrice ===
                                 null
-                                  ? "â€”"
+                                  ? "—"
                                   : formatMoney(
                                       entry.unitPrice,
                                       entry.currency
@@ -2217,7 +2218,7 @@ export default function MonthlyAccountsPage() {
           )}
 
           <p className="mt-8 text-center text-xs text-slate-400 print:mt-10">
-            Â© 2026 Siraaje Poultry & Feeds Company
+            © 2026 Siraaje Poultry & Feeds Company
           </p>
         </section>
       </div>
@@ -2226,12 +2227,17 @@ export default function MonthlyAccountsPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 12mm;
+            margin: 7mm;
           }
 
           html,
           body {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
+            overflow: visible !important;
           }
 
           body {
@@ -2239,8 +2245,48 @@ export default function MonthlyAccountsPage() {
             print-color-adjust: exact;
           }
 
+          main {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
+
+          section {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            overflow: visible !important;
+          }
+
+          .overflow-x-auto,
+          .overflow-hidden {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+          }
+
           table {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
             page-break-inside: auto;
+            font-size: 7px !important;
+          }
+
+          thead {
+            display: table-header-group;
+          }
+
+          tbody {
+            display: table-row-group;
           }
 
           tr {
@@ -2248,8 +2294,35 @@ export default function MonthlyAccountsPage() {
             page-break-after: auto;
           }
 
-          thead {
-            display: table-header-group;
+          th,
+          td {
+            min-width: 0 !important;
+            max-width: none !important;
+            width: auto !important;
+            padding: 3px 2px !important;
+            font-size: 7px !important;
+            line-height: 1.15 !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+            vertical-align: top !important;
+          }
+
+          th {
+            font-size: 6.5px !important;
+            font-weight: 700 !important;
+          }
+
+          .whitespace-nowrap {
+            white-space: normal !important;
+          }
+
+          [class*="min-w-"] {
+            min-width: 0 !important;
+          }
+
+          [class*="max-w-"] {
+            max-width: 100% !important;
           }
         }
       `}</style>
