@@ -1737,7 +1737,7 @@ export default function ChickenPage() {
 }
 
 const inputClass =
-  "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100";
+  "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100";
 
 function SummaryCard({
   title,
