@@ -1292,7 +1292,7 @@ export default function MonthlyAccountsPage() {
                       className={`rounded-2xl border p-4 text-left transition ${
                         selected
                           ? "border-[#075b35] bg-[#edf6ef] shadow-sm"
-                          : "border-[#e7e1d4] bg-[#f7f5ed] hover:border-[#b7cbbd]"
+                          : "border-[#cfe3d5] bg-[#edf6ef] hover:border-[#b7cbbd] lg:border-[#e7e1d4] lg:bg-[#f7f5ed]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
