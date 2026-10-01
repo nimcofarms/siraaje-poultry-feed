@@ -811,7 +811,7 @@ export default function EggsPage() {
             </div>
           </div>
                     {/* PURCHASED EGGS */}
-          <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-white shadow-sm">
+          <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-[#f7f5ed] shadow-sm lg:bg-white">
             <div className="flex flex-col gap-4 border-b border-[#eee9df] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-xl font-extrabold text-[#064b2c]">
@@ -959,7 +959,7 @@ export default function EggsPage() {
           </div>
 
           {/* SOLD EGGS */}
-          <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-white shadow-sm">
+          <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-[#f7f5ed] shadow-sm lg:bg-white">
             <div className="flex flex-col gap-4 border-b border-[#eee9df] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-xl font-extrabold text-[#064b2c]">
