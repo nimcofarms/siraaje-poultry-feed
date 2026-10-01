@@ -1184,7 +1184,7 @@ export default function ChickenPage() {
           </div>
 
           {/* TABLE */}
-          <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-[#f7f5ed] shadow-sm lg:bg-white">
+          <div className="mt-7 overflow-hidden rounded-3xl border border-[#e7e1d4] bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-[#eee9df] p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-xl font-extrabold text-[#064b2c]">
@@ -1939,7 +1939,7 @@ function LiveTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1720px] text-left">
+      <table className="w-full min-w-[1720px] bg-white text-left text-slate-800">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
@@ -2075,7 +2075,7 @@ function MeatPurchaseTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1500px] text-left">
+      <table className="w-full min-w-[1500px] bg-white text-left text-slate-800">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
@@ -2192,7 +2192,7 @@ function MeatSaleTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1420px] text-left">
+      <table className="w-full min-w-[1420px] bg-white text-left text-slate-800">
         <thead className="bg-[#f8faf8] text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-5 py-4">Taariikhda / Date</th>
