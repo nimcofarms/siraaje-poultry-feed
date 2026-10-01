@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -151,23 +151,23 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Diiwaannada Wax-soo-saarka / Production Records",
+    title: "Production Records / Diiwaannada Wax-soo-saarka",
     description:
-      "Foomamka wax-soo-saarka, diiwaannada quudinta, tayada iyo hawlgalka. / Production forms, feed records, quality records and operational documents.",
+      "Production forms, feed records, quality records and operational documents. / Foomamka wax-soo-saarka, diiwaannada quudinta, tayada iyo hawlgalka.",
     icon: Building2,
     documents: [
       {
-        name: "Diiwaanka Wax-soo-saarka Maalinlaha / Daily Production Record",
+        name: "Daily Production Record / Diiwaanka Wax-soo-saarka Maalinlaha",
         code: "SPF-PROD-001",
         version: "1.0",
       },
       {
-        name: "Diiwaanka Soo-saarka Quudinta / Feed Production Record",
+        name: "Feed Production Record / Diiwaanka Soo-saarka Quudinta",
         code: "SPF-PROD-002",
         version: "1.0",
       },
       {
-        name: "Foomka Xakamaynta Tayada / Quality Control Form",
+        name: "Quality Control Form / Foomka Xakamaynta Tayada",
         code: "SPF-PROD-003",
         version: "1.0",
       },
@@ -175,23 +175,23 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Iibsiga & Alaab-qeybiyeyaasha / Purchasing & Suppliers",
+    title: "Purchasing & Suppliers / Iibsiga & Alaab-qeybiyeyaasha",
     description:
-      "Xogta alaab-qeybiyeyaasha, foomamka iibsiga iyo heshiisyada alaab-qeybiyeyaasha. / Supplier information, purchase forms and supplier agreements.",
+      "Supplier information, purchase forms and supplier agreements. / Xogta alaab-qeybiyeyaasha, foomamka iibsiga iyo heshiisyada alaab-qeybiyeyaasha.",
     icon: Truck,
     documents: [
       {
-        name: "Foomka Diiwaangelinta Alaab-qeybiyaha / Supplier Registration Form",
+        name: "Supplier Registration Form / Foomka Diiwaangelinta Alaab-qeybiyaha",
         code: "SPF-SUP-001",
         version: "1.0",
       },
       {
-        name: "Foomka Dalabka Iibsiga / Purchase Order Form",
+        name: "Purchase Order Form / Foomka Dalabka Iibsiga",
         code: "SPF-SUP-002",
         version: "1.0",
       },
       {
-        name: "Heshiiska Alaab-qeybiyaha / Supplier Agreement",
+        name: "Supplier Agreement / Heshiiska Alaab-qeybiyaha",
         code: "SPF-SUP-003",
         version: "1.0",
       },
@@ -199,28 +199,28 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Shahaadooyinka & Sharciga / Certificates & Legal",
+    title: "Certificates & Legal / Shahaadooyinka & Sharciga",
     description:
-      "Shahaadooyinka shirkadda, ruqsadaha iyo dukumentiyada sharciyeed ee muhiimka ah. / Company certificates, licences and important legal documents.",
+      "Company certificates, licences and important legal documents. / Shahaadooyinka shirkadda, ruqsadaha iyo dukumentiyada sharciyeed ee muhiimka ah.",
     icon: Scale,
     documents: [
       {
-        name: "Shahaadada Ganacsiga / Business Certificate",
+        name: "Business Certificate / Shahaadada Ganacsiga",
         code: "SPF-LEGAL-001",
         version: "1.0",
       },
       {
-        name: "Ruqsadda Ganacsiga / Business Licence",
+        name: "Business Licence / Ruqsadda Ganacsiga",
         code: "SPF-LEGAL-002",
         version: "1.0",
       },
       {
-        name: "Dukumentiga Canshuurta & Diiwaangelinta / Tax & Registration Document",
+        name: "Tax & Registration Document / Dukumentiga Canshuurta & Diiwaangelinta",
         code: "SPF-LEGAL-003",
         version: "1.0",
       },
       {
-        name: "Dukumenti Sharciyeed Kale / Other Legal Document",
+        name: "Other Legal Document / Dukumenti Sharciyeed Kale",
         code: "SPF-LEGAL-004",
         version: "1.0",
       },
