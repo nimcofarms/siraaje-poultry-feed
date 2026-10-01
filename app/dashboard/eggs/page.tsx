@@ -1165,7 +1165,7 @@ export default function EggsPage() {
                         date: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1185,7 +1185,7 @@ export default function EggsPage() {
                         location: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1204,7 +1204,7 @@ export default function EggsPage() {
                         companyName: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1225,7 +1225,7 @@ export default function EggsPage() {
                         quantity: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1246,7 +1246,7 @@ export default function EggsPage() {
                         price: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
               </div>
@@ -1338,7 +1338,7 @@ export default function EggsPage() {
                         date: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1358,7 +1358,7 @@ export default function EggsPage() {
                         location: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1376,7 +1376,7 @@ export default function EggsPage() {
                         customerType: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   >
                     <option value="">Dooro / Select</option>
                     <option value="Dukaan">Dukaan / Shop</option>
@@ -1402,7 +1402,7 @@ export default function EggsPage() {
                         companyName: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1423,7 +1423,7 @@ export default function EggsPage() {
                         quantity: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
 
@@ -1444,7 +1444,7 @@ export default function EggsPage() {
                         price: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#075b35] focus:ring-2 focus:ring-green-100"
                   />
                 </label>
               </div>
