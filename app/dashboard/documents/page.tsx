@@ -122,28 +122,28 @@ const documentSections: DocumentSection[] = [
   },
 
   {
-    title: "Siyaasadaha Shirkadda / Company Policies",
+    title: "Company Policies / Siyaasadaha Shirkadda",
     description:
-      "Siyaasadaha rasmiga ah iyo xeerarka goobta shaqada ee Siraaje Poultry Feed. / Official policies and workplace rules for Siraaje Poultry Feed.",
+      "Official policies and workplace rules for Siraaje Poultry Feed. / Siyaasadaha rasmiga ah iyo xeerarka goobta shaqada ee Siraaje Poultry Feed.",
     icon: ShieldCheck,
     documents: [
       {
-        name: "Xeerarka Goobta Shaqada / Workplace Rules",
+        name: "Workplace Rules / Xeerarka Goobta Shaqada",
         code: "SPF-POL-001",
         version: "1.0",
       },
       {
-        name: "Siyaasadda Caafimaadka & Badbaadada / Health & Safety Policy",
+        name: "Health & Safety Policy / Siyaasadda Caafimaadka & Badbaadada",
         code: "SPF-POL-002",
         version: "1.0",
       },
       {
-        name: "Siyaasadda Nadaafadda / Hygiene Policy",
+        name: "Hygiene Policy / Siyaasadda Nadaafadda",
         code: "SPF-POL-003",
         version: "1.0",
       },
       {
-        name: "Siyaasadda Sirta / Confidentiality Policy",
+        name: "Confidentiality Policy / Siyaasadda Sirta",
         code: "SPF-POL-004",
         version: "1.0",
       },
